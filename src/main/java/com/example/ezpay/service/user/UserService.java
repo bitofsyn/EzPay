@@ -15,15 +15,11 @@ public class UserService {
 
     @Transactional
     public Users saveUser(Users user) {
-        System.out.println("힘들다 ");
         try {
-            System.out.println("here===============");
             Users savedUser = userRepository.save(user);
             userRepository.flush();
-            System.out.println("Successfully saved user: " + savedUser + " ============ ");
             return savedUser;
         }catch (Exception e) {
-            System.out.println("Error while saving user: " + e.getMessage() + "============");
             throw e;
         }
     }
