@@ -50,4 +50,27 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new CustomNotFoundException("사용자를 찾을 수 없습니다." + id));
     }
+
+    // 정보 수정
+
+    @Override
+    public User updateUser(Long id, UserRequest userRequest) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new CustomNotFoundException("사용자를 찾을 수 없습니다." + id));
+
+        if(userRequest.getName() != null) user.setName(userRequest.getName());
+        if(userRequest.getEmail() != null) user.setEmail(userRequest.getEmail());
+        if(userRequest.getPassword() != null) user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+
+        return userRepository.save(user);
+    }
+
+    // 정보 삭제
+
+    @Override
+    public void deleteUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new CustomNotFoundException("사용자를 찾을 수 없습니다." + id));
+        userRepository.delete(user);
+    }
 }
