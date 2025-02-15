@@ -4,6 +4,7 @@ import com.example.ezpay.model.user.User;
 import com.example.ezpay.request.UserRequest;
 import com.example.ezpay.response.CommonResponse;
 import com.example.ezpay.service.user.UserService;
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
