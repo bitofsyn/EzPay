@@ -10,4 +10,6 @@ public interface UserService {
     User registerUser(UserRequest userRequest);
     List<User> getAllUsers();
     User getUserById(Long id);
+    User updateUser(Long id, UserRequest userRequest);
+    void deleteUser(Long id);
 }
