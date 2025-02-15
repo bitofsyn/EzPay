@@ -47,6 +47,23 @@ public class UserController {
     }
 
     // 회원 수정
+    @PutMapping("/{id}")
+    public ResponseEntity<CommonResponse<User>> updateUser(@PathVariable Long id, @RequestBody UserRequest userRequest) {
+        User user = userService.updateUser(id, userRequest);
+        CommonResponse<User> response = new CommonResponse<>(
+                "success", user, "User updated successfully"
+        );
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
     // 회원 탈퇴
+    @DeleteMapping("/{id}")
+    public ResponseEntity<CommonResponse> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        CommonResponse<String> response = new CommonResponse<>(
+                "success", null, "User deleted successfully"
+        );
+        return ResponseEntity.ok(response);
+    }
 
 }
