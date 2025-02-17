@@ -2,12 +2,11 @@ package com.example.ezpay.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 public class SecurityConfig {
@@ -23,10 +22,12 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable) // CSRF 보호 비활성화
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/users/**", "/**").permitAll() // "/users" 경로 인증 없이 허용
+                        .requestMatchers(HttpMethod.DELETE,"/users/**", "/**").permitAll()// "/users" 경로 인증 없이 허용
+                        .requestMatchers("/users/**").permitAll()
                         .anyRequest().authenticated() // 나머지 요청은 인증 필요
                 )
-                .httpBasic(withDefaults()); // HTTP Basic 인증 활성화
+                .formLogin(AbstractHttpConfigurer::disable) // 기본 로그인 비활성화
+                .httpBasic(AbstractHttpConfigurer::disable); // 기본 인증 비활성화
 
         return http.build();
     }
