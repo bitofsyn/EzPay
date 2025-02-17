@@ -58,7 +58,7 @@ public class UserController {
 
     // 회원 탈퇴
     @DeleteMapping("/{id}")
-    public ResponseEntity<CommonResponse> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<CommonResponse<String>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         CommonResponse<String> response = new CommonResponse<>(
                 "success", null, "User deleted successfully"
