@@ -1,6 +1,7 @@
 package com.example.ezpay.model.user;
 
 import com.example.ezpay.model.enums.Status;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -37,6 +38,7 @@ public class User {
     private Timestamp updatedAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // 양방향 참조
     private List<Accounts> accounts;
 
     @Override
