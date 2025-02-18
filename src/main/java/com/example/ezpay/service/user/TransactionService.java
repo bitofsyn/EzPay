@@ -4,6 +4,7 @@ import com.example.ezpay.model.kafka.TransferEvent;
 import com.example.ezpay.model.user.Transaction;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface TransactionService {
     // kafka 이벤트 발생
@@ -11,4 +12,15 @@ public interface TransactionService {
 
     // 송금 처리 및 거래 기록 저장
     Transaction processTransfer(TransferEvent transferEvent);
+
+    List<Transaction> getTransactionByAccount(Long accountId);
+    Transaction getTransactionById(Long transactionId);
+    void cancelTransaction(Long transactionId);
+
+    // 특정 계좌에서 송금한 거래 조회
+    List<Transaction> getSentTransactions(Long senderAccountId);
+
+    // 특정 계좌에서 받은 거래 조회
+    List<Transaction> getReceivedTransactions(Long receiverAccountId);
+
 }

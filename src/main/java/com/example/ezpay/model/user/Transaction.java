@@ -24,11 +24,11 @@ public class Transaction {
 
     @ManyToOne
     @JoinColumn(name="sender_account_id", nullable=false)
-    private Accounts senderAccountId;
+    private Accounts senderAccount;
 
     @ManyToOne
     @JoinColumn(name="receiver_account_id", nullable=false)
-    private Accounts receiverAccountId;
+    private Accounts receiverAccount;
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
@@ -37,15 +37,4 @@ public class Transaction {
     @CreationTimestamp
     private Timestamp transactionDate;
     private String description;
-
-    public Transaction toEntity() {
-        return Transaction
-                .builder()
-                .senderAccountId(senderAccountId)
-                .receiverAccountId(receiverAccountId)
-                .amount(amount)
-                .status(TransactionStatus.SUCCESS)
-                .description(description)
-                .build();
-    }
 }
