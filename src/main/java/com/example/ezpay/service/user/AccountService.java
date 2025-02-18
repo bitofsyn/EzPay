@@ -1,5 +1,6 @@
 package com.example.ezpay.service.user;
 
+import com.example.ezpay.model.kafka.TransferEvent;
 import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.request.AccountRequest;
 
