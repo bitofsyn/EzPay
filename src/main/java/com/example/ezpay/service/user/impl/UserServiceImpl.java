@@ -1,25 +1,27 @@
 package com.example.ezpay.service.user.impl;
 
 import com.example.ezpay.exception.CustomNotFoundException;
+import com.example.ezpay.model.user.TransferLimit;
 import com.example.ezpay.model.user.User;
+import com.example.ezpay.repository.user.TransferLimitRepository;
 import com.example.ezpay.repository.user.UserRepository;
 import com.example.ezpay.request.UserRequest;
 import com.example.ezpay.service.user.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final TransferLimitRepository transferLimitRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     // 회원 가입
     @Transactional
@@ -34,9 +36,19 @@ public class UserServiceImpl implements UserService {
 
         // 사용자 생성
         User user = userRequest.toEntity(encodedPassword);
+        User savedUser = userRepository.save(user);
+
+        // 기본 송금 한도 자동 추가
+        TransferLimit transferLimit = TransferLimit
+                .builder()
+                .user(savedUser)
+                .dailyLimit(new BigDecimal("1000000.00"))
+                .perTransactionLimit(new BigDecimal("100000.00"))
+                .build();
+        transferLimitRepository.save(transferLimit);
 
         // 사용자 저장
-        return userRepository.save(user);
+        return savedUser;
     }
 
     // 전체 회원 조회
