@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,7 +47,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         Optional<PasswordReset> request = passwordResetRepository.findByResetToken(token);
 
         // 🔥 만료시간 체크 로직 수정
-        return request.isPresent() && request.get().getExpirationTime().isAfter(LocalDateTime.now());
+        return request.isPresent() && request.get().getExpirationTime().isAfter(LocalDateTime.now()) && !request.get().getUsed();
     }
 
 
@@ -59,23 +58,37 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 .orElseThrow(() -> new CustomNotFoundException("유효하지 않은 비밀번호 재설정 토큰입니다."));
 
         // 🔥 만료시간 및 사용 여부 체크 로직 수정
-        if (Boolean.TRUE.equals(request.getUsed())) {
+        if (request.getUsed()) {
             throw new IllegalArgumentException("이미 사용된 비밀번호 재설정 토큰입니다.");
         }
 
+        // 토큰 만료 여부 확인
         if (request.getExpirationTime().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("비밀번호 재설정 토큰이 만료되었습니다.");
         }
 
+        validatePasswordStrength(newPassword);
+
         // 비밀번호 변경
         User user = request.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
-        user.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         userRepository.save(user);
 
         // 토큰 사용 처리
         request.setUsed(true);
         passwordResetRepository.save(request);
+
+        // TODO: 이메일 알림 발송
+
+    }
+
+    private void validatePasswordStrength(String password) {
+        // ✅ 최소 8자 이상, 숫자, 대문자, 특수문자 포함
+        String passwordPattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+
+        if (!password.matches(passwordPattern)) {
+            throw new IllegalArgumentException("비밀번호는 최소 8자 이상, 숫자, 대문자, 특수문자를 포함해야 합니다.");
+        }
     }
 
 }
