@@ -32,4 +32,10 @@ public class GlobalExceptionHandler {
         ApiError apiError = new ApiError("error", ex.getMessage(), HttpStatus.NOT_FOUND.value());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
+
+    @ExceptionHandler(TransferLimitExceededException.class)
+    public ResponseEntity<CommonResponse<String>> handleTransferLimitExceededException(TransferLimitExceededException e) {
+        return ResponseEntity.badRequest().body(new CommonResponse<>("error", e.getMessage(), "TRANSFER_LIMIT_EXCEEDED"));
+    }
+
 }
