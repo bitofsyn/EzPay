@@ -7,6 +7,10 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Repository
@@ -43,5 +47,17 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
                 .selectFrom(transaction)
                 .where(transaction.receiverAccount.accountId.eq(receiverAccountId))
                 .fetch();
+    }
+
+    @Override
+    public BigDecimal sumTodayTransactionBySender(Long senderAccountId, LocalDate today) {
+        QTransaction transaction = QTransaction.transaction;
+
+        return queryFactory
+                .select(transaction.amount.sum())
+                .from(transaction)
+                .where(transaction.senderAccount.accountId.eq(senderAccountId)
+                        .and(transaction.transactionDate.goe(Timestamp.from(today.atStartOfDay(ZoneId.systemDefault()).toInstant()))))
+                .fetchOne();
     }
 }
