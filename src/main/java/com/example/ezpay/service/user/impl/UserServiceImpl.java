@@ -1,8 +1,11 @@
 package com.example.ezpay.service.user.impl;
 
 import com.example.ezpay.exception.CustomNotFoundException;
+import com.example.ezpay.model.enums.NotificationType;
+import com.example.ezpay.model.user.Notification;
 import com.example.ezpay.model.user.TransferLimit;
 import com.example.ezpay.model.user.User;
+import com.example.ezpay.repository.user.NotificationRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
 import com.example.ezpay.repository.user.UserRepository;
 import com.example.ezpay.request.UserRequest;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -20,6 +24,7 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final TransferLimitRepository transferLimitRepository;
+    private final NotificationRepository notificationRepository;
     private final PasswordEncoder passwordEncoder;
 
 
@@ -46,6 +51,13 @@ public class UserServiceImpl implements UserService {
                 .perTransactionLimit(new BigDecimal("100000.00"))
                 .build();
         transferLimitRepository.save(transferLimit);
+
+        // 기본 알림 설정 자동 등록
+        List<Notification> defaultNotifications = Arrays.asList(
+                Notification.builder().user(user).notificationType(NotificationType.EMAIL).isEnabled(true).build(),
+                Notification.builder().user(user).notificationType(NotificationType.PUSH).isEnabled(true).build()
+        );
+        notificationRepository.saveAll(defaultNotifications);
 
         // 사용자 저장
         return savedUser;
