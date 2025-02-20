@@ -1,6 +1,6 @@
-#version: '3.8'
+version: '3.8'
 services:
-  app: # 서비스 이름
+  app:
     restart: always
     build: .
     container_name: my_spring_app
@@ -9,9 +9,6 @@ services:
     depends_on:
       - postgres
       - kafka
-    volumes:
-      - ./src:/app/src
-      - ./target:/app/target
     environment:
       SPRING_DATASOURCE_URL: ${POSTGRES_URL}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -20,12 +17,10 @@ services:
     networks:
       - my_network
 
-  #ZooKeeper
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
     restart: always
-    hostname: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -34,9 +29,8 @@ services:
     volumes:
       - zookeeper-data:/var/lib/zookeeper/data
     networks:
-      - kafka-network
+      - my_network
 
-  #kafka
   kafka:
     image: confluentinc/cp-kafka:latest
     container_name: kafka
@@ -47,24 +41,20 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true" # 자동 토픽 생성 활성화
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_sTATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
     ports:
       - "9092:9092"
       - "9093:9093"
     depends_on:
       - zookeeper
     networks:
-      - kafka-network
       - my_network
     volumes:
       - kafka-data:/var/lib/kafka/data
-      - zookeeper-data:/var/lib/zookeeper/data
 
-
-  #postgreSQL
   postgres:
     image: postgres:12
     container_name: postgres
@@ -78,7 +68,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - kafka-network
       - my_network
 
 volumes:
@@ -87,7 +76,5 @@ volumes:
   zookeeper-data:
 
 networks:
-  kafka-network:
-    driver: bridge
   my_network:
     driver: bridge
