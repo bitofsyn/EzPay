@@ -1,5 +1,7 @@
 package com.example.ezpay.controller.user;
 
+import com.example.ezpay.exception.CustomNotFoundException;
+import com.example.ezpay.exception.TransferLimitExceededException;
 import com.example.ezpay.kafka.TransactionProducer;
 import com.example.ezpay.model.kafka.TransferEvent;
 import com.example.ezpay.model.user.Transaction;
@@ -25,11 +27,19 @@ public class TransactionController {
     public ResponseEntity<CommonResponse<String>> transfer(@RequestParam Long fromAccountId,
                                                            @RequestParam Long toAccountId,
                                                            @RequestParam BigDecimal amount) {
-
-        TransferEvent event = new TransferEvent(fromAccountId, toAccountId, amount);
-        transactionProducer.sendTransferEvent(event);
-        return ResponseEntity.ok(new CommonResponse<>("success", "Transfer request sent", "TRANSFER REQUESTED"));
+        try {
+            // 💡 Kafka를 사용하지 않고, 즉시 송금 처리
+            transactionService.processTransfer(new TransferEvent(fromAccountId, toAccountId, amount));
+            return ResponseEntity.ok(new CommonResponse<>("success", "송금 완료", "TRANSFER_SUCCESS"));
+        } catch (IllegalArgumentException | CustomNotFoundException | TransferLimitExceededException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new CommonResponse<>("error", null, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new CommonResponse<>("error", null, "서버 오류 발생"));
+        }
     }
+
 
     // 특정 계좌의 거래 내역 조회
     @GetMapping("/account/{accountId}")

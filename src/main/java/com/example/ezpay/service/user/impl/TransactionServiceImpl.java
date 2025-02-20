@@ -3,6 +3,7 @@ package com.example.ezpay.service.user.impl;
 import com.example.ezpay.exception.CustomNotFoundException;
 import com.example.ezpay.exception.TransferLimitExceededException;
 import com.example.ezpay.kafka.TransactionProducer;
+import com.example.ezpay.model.enums.ErrorLogStatus;
 import com.example.ezpay.model.enums.TransactionStatus;
 import com.example.ezpay.model.kafka.TransferEvent;
 import com.example.ezpay.model.user.Accounts;
@@ -11,6 +12,7 @@ import com.example.ezpay.model.user.TransferLimit;
 import com.example.ezpay.repository.user.AccountRepository;
 import com.example.ezpay.repository.user.TransactionRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
+import com.example.ezpay.service.user.ErrorLogService;
 import com.example.ezpay.service.user.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionProducer transactionProducer;
     private final TransferLimitRepository transferLimitRepository;
+    private final ErrorLogService errorLogService;
 
     // 송금 요청 (kafka 이벤트 발행)
     @Override
@@ -42,55 +45,65 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Transactional(transactionManager = "transactionManager")
     public Transaction processTransfer(TransferEvent event) {
-        Accounts fromAccount = accountRepository.findById(event.getFromAccountId())
-                .orElseThrow(() -> new CustomNotFoundException("출금 계좌를 찾을 수 없습니다."));
+        try{
+            Accounts fromAccount = accountRepository.findById(event.getFromAccountId())
+                    .orElseThrow(() -> new CustomNotFoundException("출금 계좌를 찾을 수 없습니다."));
 
-        Accounts toAccount = accountRepository.findById(event.getToAccountId())
-                .orElseThrow(() -> new CustomNotFoundException("입금 계좌를 찾을 수 없습니다."));
+            Accounts toAccount = accountRepository.findById(event.getToAccountId())
+                    .orElseThrow(() -> new CustomNotFoundException("입금 계좌를 찾을 수 없습니다."));
 
-        TransferLimit transferLimit = transferLimitRepository.findByUserId(fromAccount.getUser().getUserId())
-                .orElseThrow(() -> new CustomNotFoundException("송금 한도 정보를 찾을 수 없습니다."));
+            TransferLimit transferLimit = transferLimitRepository.findByUserId(fromAccount.getUser().getUserId())
+                    .orElseThrow(() -> new CustomNotFoundException("송금 한도 정보를 찾을 수 없습니다."));
 
-        if (fromAccount.getBalance().compareTo(event.getAmount()) < 0) {
-            throw new IllegalArgumentException("잔액 부족으로 송금할 수 없습니다.");
+            if (fromAccount.getBalance().compareTo(event.getAmount()) < 0) {
+                throw new IllegalArgumentException("잔액 부족으로 송금할 수 없습니다.");
+            }
+
+            // ✅ 1회 송금 한도 체크
+            if (event.getAmount().compareTo(transferLimit.getPerTransactionLimit()) > 0) {
+                throw new TransferLimitExceededException("1회 송금 한도를 초과했습니다.");
+            }
+
+            // ✅ 하루 총 송금 한도 체크(QueryDSL)
+            BigDecimal todayTotalTransfers = transactionRepository.sumTodayTransactionBySender(fromAccount.getAccountId(), LocalDate.now());
+            if (todayTotalTransfers == null) {
+                todayTotalTransfers = BigDecimal.ZERO;
+            }
+
+            if (todayTotalTransfers.add(event.getAmount()).compareTo(transferLimit.getDailyLimit()) > 0) {
+                throw new TransferLimitExceededException("하루 송금 한도를 초과했습니다.");
+            }
+
+            // ✅ 잔액 체크
+            if (fromAccount.getBalance().compareTo(event.getAmount()) <= 0) {
+                throw new IllegalArgumentException("잔액 부족으로 송금할 수 없습니다.");
+            }
+
+            // ✅ 송금 처리
+            fromAccount.setBalance(fromAccount.getBalance().subtract(event.getAmount()));
+            toAccount.setBalance(toAccount.getBalance().add(event.getAmount()));
+
+            accountRepository.save(fromAccount);
+            accountRepository.save(toAccount);
+
+            // ✅ 거래 기록 저장
+            Transaction transaction = new Transaction();
+            transaction.setSenderAccount(fromAccount);
+            transaction.setReceiverAccount(toAccount);
+            transaction.setAmount(event.getAmount());
+            transaction.setStatus(TransactionStatus.SUCCESS);
+            transaction.setDescription("송금 완료");
+
+            return transactionRepository.save(transaction);
+        }catch (CustomNotFoundException | TransferLimitExceededException | IllegalArgumentException e) {
+            // 장애 발생시 로그 저장
+            errorLogService.logError("Transaction Service", e.getMessage(), ErrorLogStatus.UNRESOLVED);
+            throw e;
+        } catch (Exception e) {
+            // 예상치 못한 오류 발생시 로그 저장
+            errorLogService.logError("Transaction Service", "알수 없는 오류 발생:" + e.getMessage(), ErrorLogStatus.UNRESOLVED);
+            throw e;
         }
-
-        // ✅ 1회 송금 한도 체크
-        if (event.getAmount().compareTo(transferLimit.getPerTransactionLimit()) > 0) {
-            throw new TransferLimitExceededException("1회 송금 한도를 초과했습니다.");
-        }
-
-        // ✅ 하루 총 송금 한도 체크(QueryDSL)
-        BigDecimal todayTotalTransfers = transactionRepository.sumTodayTransactionBySender(fromAccount.getAccountId(), LocalDate.now());
-        if (todayTotalTransfers == null) {
-            todayTotalTransfers = BigDecimal.ZERO;
-        }
-
-        if (todayTotalTransfers.add(event.getAmount()).compareTo(transferLimit.getDailyLimit()) > 0) {
-            throw new TransferLimitExceededException("하루 송금 한도를 초과했습니다.");
-        }
-
-        // ✅ 잔액 체크
-        if (fromAccount.getBalance().compareTo(event.getAmount()) < 0) {
-            throw new IllegalArgumentException("잔액 부족으로 송금할 수 없습니다.");
-        }
-
-        // ✅ 송금 처리
-        fromAccount.setBalance(fromAccount.getBalance().subtract(event.getAmount()));
-        toAccount.setBalance(toAccount.getBalance().add(event.getAmount()));
-
-        accountRepository.save(fromAccount);
-        accountRepository.save(toAccount);
-
-        // ✅ 거래 기록 저장
-        Transaction transaction = new Transaction();
-        transaction.setSenderAccount(fromAccount);
-        transaction.setReceiverAccount(toAccount);
-        transaction.setAmount(event.getAmount());
-        transaction.setStatus(TransactionStatus.SUCCESS);
-        transaction.setDescription("송금 완료");
-
-        return transactionRepository.save(transaction);
     }
 
 
