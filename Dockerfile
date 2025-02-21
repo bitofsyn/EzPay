@@ -5,8 +5,8 @@ FROM openjdk:17-jdk-slim AS build
 WORKDIR /app
 
 # 3. Gradle 관련 파일 먼저 복사 (빌드 캐싱 최적화)
-COPY gradlew gradlew.bat build.gradle settings.gradle ./
-COPY gradle gradle
+COPY gradlew ./
+COPY gradle gradle/
 
 # 4. dos2unix 설치 (줄바꿈 문제 해결)
 RUN apt-get update && apt-get install -y dos2unix
