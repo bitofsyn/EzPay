@@ -106,7 +106,6 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
-
     @Override
     public List<Transaction> getTransactionByAccount(Long accountId) {
         return transactionRepository.findTransactionByAccount(accountId);
