@@ -37,4 +37,5 @@ public class AdminTransferLimitController {
         transferLimitService.resetUserTransferLimit(userId);
         return ResponseEntity.ok(new CommonResponse<>("success", "송금 한도 초기화 완료", "TRANSFER LIMIT RESET"));
     }
+
 }
