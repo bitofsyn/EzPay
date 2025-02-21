@@ -26,5 +26,5 @@ public class PasswordReset {
     private LocalDateTime expirationTime; // 토큰 만료 여부확인
     @CreationTimestamp
     private LocalDateTime createdAt;
-    private Boolean used = false;
+    private Boolean used;
 }
