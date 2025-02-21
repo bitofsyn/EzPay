@@ -4,19 +4,19 @@ FROM openjdk:17-jdk-slim AS build
 # 2. 작업 디렉토리 설정
 WORKDIR /app
 
-# 3. Gradle Wrapper 복사
+# 3. Gradle Wrapper 및 프로젝트 복사
 COPY gradlew ./
 COPY gradle gradle/
+COPY build.gradle settings.gradle ./
 
 # 4. 실행 권한 부여 + CRLF 변환
 RUN apt-get update && apt-get install -y dos2unix && \
     dos2unix gradlew && chmod +x gradlew
 
-# 5. Gradle 버전 확인 (디버깅용)
+# 5. Gradle 버전 확인 (디버깅)
 RUN ./gradlew --version
 
-# 6. 의존성 다운로드 (캐싱 최적화)
-COPY build.gradle settings.gradle ./
+# 6. 의존성 다운로드 (빌드 캐싱 최적화)
 RUN ./gradlew dependencies --no-daemon
 
 # 7. 전체 프로젝트 복사 및 빌드 실행
