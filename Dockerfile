@@ -4,20 +4,22 @@ FROM openjdk:17-jdk-slim AS build
 # 2. 작업 디렉토리 설정
 WORKDIR /app
 
-# 3. Gradle 관련 파일 먼저 복사 (빌드 캐싱 최적화)
+# 3. Gradle Wrapper 복사
 COPY gradlew ./
 COPY gradle gradle/
 
-# 4. dos2unix 설치 (줄바꿈 문제 해결)
-RUN apt-get update && apt-get install -y dos2unix
+# 4. 실행 권한 부여 + CRLF 변환
+RUN apt-get update && apt-get install -y dos2unix && \
+    dos2unix gradlew && chmod +x gradlew
 
-# 5. Gradle 실행 권한 부여 + CRLF 변환
-RUN dos2unix gradlew && chmod +x gradlew
+# 5. Gradle 버전 확인 (디버깅용)
+RUN ./gradlew --version
 
-# 6. 의존성만 먼저 다운로드하여 캐싱 유지
+# 6. 의존성 다운로드 (캐싱 최적화)
+COPY build.gradle settings.gradle ./
 RUN ./gradlew dependencies --no-daemon
 
-# 7. 전체 프로젝트 복사 후 빌드 실행
+# 7. 전체 프로젝트 복사 및 빌드 실행
 COPY . .
 RUN ./gradlew clean build -x test --no-daemon
 
