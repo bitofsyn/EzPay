@@ -8,22 +8,25 @@ WORKDIR /app
 COPY gradlew gradlew.bat build.gradle settings.gradle ./
 COPY gradle gradle
 
-# 4. Gradle 실행 권한 부여
-RUN chmod +x gradlew
+# 4. dos2unix 설치 (줄바꿈 문제 해결)
+RUN apt-get update && apt-get install -y dos2unix
 
-# 5. 의존성만 먼저 다운로드하여 캐싱 유지
+# 5. Gradle 실행 권한 부여 + CRLF 변환
+RUN dos2unix gradlew && chmod +x gradlew
+
+# 6. 의존성만 먼저 다운로드하여 캐싱 유지
 RUN ./gradlew dependencies --no-daemon
 
-# 6. 전체 프로젝트 복사 후 빌드 실행
+# 7. 전체 프로젝트 복사 후 빌드 실행
 COPY . .
 RUN ./gradlew clean build -x test --no-daemon
 
-# 7. 실행 스테이지 (최종 JAR 실행)
+# 8. 실행 스테이지 (최종 JAR 실행)
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 
-# 8. 빌드된 JAR 파일만 복사
+# 9. 빌드된 JAR 파일만 복사
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# 9. Spring Boot 실행
+# 10. Spring Boot 실행
 ENTRYPOINT ["java", "-jar", "app.jar"]
