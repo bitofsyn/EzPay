@@ -112,7 +112,6 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository.findTransactionByAccount(accountId);
     }
 
-
     @Override
     public Transaction getTransactionById(Long transactionId) {
         return transactionRepository.findById(transactionId)
