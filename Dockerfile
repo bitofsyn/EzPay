@@ -1,5 +1,5 @@
 # 1. 빌드 스테이지 (Gradle 빌드 전용)
-FROM openjdk:17-jdk-slim as build
+FROM openjdk:17-jdk-slim AS build
 
 # 2. 작업 디렉토리 설정
 WORKDIR /app
