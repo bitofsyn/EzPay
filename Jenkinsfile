@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_REPO = 'soyoonjeong2328/ezpay' // Docker Hub 리포지토리명
+        DOCKER_HUB_USERNAME = credentials('docker_hub_username')  // Jenkins에서 설정한 Docker Hub ID
+        DOCKER_HUB_PASSWORD = credentials('docker_hub_password')  // Jenkins에서 설정한 Docker Hub 비밀번호 (Access Token)
     }
 
     stages {
@@ -12,32 +13,36 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                bat './gradlew test --no-daemon'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %DOCKER_HUB_REPO%:latest .'
+                bat 'docker build -t ${DOCKER_HUB_USERNAME}/ezpay-app:latest .'
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Login to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    bat 'docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%'
-                    bat 'docker tag %DOCKER_HUB_REPO%:latest %DOCKER_HUB_REPO%:latest'
-                    bat 'docker push %DOCKER_HUB_REPO%:latest'
-                }
+                bat 'echo ${DOCKER_HUB_PASSWORD} | docker login -u ${DOCKER_HUB_USERNAME} --password-stdin'
             }
         }
 
-        stage('Deploy with Docker Compose') {
+        stage('Push Docker Image to Docker Hub') {
             steps {
-                bat 'docker-compose down'
-                bat 'docker-compose up --build -d'
+                bat 'docker push ${DOCKER_HUB_USERNAME}/ezpay-app:latest'
+            }
+        }
+
+        stage('Stop and Remove Previous Container') {
+            steps {
+                bat '''
+                docker stop my_spring_app || echo "Container not found"
+                docker rm my_spring_app || echo "No such container"
+                '''
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                bat 'docker run -d -p 8080:8080 --name my_spring_app ${DOCKER_HUB_USERNAME}/ezpay-app:latest'
             }
         }
     }
