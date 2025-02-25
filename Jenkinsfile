@@ -14,6 +14,7 @@ pipeline {
             }
         }
 
+
         // 2️⃣ `.env` 파일 로드 (환경변수 적용)
         stage('Load Environment Variables') {
             steps {
