@@ -18,14 +18,11 @@ pipeline {
         stage('Load Environment Variables') {
             steps {
                 script {
-                    def envVars = readFile('.env').trim().split("\n").collectEntries {
-                        def parts = it.split("=")
-                        [(parts[0].trim()): parts[1].trim()]
-                    }
-                    envVars.each { key, value -> env[key] = value }
+                    sh 'export $(cat .env | xargs)'
                 }
             }
         }
+
 
         // 3️⃣ Docker 이미지 빌드 및 Docker Hub 푸시
         stage('Build and Push Docker Image') {
