@@ -14,6 +14,19 @@ pipeline {
             }
         }
 
+        // ✅ 환경 변수 로드 추가
+                stage('Load Environment Variables') {
+                    steps {
+                        script {
+                            def envVars = readFile('.env').trim().split("\n").collectEntries {
+                                def parts = it.split("=")
+                                [(parts[0].trim()): parts[1].trim()]
+                            }
+                            envVars.each { key, value -> env[key] = value }
+                        }
+                    }
+                }
+
         // 2️⃣ Docker Hub 로그인 및 이미지 빌드 & 푸시
         stage('Build and Push Docker Image') {
             steps {
