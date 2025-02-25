@@ -11,11 +11,6 @@ services:
     depends_on:
       - postgres
       - kafka
-    environment:
-      SPRING_DATASOURCE_URL: "${POSTGRES_URL}"
-      SPRING_DATASOURCE_USERNAME: "${POSTGRES_USER}"
-      SPRING_DATASOURCE_PASSWORD: "${POSTGRES_PASSWORD}"
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     networks:
       - my_network
 
