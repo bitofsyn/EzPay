@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USERNAME = 'soyounjeong'
-        DOCKER_HUB_REPO = 'ezpay'
+        DOCKER_HUB_USERNAME = credentials('docker_hub_username')  // Docker Hub ID
+        DOCKER_HUB_PASSWORD = credentials('docker_hub_password')  // Docker Hub Access Token
+        IMAGE_NAME = 'soyounjeong/ezpay' // Docker Hub에 업로드할 이미지 이름
     }
 
     stages {
@@ -13,20 +14,15 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                }
-            }
-        }
-
         stage('Build and Push Docker Image') {
             steps {
-                sh '''
-                docker build -t $DOCKER_HUB_USERNAME/$DOCKER_HUB_REPO:latest .
-                docker push $DOCKER_HUB_USERNAME/$DOCKER_HUB_REPO:latest
-                '''
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                    docker build -t $IMAGE_NAME:latest .
+                    docker login -u $DOCKER_USER -p $DOCKER_PASS
+                    docker push $IMAGE_NAME:latest
+                    '''
+                }
             }
         }
 
@@ -41,9 +37,7 @@ pipeline {
 
         stage('Run Docker Container') {
             steps {
-                sh '''
-                docker run -d -p 8080:8080 --name my_spring_app $DOCKER_HUB_USERNAME/$DOCKER_HUB_REPO:latest
-                '''
+                sh 'docker run -d -p 8080:8080 --name my_spring_app $IMAGE_NAME:latest'
             }
         }
     }
