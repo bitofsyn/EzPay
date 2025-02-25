@@ -1,45 +1,23 @@
+version: '3.8'
 services:
-  backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    container_name: backend
-    restart : always
+  app:
+    restart: always
+    build: .
+    container_name: my_spring_app
     env_file:
-      - ./backend/.env
-    volumes:
-      - ./backend/build/libs:/app/build/libs
+      - .env
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-      jenkins:
-        condition: service_started
-    networks:
-      - my_network
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
-    restart: always
-    ports:
-      - "3000:80"
-    volumes:
-      - ./frontend:/app
-    env_file:
-      - ./frontend/.env
+      - postgres
+      - kafka
     environment:
-      - REACT_APP_API_URL=http://backend:8080
+      SPRING_DATASOURCE_URL: ${POSTGRES_URL}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     networks:
       - my_network
-    depends_on:
-      - backend
-
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -62,14 +40,13 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
     ports:
       - "9092:9092"
       - "9093:9093"
@@ -78,44 +55,22 @@ services:
     networks:
       - my_network
     volumes:
-      - /var/lib/kafka/data # kafka 데이터 휘발성으로 변경
+      - kafka-data:/var/lib/kafka/data
 
   postgres:
     image: postgres:12
     container_name: postgres
     restart: always
     env_file:
-      - ./backend/.env
+      - .env
     environment:
-      - POSTGRES_DB=${SPRING_DATASOURCE_DB}
-      - POSTGRES_USER=${SPRING_DATASOURCE_USERNAME}
-      - POSTGRES_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
-    networks:
-      - my_network
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME}" ]
-      interval: 10s
-      retries: 5
-      start_period: 20s
-
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins
-    restart: always
-    user: root
-    ports:
-      - "9090:8080"
-      - "50000:50000"
-    environment:
-      - JENKINS_USER=admin
-      - JENKINS_PASSWORD=admin
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock  # ✅ Jenkins가 Docker 컨트롤 가능
     networks:
       - my_network
 
@@ -123,7 +78,6 @@ volumes:
   postgres_data:
   kafka-data:
   zookeeper-data:
-  jenkins_home:
 
 networks:
   my_network:
