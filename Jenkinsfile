@@ -15,17 +15,17 @@ pipeline {
         }
 
         // ✅ 환경 변수 로드 추가
-                stage('Load Environment Variables') {
-                    steps {
-                        script {
-                            def envVars = readFile('.env').trim().split("\n").collectEntries {
-                                def parts = it.split("=")
-                                [(parts[0].trim()): parts[1].trim()]
-                            }
-                            envVars.each { key, value -> env[key] = value }
-                        }
+        stage('Load Environment Variables') {
+            steps {
+                script {
+                    def envVars = readFile('.env').trim().split("\n").collectEntries {
+                        def parts = it.split("=")
+                        [(parts[0].trim()): parts[1].trim()]
                     }
+                    envVars.each { key, value -> env[key] = value }
                 }
+            }
+        }
 
         // 2️⃣ Docker Hub 로그인 및 이미지 빌드 & 푸시
         stage('Build and Push Docker Image') {
@@ -51,12 +51,13 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker stop my_spring_app || echo "Container not found"
-                    docker rm my_spring_app || echo "No such container"
+                    docker stop my_spring_app || true
+                    docker rm my_spring_app || true
                     '''
                 }
             }
         }
+
 
 
         // 4️⃣ Docker Compose로 새로운 컨테이너 실행
