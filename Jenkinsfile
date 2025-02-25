@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USERNAME = 'soyounjeong'  // 직접 사용자명 입력
+        DOCKER_HUB_USERNAME = 'soyounjeong'
         DOCKER_HUB_REPO = 'ezpay'
     }
 
