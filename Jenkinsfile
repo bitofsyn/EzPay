@@ -13,11 +13,16 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build and Push Docker Image') {
             steps {
-                bat 'docker build -t ${DOCKER_HUB_USERNAME}/ezpay-app:latest .'
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_USERNAME', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'docker build -t soyounjeong/ezpay:latest .'  // 올바른 이미지 이름
+                    sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+                    sh 'docker push soyounjeong/ezpay:latest'  // 올바른 푸시 경로
+                }
             }
         }
+
 
         stage('Login to Docker Hub') {
             steps {
