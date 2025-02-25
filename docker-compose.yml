@@ -6,6 +6,8 @@ services:
     container_name: my_spring_app
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     depends_on:
       - postgres
       - kafka
@@ -59,6 +61,8 @@ services:
     image: postgres:12
     container_name: postgres
     restart: always
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
