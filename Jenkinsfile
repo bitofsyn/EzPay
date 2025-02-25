@@ -39,7 +39,6 @@ pipeline {
 
                     // 이미지 빌드 및 태그 적용
                     sh 'docker build -t $DOCKER_HUB_USER/ezpay:latest .'
-
                     // Docker Hub에 푸시
                     sh 'docker push $DOCKER_HUB_USER/ezpay:latest'
                 }
