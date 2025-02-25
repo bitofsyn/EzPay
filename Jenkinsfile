@@ -58,6 +58,7 @@ pipeline {
             }
         }
 
+
         // 4️⃣ Docker Compose로 새로운 컨테이너 실행
         stage('Run Docker Container with Compose') {
             steps {
