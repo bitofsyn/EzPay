@@ -10,7 +10,28 @@ pipeline {
             }
         }
 
-        stage('Prepare Environment') {
+        stage('Clean Up Docker') {  // ✅ 기존 Docker 컨테이너, 이미지, 볼륨 삭제
+            steps {
+                script {
+                    sh '''
+                    echo "Stopping and removing all running containers..."
+                    docker ps -q | xargs -r docker stop
+                    docker ps -aq | xargs -r docker rm -f
+
+                    echo "Removing all Docker images..."
+                    docker images -q | xargs -r docker rmi -f
+
+                    echo "Removing all Docker volumes..."
+                    docker volume ls -q | xargs -r docker volume rm -f
+
+                    echo "Removing all Docker networks..."
+                    docker network ls -q | xargs -r docker network rm
+                    '''
+                }
+            }
+        }
+
+        stage('Prepare Environment') {  // ✅ .env 파일 자동 생성
             steps {
                 script {
                     sh '''
@@ -24,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Build & Deploy') {
+        stage('Build & Deploy') {  // ✅ Docker 빌드 및 실행
             steps {
                 script {
                     sh 'docker-compose --env-file .env up -d --build'
@@ -32,7 +53,7 @@ pipeline {
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Verify Deployment') {  // ✅ 컨테이너 상태 확인
             steps {
                 script {
                     sh 'docker ps -a'
