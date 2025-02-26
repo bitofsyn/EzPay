@@ -1,57 +1,29 @@
 pipeline {
     agent any
-
     environment {
-        DOCKER_COMPOSE_FILE = "docker-compose.yml"
-        ENV_FILE = ".env"
+        POSTGRES_PASSWORD = credentials('POSTGRES_PASSWORD')
     }
-
     stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                checkout scm
+                git 'https://github.com/your-repo.git'
             }
         }
-
-        stage('Create .env File if Missing') {
+        stage('Build Docker Image') {
             steps {
-                script {
-                    withCredentials([string(credentialsId: 'POSTGRES_PASSWORD', variable: 'DB_PASSWORD')]) {
-                        sh '''
-                        if [ ! -f .env ]; then
-                            echo "POSTGRES_DB=postgres" > .env
-                            echo "POSTGRES_USER=postgres" >> .env
-                            echo "POSTGRES_PASSWORD=$DB_PASSWORD" >> .env
-                            echo "POSTGRES_URL=jdbc:postgresql://postgres:5432/postgres" >> .env
-                        fi
-                        cat .env  # 생성된 .env 파일 확인 (비밀번호 제외)
-                        '''
-                    }
-                }
+                sh 'docker-compose down'
+                sh 'docker-compose build'
             }
         }
-
-        stage('Build & Deploy') {
+        stage('Run Containers') {
             steps {
-                script {
-                    sh 'docker-compose --env-file .env up -d --build'
-                }
+                sh 'docker-compose up -d --remove-orphans'
             }
         }
-
-        stage('Verify Deployment') {
+        stage('Check Running Containers') {
             steps {
-                script {
-                    sh 'docker ps -a'
-                    sh 'docker logs my_spring_app'
-                }
+                sh 'docker ps'
             }
-        }
-    }
-
-    post {
-        failure {
-            sh 'docker-compose logs'
         }
     }
 }
