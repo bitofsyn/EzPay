@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "your-dockerhub-username/your-image-name:latest"
         DOCKER_COMPOSE_FILE = "docker-compose.yml"
         ENV_FILE = ".env"
     }
@@ -14,29 +13,18 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Stop Existing Containers') {
             steps {
                 script {
-                    sh 'docker-compose build'
+                    sh 'docker-compose down'
                 }
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Build & Deploy') {
             steps {
                 script {
-                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
-                        sh 'docker tag my_spring_app $DOCKER_IMAGE'
-                        sh 'docker push $DOCKER_IMAGE'
-                    }
-                }
-            }
-        }
-
-        stage('Deploy Containers') {
-            steps {
-                script {
-                    sh 'docker-compose --env-file .env up -d'
+                    sh 'docker-compose --env-file .env up -d --build'
                 }
             }
         }
@@ -45,7 +33,7 @@ pipeline {
             steps {
                 script {
                     sh 'docker ps -a'
-                    sh 'docker-compose logs app'
+                    sh 'docker logs my_spring_app'
                 }
             }
         }
