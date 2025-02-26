@@ -38,7 +38,7 @@ pipeline {
                     echo "POSTGRES_DB=postgres" > .env
                     echo "POSTGRES_USER=postgres" >> .env
                     echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env
-                    echo "POSTGRES_URL=jdbc:postgresql://postgres:5432/postgres" >> .env
+                    echo "POSTGRES_URL=jdbc:postgresql://host.docker.internal:5432/postgres" >> .env
                     cat .env  # 생성된 .env 파일 확인
                     '''
                 }
