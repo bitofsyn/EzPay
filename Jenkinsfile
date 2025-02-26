@@ -10,7 +10,7 @@ pipeline {
             }
         }
 
-        stage('Clean Up Docker') {  // ✅ 기존 Docker 컨테이너, 이미지, 볼륨 삭제
+        stage('Clean Up Docker') {  // ✅ 기존 Docker 컨테이너 및 이미지 삭제
             steps {
                 script {
                     sh '''
@@ -38,14 +38,14 @@ pipeline {
                     echo "POSTGRES_DB=postgres" > .env
                     echo "POSTGRES_USER=postgres" >> .env
                     echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env
-                    echo "POSTGRES_URL=jdbc:postgresql://host.docker.internal:5432/postgres" >> .env
+                    echo "POSTGRES_URL=jdbc:postgresql://postgres:5432/postgres" >> .env
                     cat .env  # 생성된 .env 파일 확인
                     '''
                 }
             }
         }
 
-        stage('Build & Deploy') {  // ✅ Docker 빌드 및 실행
+        stage('Build & Deploy') {  // ✅ Docker 새로 빌드
             steps {
                 script {
                     sh 'docker-compose --env-file .env up -d --build'
