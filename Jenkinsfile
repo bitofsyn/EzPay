@@ -13,18 +13,33 @@ pipeline {
             }
         }
 
-        stage('Stop Existing Containers') {
+        stage('Remove All Existing Docker Data') {
             steps {
                 script {
-                    sh 'docker-compose down'
+                    // 모든 실행 중인 컨테이너 중지 및 삭제
+                    sh '''
+                    docker ps -q | xargs -r docker stop
+                    docker ps -aq | xargs -r docker rm -f
+                    docker images -q | xargs -r docker rmi -f
+                    docker volume ls -q | xargs -r docker volume rm -f
+                    docker network ls -q | xargs -r docker network rm
+                    '''
                 }
             }
         }
 
-        stage('Build & Deploy') {
+        stage('Build Docker Images') {
             steps {
                 script {
-                    sh 'docker-compose --env-file .env up -d --build'
+                    sh 'docker-compose build'
+                }
+            }
+        }
+
+        stage('Deploy New Containers') {
+            steps {
+                script {
+                    sh 'docker-compose --env-file .env up -d'
                 }
             }
         }
