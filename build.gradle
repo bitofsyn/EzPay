@@ -57,8 +57,8 @@ dependencies {
     // Mail
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
-    // .evn 파일 로드
-    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+    // .env 파일 로드
+    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
     // Model Mapper
     implementation 'org.modelmapper:modelmapper:3.1.1'
@@ -72,9 +72,6 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-tasks.withType(JavaCompile).configureEach {
-    options.annotationProcessorGeneratedSourcesDirectory = file("$buildDir/generated/sources/annotationProcessor/java/main")
-}
 
 sourceSets {
     main {
