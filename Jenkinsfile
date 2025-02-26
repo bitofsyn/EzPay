@@ -13,33 +13,28 @@ pipeline {
             }
         }
 
-        stage('Remove All Existing Docker Data') {
+        stage('Create .env File if Missing') {
             steps {
                 script {
-                    // 모든 실행 중인 컨테이너 중지 및 삭제
-                    sh '''
-                    docker ps -q | xargs -r docker stop
-                    docker ps -aq | xargs -r docker rm -f
-                    docker images -q | xargs -r docker rmi -f
-                    docker volume ls -q | xargs -r docker volume rm -f
-                    docker network ls -q | xargs -r docker network rm
-                    '''
+                    withCredentials([string(credentialsId: 'POSTGRES_PASSWORD', variable: 'DB_PASSWORD')]) {
+                        sh '''
+                        if [ ! -f .env ]; then
+                            echo "POSTGRES_DB=postgres" > .env
+                            echo "POSTGRES_USER=postgres" >> .env
+                            echo "POSTGRES_PASSWORD=$DB_PASSWORD" >> .env
+                            echo "POSTGRES_URL=jdbc:postgresql://postgres:5432/postgres" >> .env
+                        fi
+                        cat .env  # 생성된 .env 파일 확인 (비밀번호 제외)
+                        '''
+                    }
                 }
             }
         }
 
-        stage('Build Docker Images') {
+        stage('Build & Deploy') {
             steps {
                 script {
-                    sh 'docker-compose build'
-                }
-            }
-        }
-
-        stage('Deploy New Containers') {
-            steps {
-                script {
-                    sh 'docker-compose --env-file .env up -d'
+                    sh 'docker-compose --env-file .env up -d --build'
                 }
             }
         }
