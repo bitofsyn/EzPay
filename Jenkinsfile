@@ -2,65 +2,58 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USERNAME = credentials('docker_hub_credentials')
-        DOCKER_HUB_PASSWORD = credentials('docker_hub_credentials')
+        DOCKER_IMAGE = "your-dockerhub-username/your-image-name:latest"
+        DOCKER_COMPOSE_FILE = "docker-compose.yml"
+        ENV_FILE = ".env"
     }
 
     stages {
-        // 1️⃣ 깃허브에서 최신 코드 가져오기
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git branch: 'master', url: 'https://github.com/soyoonjeong2328/EzPay.git'
+                checkout scm
             }
         }
 
-        // 2️⃣ `.env` 파일 로드 (환경변수 적용)
-        stage('Load Environment Variables') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'export $(cat .env | xargs)'
+                    sh 'docker-compose build'
                 }
             }
         }
 
-
-        // 3️⃣ Docker 이미지 빌드 및 Docker Hub 푸시
-        stage('Build and Push Docker Image') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'docker_hub_credentials',
-                    usernameVariable: 'DOCKER_HUB_USER',
-                    passwordVariable: 'DOCKER_HUB_PASS')]) {
-
-                    // Docker Hub 로그인
-                    sh 'docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASS'
-
-                    // 이미지 빌드 및 태그 적용
-                    sh 'docker build -t $DOCKER_HUB_USER/ezpay:latest .'
-                    // Docker Hub에 푸시
-                    sh 'docker push $DOCKER_HUB_USER/ezpay:latest'
-                }
-            }
-        }
-
-        // 4️⃣ 기존 컨테이너 종료 및 삭제
-        stage('Stop and Remove Previous Container') {
+        stage('Push to Docker Hub') {
             steps {
                 script {
-                    sh '''
-                    docker stop my_spring_app || echo "Container not found"
-                    docker rm my_spring_app || echo "No such container"
-                    '''
+                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+                        sh 'docker tag my_spring_app $DOCKER_IMAGE'
+                        sh 'docker push $DOCKER_IMAGE'
+                    }
                 }
             }
         }
 
-        // 5️⃣ Docker Compose 실행
-        stage('Run Docker Compose') {
+        stage('Deploy Containers') {
             steps {
                 script {
-                    sh 'docker-compose --env-file .env up -d --build'
+                    sh 'docker-compose --env-file .env up -d'
                 }
             }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                script {
+                    sh 'docker ps -a'
+                    sh 'docker-compose logs app'
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            sh 'docker-compose logs'
         }
     }
 }
