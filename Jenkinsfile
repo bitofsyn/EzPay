@@ -2,6 +2,9 @@ pipeline {
     agent any
     environment {
         POSTGRES_PASSWORD = credentials('POSTGRES_PASSWORD')
+        SPRING_DATASOURCE_URL = sh(script: "grep SPRING_DATASOURCE_URL .env | cut -d '=' -f2", returnStdout: true).trim()
+        SPRING_DATASOURCE_USERNAME = sh(script: "grep SPRING_DATASOURCE_USERNAME .env | cut -d '=' -f2", returnStdout: true).trim()
+        SPRING_DATASOURCE_PASSWORD = sh(script: "grep SPRING_DATASOURCE_PASSWORD .env | cut -d '=' -f2", returnStdout: true).trim()
     }
     stages {
         stage('Clone Repository') {
@@ -48,6 +51,9 @@ pipeline {
         stage('Build & Deploy') {  // ✅ Docker 새로 빌드
             steps {
                 script {
+                    sh 'chmod +x gradlew'
+                    sh './gradlew clean build -x test'
+                    sh 'docker-compose down'
                     sh 'docker-compose --env-file .env up -d --build'
                 }
             }
