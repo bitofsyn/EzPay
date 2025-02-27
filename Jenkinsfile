@@ -12,6 +12,7 @@ pipeline {
                 git branch: 'master', url: 'https://github.com/soyoonjeong2328/EzPay.git'
             }
         }
+
         stage('Build') {
             steps {
                 sh 'echo "🔨 Building project..."'
