@@ -6,6 +6,7 @@ pipeline {
         DOCKER_HUB_USERNAME = credentials('DOCKER_HUB_USERNAME')
         DOCKER_HUB_PASSWORD = credentials('DOCKER_HUB_PASSWORD')
     }
+
     stages {
         stage('Checkout') {
             steps {
