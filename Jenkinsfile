@@ -14,12 +14,15 @@ pipeline {
             }
         }
 
-        stage('Build') {
-            steps {
-                sh 'echo "🔨 Building project..."'
-                sh 'mvn clean package -DskipTests'
-            }
+        stage('Build Gradle Project') {
+             steps {
+                sh '''
+                chmod +x gradlew
+                ./gradlew clean build
+                '''
+             }
         }
+
         stage('Docker Build & Push') {
             steps {
                 sh 'echo "🐳 Building and pushing Docker image..."'
