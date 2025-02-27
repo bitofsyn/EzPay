@@ -5,16 +5,14 @@ services:
     container_name: my_spring_app
     env_file:
       - .env
-    environment:
-      SPRING_DATASOURCE_URL: "${SPRING_DATASOURCE_URL}"
-      SPRING_DATASOURCE_USERNAME: "${SPRING_DATASOURCE_USERNAME}"
-      SPRING_DATASOURCE_PASSWORD: "${SPRING_DATASOURCE_PASSWORD}"
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_started
+      jenkins:
         condition: service_started
     networks:
       - my_network
@@ -61,8 +59,10 @@ services:
     image: postgres:12
     container_name: postgres
     restart: always
-    env_file:
-      - .env
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "${SPRING_DATASOURCE_PASSWORD}"
     networks:
       - my_network
     ports:
@@ -73,12 +73,25 @@ services:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       retries: 5
-      start_period: 20s  #
+      start_period: 20s
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    restart: always
+    ports:
+      - "9090:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    networks:
+      - my_network
 
 volumes:
   postgres_data:
   kafka-data:
   zookeeper-data:
+  jenkins_home:
 
 networks:
   my_network:
