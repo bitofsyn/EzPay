@@ -32,7 +32,7 @@ pipeline {
                 sh "docker push $DOCKER_HUB_REPO:$BUILD_NUMBER"
                 sh "docker push $DOCKER_HUB_REPO:latest"
             }
-        }
+        }dp
         stage('Deploy') {
             steps {
                 sh 'echo "🚀 Deploying to server..."'
