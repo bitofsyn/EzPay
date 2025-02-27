@@ -1,49 +1,38 @@
 pipeline {
     agent any
-
     environment {
         DOCKER_IMAGE = "myapp:latest"
-        CONTAINER_NAME = "myapp-container"
+        DOCKER_HUB_REPO = "mydockerhub/myapp"
+        DOCKER_HUB_USERNAME = credentials('DOCKER_HUB_USERNAME')
+        DOCKER_HUB_PASSWORD = credentials('DOCKER_HUB_PASSWORD')
     }
-
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git branch: 'master', url: 'https://github.com/soyoonjeong2328/EzPay.git'
+                git branch: 'main', url: 'https://github.com/soyoonjeong2328/EzPay.git'
             }
         }
-        stage('Build Docker Image') {
+        stage('Build') {
             steps {
-                sh '''
-                echo "🐳 Building Docker Image..."
-                docker build -t $DOCKER_IMAGE .
-                '''
+                sh 'mvn clean package -DskipTests'
             }
         }
-        stage('Stop & Remove Existing Container') {
+        stage('Docker Build & Push') {
             steps {
-                sh '''
-                echo "🛑 Stopping existing container (if running)..."
-                docker ps -q --filter "name=$CONTAINER_NAME" | grep -q . && docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME || true
-                '''
+                sh "docker build -t $DOCKER_HUB_REPO:$BUILD_NUMBER ."
+                sh "echo $DOCKER_HUB_PASSWORD | docker login -u $DOCKER_HUB_USERNAME --password-stdin"
+                sh "docker tag $DOCKER_HUB_REPO:$BUILD_NUMBER $DOCKER_HUB_REPO:latest"
+                sh "docker push $DOCKER_HUB_REPO:$BUILD_NUMBER"
+                sh "docker push $DOCKER_HUB_REPO:latest"
             }
         }
-        stage('Run Docker Container') {
+        stage('Deploy') {
             steps {
                 sh '''
-                echo "🚀 Running new Docker container..."
-                docker run -d -p 8081:8080 --name $CONTAINER_NAME $DOCKER_IMAGE
+                docker-compose down
+                docker-compose up -d
                 '''
             }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Build & Deployment Successful!"
-        }
-        failure {
-            echo "❌ Build or Deployment Failed!"
         }
     }
 }
