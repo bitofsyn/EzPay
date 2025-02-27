@@ -89,7 +89,9 @@ services:
       - JENKINS_PASSWORD=admin
     volumes:
       - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock  # ✅ Docker 실행 권한 추가
+      - /usr/bin/docker:/usr/bin/docker  # ✅ Docker 실행 바이너리 추가
+      - /usr/libexec/docker:/usr/libexec/docker  # ✅ 추가 가능성 있음 (Linux 배포판에 따라)
     networks:
       - my_network
 
