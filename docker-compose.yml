@@ -45,6 +45,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
     ports:
       - "9092:9092"
       - "9093:9093"
@@ -52,8 +53,8 @@ services:
       - zookeeper
     networks:
       - my_network
-    volumes:
-      - kafka-data:/var/lib/kafka/data
+    tmpfs:
+      - /var/lib/kafka/data # kafka 데이터 휘발성으로 변경
 
   postgres:
     image: postgres:12
