@@ -33,7 +33,6 @@ pipeline {
                 sh "docker push $DOCKER_HUB_REPO:latest"
             }
         }
-
         stage('Deploy') {
             steps {
                 sh 'echo "🚀 Deploying to server..."'
