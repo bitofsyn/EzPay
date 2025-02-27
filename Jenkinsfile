@@ -1,49 +1,49 @@
 pipeline {
     agent any
+
     environment {
-        POSTGRES_PASSWORD = credentials('POSTGRES_PASSWORD')
+        DOCKER_IMAGE = "myapp:latest"
+        CONTAINER_NAME = "myapp-container"
     }
+
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/soyoonjeong2328/EzPay.git'
+                git branch: 'master', url: 'https://github.com/soyoonjeong2328/EzPay.git'
             }
         }
-
-        stage('Clean Up Docker') {  // ✅ 기존 컨테이너 삭제
+        stage('Build Docker Image') {
             steps {
-                script {
-                    sh '''
-                    docker-compose down --remove-orphans
-                    docker volume rm kafka-data || true
-                    docker ps -q | xargs -r docker stop
-                    docker ps -aq | xargs -r docker rm -f
-                    '''
-                }
+                sh '''
+                echo "🐳 Building Docker Image..."
+                docker build -t $DOCKER_IMAGE .
+                '''
             }
         }
-
-        stage('Build & Deploy') {  // ✅ 새로 빌드 후 실행
+        stage('Stop & Remove Existing Container') {
             steps {
-                script {
-                    sh 'docker-compose up -d --build'
-                }
+                sh '''
+                echo "🛑 Stopping existing container (if running)..."
+                docker ps -q --filter "name=$CONTAINER_NAME" | grep -q . && docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME || true
+                '''
             }
         }
-
-        stage('Verify Deployment') {  // ✅ 컨테이너 실행 상태 확인
+        stage('Run Docker Container') {
             steps {
-                script {
-                    sh 'docker ps -a'
-                    sh 'docker logs my_spring_app'
-                }
+                sh '''
+                echo "🚀 Running new Docker container..."
+                docker run -d -p 8081:8080 --name $CONTAINER_NAME $DOCKER_IMAGE
+                '''
             }
         }
     }
 
     post {
+        success {
+            echo "✅ Build & Deployment Successful!"
+        }
         failure {
-            sh 'docker-compose logs'
+            echo "❌ Build or Deployment Failed!"
         }
     }
 }
