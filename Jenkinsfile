@@ -10,43 +10,19 @@ pipeline {
             }
         }
 
-        stage('Clean Up Docker') {  // ✅ 기존 컨테이너, 이미지, 네트워크 삭제
+        stage('Clean Up Docker') {  // ✅ 기존 컨테이너 삭제
             steps {
                 script {
                     sh '''
-                    echo "Stopping and removing all running containers..."
                     docker-compose down --remove-orphans
                     docker ps -q | xargs -r docker stop
                     docker ps -aq | xargs -r docker rm -f
-
-                    echo "Removing all Docker images..."
-                    docker images -q | xargs -r docker rmi -f
-
-                    echo "Removing all Docker volumes..."
-                    docker volume ls -q | xargs -r docker volume rm -f
-
-                    echo "Removing all Docker networks..."
-                    docker network ls -q | xargs -r docker network rm
                     '''
                 }
             }
         }
 
-        stage('Prepare Environment') {  // ✅ .env 파일 자동 생성
-            steps {
-                script {
-                    sh '''
-                    echo "POSTGRES_DB=postgres" > .env
-                    echo "POSTGRES_USER=postgres" >> .env
-                    echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env
-                    echo "POSTGRES_URL=jdbc:postgresql://postgres:5432/postgres" >> .env
-                    cat .env  # 생성된 .env 파일 확인
-                    '''
-                }
-            }
-        }
-
-        stage('Build & Deploy') {  // ✅ Docker 새로 빌드
+        stage('Build & Deploy') {  // ✅ 새로 빌드 후 실행
             steps {
                 script {
                     sh 'docker-compose up -d --build'
@@ -54,7 +30,7 @@ pipeline {
             }
         }
 
-        stage('Verify Deployment') {  // ✅ 컨테이너 상태 확인
+        stage('Verify Deployment') {  // ✅ 컨테이너 실행 상태 확인
             steps {
                 script {
                     sh 'docker ps -a'
