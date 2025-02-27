@@ -15,6 +15,7 @@ pipeline {
                 script {
                     sh '''
                     docker-compose down --remove-orphans
+                    docker volume rm kafka-data || true
                     docker ps -q | xargs -r docker stop
                     docker ps -aq | xargs -r docker rm -f
                     '''
