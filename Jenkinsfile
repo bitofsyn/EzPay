@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_HUB_REPO = "soyoonjeong2328/ezpay"  // Docker Hub Repo 설정
+        DOCKER_HUB_REPO = "soyounjeong/ezpay"  // Docker Hub Repo 설정
     }
     stages {
         stage('Clone Repository') {
@@ -22,7 +22,7 @@ pipeline {
         stage('Docker Login') {
             steps {
                 withCredentials([string(credentialsId: 'DOCKER_HUB_PASSWORD', variable: 'DOCKER_HUB_PASSWORD')]) {
-                    sh 'echo $DOCKER_HUB_PASSWORD | docker login -u soyoonjeong2328 --password-stdin'
+                    sh 'echo $DOCKER_HUB_PASSWORD | docker login -u soyounjeong --password-stdin'
                 }
             }
         }
