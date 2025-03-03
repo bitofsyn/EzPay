@@ -33,7 +33,7 @@
 ### 1️⃣ Backend 실행
 ```bash
 # 프로젝트 클론
-git clone https://github.com/your-repository/simple-remittance-system.git
+git clone https://github.com/soyoonjeong2328/EzPay.git
 cd simple-remittance-system/backend
 
 # 환경 설정 (Kafka 및 DB 실행)
