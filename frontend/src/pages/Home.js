@@ -29,6 +29,7 @@ const Home = () => {
               <FaSignInAlt size={20}/>
               <span>로그인</span>
             </button>
+            
             <button className="w-full flex items-center justify-center space-x-2 bg-gray-700 text-white py-3 rounded-xl font-semibold transition hover:bg-gray-800"
             onClick={() => navigate("/signup")}
             >
