@@ -5,43 +5,43 @@ import { FiMenu, FiX} from "react-icons/fi"; // 메뉴 아이콘 (열기 / 닫�
 const Dashboard = () => {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState("사용자");
+  const [user, setUser] = useState(null);
   const [account, setAccount] = useState(null); // 계좌정보
   const [balance, setBalance] = useState(0); // 계좌 잔액
   const [transactions, setTransactions] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true); //데이터 로딩 상태 
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch("http://localhost:8080/api/user");
-        if (!response.ok) throw new Error("데이터를 불러올 수 없음");
+  // useEffect(() => {
+  //   const fetchUserData = async () => {
+  //     try {
+  //       const response = await fetch("http://localhost:8080/api/user");
+  //       if (!response.ok) throw new Error("데이터를 불러올 수 없음");
 
-        const data = await response.json();
+  //       const data = await response.json();
         
-        if (!data.user) {
-          navigate("/login"); // 사용자 정보가 없으면 로그인 페이지로 이동
-          return;
-        }
+  //       if (!data.user) {
+  //         navigate("/login"); // 사용자 정보가 없으면 로그인 페이지로 이동
+  //         return;
+  //       }
 
-        setUser(data.user);
-        setBalance(data.balance || 0);
-        setTransactions(data.transactions || []);
+  //       setUser(data.user);
+  //       setBalance(data.balance || 0);
+  //       setTransactions(data.transactions || []);
 
-        if (data.account) {
-          setAccount(data.account);
-        }
-      } catch (error) {
-        console.error("데이터 가져오기 오류:", error);
-        navigate("/login"); // 오류 발생 시 로그인 페이지로 이동
-      } finally {
-        setIsLoading(false); // 로딩 상태 해제
-      }
-    };
+  //       if (data.account) {
+  //         setAccount(data.account);
+  //       }
+  //     } catch (error) {
+  //       console.error("데이터 가져오기 오류:", error);
+  //       navigate("/login"); // 오류 발생 시 로그인 페이지로 이동
+  //     } finally {
+  //       setIsLoading(false); // 로딩 상태 해제
+  //     }
+  //   };
 
-    fetchUserData();
-  }, [navigate]);
+  //   fetchUserData();
+  // }, [navigate]);
 
   // if(isLoading) {
   //   return(
@@ -50,6 +50,20 @@ const Dashboard = () => {
   //     </div>
   //   );
   // }
+
+  // 하드 코딩 중
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     setUser({name : "apple"});
+  //     setAccount({bankName : "국민은행", accountNumber:"1234567899"});
+  //     setBalance(150000);
+  //     setTransactions([
+  //       {type : "입금", amount : 50000},
+  //       {type: "송금", amount : -1000},
+  //     ]);
+  //     setIsLoading(false);
+  //   }, 1000);
+  // }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
@@ -111,34 +125,40 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* 메뉴 모달 */}
-      {isMenuOpen && (
-        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-end">
-          <div className="w-64 h-full bg-white shadow-lg p-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">메뉴</h2>
-              <button onClick={() => setIsMenuOpen(false)}>
-                <FiX size={24} className="text-gray-700" />
-              </button>
-            </div>
-            <ul className="mt-6 space-y-4">
-              <li className="text-gray-700 hover:text-blue-600 cursor-pointer">전체계좌조회</li>
-              <li className="text-gray-700 hover:text-blue-600 cursor-pointer">통합거래내역조회</li>
-              <li className="text-gray-700 hover:text-blue-600 cursor-pointer">이체</li>
-              <li className="text-gray-700 hover:text-blue-600 cursor-pointer">환경설정</li>
-              <li
-                className="text-red-600 hover:text-red-700 cursor-pointer"
-                onClick={() => {
-                  localStorage.removeItem("userToken");
-                  navigate("/login");
-                }}
-              >
-                로그아웃
-              </li>
-            </ul>
+      {/* 메뉴 모달 (너비 조정 + 자연스럽게) */}
+      <div
+        className={`fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 transition-opacity duration-300 
+        ${isMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}
+        onClick={() => setIsMenuOpen(false)}
+      >
+        <div
+          className={`fixed top-0 right-0 h-full bg-white shadow-lg p-4 transition-transform duration-300 
+          w-64 md:w-1/4 max-w-xs transform ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+          onClick={(e) => e.stopPropagation()} // 배경 클릭 시 닫기 방지
+        >
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">메뉴</h2>
+            <button onClick={() => setIsMenuOpen(false)}>
+              <FiX size={24} className="text-gray-700" />
+            </button>
           </div>
+          <ul className="mt-6 space-y-4">
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">전체계좌조회</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">통합거래내역조회</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">이체</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">환경설정</li>
+            <li
+              className="text-red-600 hover:text-red-700 cursor-pointer"
+              onClick={() => {
+                localStorage.removeItem("userToken");
+                navigate("/login");
+              }}
+            >
+              로그아웃
+            </li>
+          </ul>
         </div>
-      )}
+      </div>
     </div>
   );
 };

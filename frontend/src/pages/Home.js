@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import {FaSignInAlt, FaUserPlus, FaWallet } from "react-icons/fa";
-// import "./index.css";
 
 const Home = () => {
   const navigate = useNavigate();

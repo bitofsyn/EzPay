@@ -12,6 +12,7 @@ const AppRoutes = () => {
         <Route path="/signup" element={<pages.Signup />} />
         <Route path="/dashboard" element={<pages.Dashboard />} />
         <Route path="/send" element={<pages.SendMoney />} />
+        <Route path="/create-account" element={<pages.CreateAccount />}/>
       </Routes>
     </BrowserRouter>
   );
