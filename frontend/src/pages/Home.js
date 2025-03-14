@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import {FaSignInAlt, FaUserPlus, FaWallet } from "react-icons/fa";
+// import "./index.css";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const Home = () => {
             <span>대시보드로 이동</span>
           </button>
         ) : (
-          <div className="space-y-45">
+          <div className="mt-4 space-y-6">
             <button className="w-full flex items-center justify-center space-x-2 bg-green-500 text-white py-3 rounded-xl font-semibold transition hover:bg-green-600"
             onClick={() => navigate("/login")}
             >
