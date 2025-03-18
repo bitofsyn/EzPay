@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import pages from "./utils/loadPage";
 import NotFound from "./pages/NotFound";
 import AccountDetail from "./pages/AccountDetail";
+import Settings from "./pages/Settings";
 
 console.log("Loaded Pages:", pages);
 
@@ -18,6 +19,7 @@ const AppRoutes = () => {
         <Route path="/transactions" element={<pages.TransactionHistory />} />
         <Route path="/accounts" element={<pages.ViewAccounts/>} />
         <Route path="/account/:id" element={<AccountDetail/>} />
+        <Route path="/settings" element={<Settings />}/>
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
