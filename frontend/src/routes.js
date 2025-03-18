@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import pages from "./utils/loadPage";
+import NotFound from "./pages/NotFound";
 
 console.log("Loaded Pages:", pages);
 
@@ -13,6 +14,8 @@ const AppRoutes = () => {
         <Route path="/dashboard" element={<pages.Dashboard />} />
         <Route path="/send" element={<pages.SendMoney />} />
         <Route path="/create-account" element={<pages.CreateAccount />}/>
+        
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
