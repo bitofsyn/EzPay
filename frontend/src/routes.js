@@ -14,6 +14,7 @@ const AppRoutes = () => {
         <Route path="/dashboard" element={<pages.Dashboard />} />
         <Route path="/send" element={<pages.SendMoney />} />
         <Route path="/create-account" element={<pages.CreateAccount />}/>
+        <Route path="/transactions" element={<pages.TransactionHistory />} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>
