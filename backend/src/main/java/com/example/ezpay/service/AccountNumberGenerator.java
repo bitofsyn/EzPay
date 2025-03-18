@@ -11,9 +11,11 @@ public class AccountNumberGenerator {
     static {
         BANK_PREFIXES.put("신한은행", "12");
         BANK_PREFIXES.put("우리은행", "34");
-        BANK_PREFIXES.put("국민은행", "56");
-        BANK_PREFIXES.put("농협은행", "78");
+        BANK_PREFIXES.put("KB국민은행", "56");
+        BANK_PREFIXES.put("NH농협은행", "78");
         BANK_PREFIXES.put("기업은행", "90");
+        BANK_PREFIXES.put("카카오뱅크", "13");
+        BANK_PREFIXES.put("토스뱅크", "24");
     }
 
     public static String generateAccountNumber(String bankName) {
