@@ -21,6 +21,7 @@ configurations {
 
 repositories {
     mavenCentral()
+    google()
 }
 
 dependencies {
@@ -29,11 +30,20 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
+    // ✅ JWT 토큰 라이브러리 추가
+    implementation 'io.jsonwebtoken:jjwt:0.11.5'
+
+    // ✅ JWT 라이브러리 사용 시 필요한 추가 라이브러리
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // JSON 처리용
+
     // ✅ Kafka 관련 라이브러리
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.apache.kafka:kafka-streams'
 
     // ✅ Database 관련 라이브러리
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.postgresql:postgresql' // PostgreSQL
     implementation 'com.h2database:h2' // H2 DB (테스트용)
 
@@ -62,6 +72,9 @@ dependencies {
 
     // Model Mapper
     implementation 'org.modelmapper:modelmapper:3.1.1'
+
+    // 개발 중 자동 리로드 지원
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 }
 
 tasks.named('bootBuildImage') {
