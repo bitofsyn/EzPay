@@ -8,16 +8,18 @@ import com.example.ezpay.model.user.User;
 import com.example.ezpay.repository.user.NotificationRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
 import com.example.ezpay.repository.user.UserRepository;
+import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
 import com.example.ezpay.service.user.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +27,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final TransferLimitRepository transferLimitRepository;
     private final NotificationRepository notificationRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder;
 
 
     // 회원 가입
@@ -61,6 +63,17 @@ public class UserServiceImpl implements UserService {
 
         // 사용자 저장
         return savedUser;
+    }
+
+    // 로그인
+    @Override
+    public String login(LoginRequest loginRequest) {
+        Optional<User> user = userRepository.findByEmail(loginRequest.getEmail());
+
+        if(user.isEmpty() || !passwordEncoder.matches(loginRequest.getPassword(), user.get().getPassword())) {
+            return null;
+        }
+        return "";
     }
 
     // 전체 회원 조회
