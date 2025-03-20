@@ -1,10 +1,14 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: backend
     restart : always
     env_file:
       - ./backend/.env
+    volumes:
+      - ./backend/build/libs:/app/build/libs
     ports:
       - "8080:8080"
     depends_on:
@@ -18,11 +22,15 @@ services:
       - my_network
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: frontend
     restart: always
     ports:
-      - "3000:3000"
+      - "3000:80"
+    volumes:
+      - ./frontend:/app
     env_file:
       - ./frontend/.env
     environment:
@@ -76,10 +84,12 @@ services:
     image: postgres:12
     container_name: postgres
     restart: always
+    env_file:
+      - ./backend/.env
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "${SPRING_DATASOURCE_PASSWORD}"
+      - POSTGRES_DB=${SPRING_DATASOURCE_DB}
+      - POSTGRES_USER=${SPRING_DATASOURCE_USERNAME}
+      - POSTGRES_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
     networks:
       - my_network
     ports:
@@ -87,7 +97,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME}" ]
       interval: 10s
       retries: 5
       start_period: 20s
