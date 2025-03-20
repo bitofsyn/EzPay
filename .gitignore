@@ -195,3 +195,5 @@ gen
 
 ./backend/.env
 ./frontend/.env
+.gradle/
+build/

@@ -1,6 +1,7 @@
 package com.example.ezpay.controller.user;
 
 import com.example.ezpay.model.user.User;
+import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
 import com.example.ezpay.response.CommonResponse;
 import com.example.ezpay.service.user.UserService;
@@ -21,8 +22,8 @@ public class UserController {
         this.userService = userService;
     }
 
-    // 회원 등록
-    @PostMapping
+    // 회원가입
+    @PostMapping("/signup")
     public ResponseEntity<CommonResponse<User>> createUser(@RequestBody UserRequest userRequest) {
         User user = userService.registerUser(userRequest);
         CommonResponse<User> response = new CommonResponse<>(
@@ -30,6 +31,19 @@ public class UserController {
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // 로그인
+    @PostMapping("/login")
+    public ResponseEntity<CommonResponse<String>> login(@RequestBody LoginRequest loginRequest) {
+        String token = userService.login(loginRequest);
+
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new CommonResponse<>("error", null, "Invalid username or password"));
+        }
+
+        return ResponseEntity.ok(new CommonResponse<>("success", token, "Login successful"));
     }
 
     // 전체 회원 조회
