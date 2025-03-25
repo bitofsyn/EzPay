@@ -1,7 +1,6 @@
 package com.example.ezpay.security;
 
-import com.example.ezpay.model.user.PasswordReset;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
@@ -14,39 +13,35 @@ public class JwtUtil {
     private static final String SECRET_KEY = SecretKeyGenerator.createSecretKey();
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24시간
 
-    private final SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    private final JwtParser parser = Jwts.parser().verifyWith((SecretKey) key).build();
 
     // 1. JWT 생성 메서드
     public String generateToken(String email) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
+
         return Jwts.builder()
                 .subject(email)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .issuedAt(now)
+                .expiration(expiryDate)
                 .signWith(key)
                 .compact();
     }
 
-    // 2. JWT 검증 및 파싱 메서드
-    public String extractEmail(String token) {
-        return Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
+    // 2. 토큰에서 email 추출
+    public String getEmailFromToken(String token) {
+        return parser.parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
     }
 
-    // 3. 토큰 만료 확인
-    public boolean isTokenValid(String token) {
+    // 3. 토큰 유효성 확인
+    public boolean validateToken(String token) {
         try {
-            return !Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload()
-                    .getExpiration()
-                    .before(new Date());
-        } catch (Exception e) {
+            parser.parseSignedClaims(token);
+            return true;
+        } catch (SecurityException | JwtException e) {
             return false;
         }
     }

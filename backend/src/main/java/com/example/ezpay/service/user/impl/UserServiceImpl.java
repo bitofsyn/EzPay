@@ -10,6 +10,7 @@ import com.example.ezpay.repository.user.TransferLimitRepository;
 import com.example.ezpay.repository.user.UserRepository;
 import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
+import com.example.ezpay.security.JwtUtil;
 import com.example.ezpay.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -28,7 +29,7 @@ public class UserServiceImpl implements UserService {
     private final TransferLimitRepository transferLimitRepository;
     private final NotificationRepository notificationRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-
+    private final JwtUtil jwtUtil;
 
     // 회원 가입
     @Transactional
@@ -68,12 +69,16 @@ public class UserServiceImpl implements UserService {
     // 로그인
     @Override
     public String login(LoginRequest loginRequest) {
-        Optional<User> user = userRepository.findByEmail(loginRequest.getEmail());
+        Optional<User> userOpt = userRepository.findByEmail(loginRequest.getEmail());
 
-        if(user.isEmpty() || !passwordEncoder.matches(loginRequest.getPassword(), user.get().getPassword())) {
-            return null;
+        if(userOpt.isPresent()) {
+            User user = userOpt.get();
+
+            if(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                return jwtUtil.generateToken(user.getEmail());
+            }
         }
-        return "";
+        return null;
     }
 
     // 전체 회원 조회
