@@ -1,20 +1,44 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect , useState } from "react";
+import axios from "axios";
 import {FaSignInAlt, FaUserPlus, FaWallet } from "react-icons/fa";
 
 const Home = () => {
   const navigate = useNavigate();
-  // 사용자가 로그인 상태인지 확인 (임시로 localStorage 사용)
-  const isLoggedIn = localStorage.getItem("userToken"); // 백엔드 API 연동 전까지는 localStorage로 테스트
+  const [userInfo, setUserInfo] = useState(null);
+  const API_URL = process.env.REACT_APP_API_URL;
 
-  console.log("HOME : " , isLoggedIn);
+  console.log("============== ", API_URL , "===========");
+
+  useEffect(() => {
+    const token = localStorage.getItem("userToken");
+    if(!token) return;
+
+    axios.get(`${API_URL}/users/me`, {
+      headers : {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((res) => {
+      setUserInfo(res.data.data);
+    })
+    .catch((err) => {
+      console.error("사용자 정보 조회 실패 : ", err);
+      localStorage.removeItem("userToken");
+    });
+  }, []);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-blue-100 to-blue-300">
       <div className="bg-white shadow-lg rounded-2xl p-8 max-w-lg w-full text-center">
         <h1 className="text-4xl font-extrabold text-gray-800 mb-4"> EzPay 송금 시스템</h1>
-        <p className="text-gray-600 mb-6">쉽고 빠른 송금, EzPay와 함께하세요.</p>
+        <p className="text-gray-600 mb-6">
+          {userInfo 
+            ? `#${userInfo.name}님, 환영합니다.`
+            : "쉽고 빠른 송금 EzPay와 함께 하세요."}
+        </p>
 
-        {isLoggedIn ? (
+        {userInfo ? (
           <button className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-3 rounded-xl font-semibold transition hover:bg-blue-700"
           onClick={() => navigate("/dashboard")}
           >

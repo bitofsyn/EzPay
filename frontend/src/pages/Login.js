@@ -1,17 +1,37 @@
 import { useNavigate } from "react-router-dom";
 import { useState} from "react";
+import axios from "axios";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 const Login = () => {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({email: "", password:""});
   const [error, setError] = useState("");
 
-  const handleLogin = async (e) => {
-    // 임시 로그인 처리 (백엔드 연동 전)
-    localStorage.setItem("userToken", "dummyToken");
-    navigate("/dashboard");
+  const handleChange = (e) => {
+    setForm({...form, [e.target.name] : e.target.value});
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try{
+      const res = await axios.post(`${API_URL}/users/login`, form);
+      console.log("로그인 성공 : ", res.data);
+
+      const token = res.data.data;
+
+      // 토큰 저장
+      localStorage.setItem("userToken", token);
+
+      // 홈으로 이동
+      navigate("/");
+    } catch(err) {
+      console.error("로그인 실패 :", err);
+      setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+    }
   };
 
   return (
@@ -20,16 +40,17 @@ const Login = () => {
         <h2 className="text-2xl font-semibold text-center">로그인</h2>
 
         {/* 로그인 폼 */}
-        <form onSubmit={handleLogin} className="mt-6">
+        <form onSubmit={handleSubmit} className="mt-6">
           {/* 이메일 입력 */}
           <div>
             <label className="block text-gray-700">이메일</label>
             <input
               type="email"
+              name="email"
               className="w-full px-4 py-2 mt-2 border rounded-lg focus:ring focus:ring-blue-200"
               placeholder="이메일을 입력하세요"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.email}
+              onChange={handleChange}
               required
             />
           </div>
@@ -39,10 +60,11 @@ const Login = () => {
             <label className="block text-gray-700">비밀번호</label>
             <input
               type="password"
+              name="password"
               className="w-full px-4 py-2 mt-2 border rounded-lg focus:ring focus:ring-blue-200"
               placeholder="비밀번호를 입력하세요"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={form.password}
+              onChange={handleChange}
               required
             />
           </div>
