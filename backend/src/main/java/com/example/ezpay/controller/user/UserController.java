@@ -4,9 +4,11 @@ import com.example.ezpay.model.user.User;
 import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
 import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.response.UserResponse;
 import com.example.ezpay.service.user.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,6 +46,20 @@ public class UserController {
         }
 
         return ResponseEntity.ok(new CommonResponse<>("success", token, "Login successful"));
+    }
+
+    // 사용자 정보
+    @GetMapping("/me")
+    public ResponseEntity<CommonResponse<UserResponse>> getMyInfo(Authentication authentication) {
+        if(authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new CommonResponse<>("error", null, "Authentication is null"));
+        }
+
+        // JWT에서 저장된 값(현재email)
+        String email = authentication.getPrincipal().toString();
+        UserResponse response = userService.getUserInfo(email);
+
+        return ResponseEntity.ok(new CommonResponse<>("success", response, "사용자 정보 조회 성공 "));
     }
 
     // 전체 회원 조회
