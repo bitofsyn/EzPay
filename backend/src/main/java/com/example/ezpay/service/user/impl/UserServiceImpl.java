@@ -10,6 +10,7 @@ import com.example.ezpay.repository.user.TransferLimitRepository;
 import com.example.ezpay.repository.user.UserRepository;
 import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
+import com.example.ezpay.response.UserResponse;
 import com.example.ezpay.security.JwtUtil;
 import com.example.ezpay.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -74,11 +75,23 @@ public class UserServiceImpl implements UserService {
         if(userOpt.isPresent()) {
             User user = userOpt.get();
 
+            System.out.println("입력한 비번 : " + loginRequest.getPassword());
+            System.out.println("DB 저장된 해시 : " + user.getPassword());
+
             if(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
                 return jwtUtil.generateToken(user.getEmail());
             }
         }
         return null;
+    }
+
+    // 사용자 정보 조회
+    @Override
+    public UserResponse getUserInfo(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomNotFoundException(email));
+
+        return new UserResponse(user);
     }
 
     // 전체 회원 조회
