@@ -1,23 +1,52 @@
-const API_BASE_URL = "http://localhost:8080";
+import axios from "axios";
 
-// 회원가입
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+
+// 회원가입(Signup)
 export const signup = async (userData) => {
-  const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
+  const response = await axios.post(`${API_BASE_URL}/auth/signup`, userData, {
+    headers: {
+      "Content-Type": "application/json"
+    }
   });
-  return response.json();
+  return response.data;
 };
 
-// 로그인
+// 로그인(Login)
 export const login = async (userData) => {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
+  const response = await axios.post(`${API_BASE_URL}/users/login`, userData);
+  return response.data;
+};
+
+// 사용자 정보 조회(Home)
+export const getUserInfo = async (token) => {
+  const response = await axios.get(`${API_BASE_URL}/users/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
   });
-  return response.json();
+  return response.data;
+};
+
+// 대시보드(Dashboard)
+export const getDashboardInfo = async (token) => {
+  const response = await axios.get(`${API_BASE_URL}/dashboard`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return response.data;
+};
+
+// 계좌 개설(createAccount)
+export const createAccount = async (token, accountData) => {
+  const response = await axios.post(`${API_BASE_URL}/account`, accountData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    }
+  });
+  return response.data;
 };
 
 // 비밀번호 변경
@@ -34,36 +63,11 @@ export const updatePassword = async (token, passwordData) => {
   };
   
 
-// 사용자 정보 조회
-export const getUserInfo = async (token) => {
-  const response = await fetch(`${API_BASE_URL}/user`, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.json();
-};
 
-// 계좌 개설
-export const createAccount = async (token, accountData) => {
-  const response = await fetch(`${API_BASE_URL}/accounts`, {
-    method: "POST",
-    headers: { 
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(accountData),
-  });
-  return response.json();
-};
 
-// 전체 계좌 조회
-export const getAccounts = async (token) => {
-  const response = await fetch(`${API_BASE_URL}/accounts`, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.json();
-};
+
+
+
 
 // 계좌 상세 조회
 export const getAccountDetails = async (token, accountId) => {

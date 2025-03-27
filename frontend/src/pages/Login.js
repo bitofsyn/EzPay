@@ -1,8 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState} from "react";
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL;
+import { login } from "../api/api"; 
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,11 +16,10 @@ const Login = () => {
     e.preventDefault();
 
     try{
-      const res = await axios.post(`${API_URL}/users/login`, form);
-      console.log("로그인 성공 : ", res.data);
+      const res = await login(form);
+      console.log("로그인 성공 : ", res);
 
-      const token = res.data.data;
-
+      const token = res.data;
       // 토큰 저장
       localStorage.setItem("userToken", token);
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { signup} from "../api/api";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -18,29 +19,20 @@ const Signup = () => {
 
     console.log("회원 가입 정보 : ", formData);
 
-    // 백엔드 API 연동 예정
     try{
-      // 백엔드 API 연동 부분 회원가입 요청
-      const response = await fetch("http://localhost:8080/api/signup", {
-        method : "POST",
-        headers : {
-          "Content-Type" : "application/json"
-        },
-        body : JSON.stringify(formData)
-      });
-
-      if(!response.ok) {
-        throw new Error("회원가입 실패");
-      }
-
-      const result = await response.json();
-      console.log("회원가입 성공 :", result);
-
+      const response = await signup(formData);
+      console.log("회원가입 성공 :", response.data);
       alert("회원가입이 완료되었습니다");
       navigate("/login");
+
     } catch (error) {
       console.log("회원가입 오류 : ", error);
-      alert("회원가입 실패했습니다. 다시 시도해주세요.");
+      
+      if(error.response && error.response.data && error.response.data.message) {
+        alert(`회원가입 실패: ${error.message.data.message}`);
+      } else {
+        alert("회원가입 실패했습니다. 다시 시도해주세요.");
+      }
     }
   };
 

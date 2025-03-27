@@ -1,31 +1,24 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect , useState } from "react";
-import axios from "axios";
+import { getUserInfo } from "../api/api";
 import {FaSignInAlt, FaUserPlus, FaWallet } from "react-icons/fa";
 
 const Home = () => {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(null);
-  const API_URL = process.env.REACT_APP_API_URL;
-
-  console.log("============== ", API_URL , "===========");
 
   useEffect(() => {
     const token = localStorage.getItem("userToken");
     if(!token) return;
 
-    axios.get(`${API_URL}/users/me`, {
-      headers : {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    .then((res) => {
-      setUserInfo(res.data.data);
+    getUserInfo(token)
+    .then((data) => {
+      setUserInfo(data.data);
     })
     .catch((err) => {
       console.error("사용자 정보 조회 실패 : ", err);
       localStorage.removeItem("userToken");
-    });
+    })
   }, []);
 
   return (
@@ -34,7 +27,7 @@ const Home = () => {
         <h1 className="text-4xl font-extrabold text-gray-800 mb-4"> EzPay 송금 시스템</h1>
         <p className="text-gray-600 mb-6">
           {userInfo 
-            ? `#${userInfo.name}님, 환영합니다.`
+            ? `${userInfo.name}님, 환영합니다.`
             : "쉽고 빠른 송금 EzPay와 함께 하세요."}
         </p>
 
