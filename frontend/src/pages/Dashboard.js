@@ -1,121 +1,133 @@
-import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { FiMenu, FiX} from "react-icons/fi"; // 메뉴 아이콘 (열기 / 닫기)
+import { useNavigate } from "react-router-dom";
+import { FiMenu, FiX } from "react-icons/fi";
+import { getDashboardInfo } from "../api/api";
 
 const Dashboard = () => {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
-  const [account, setAccount] = useState(null); // 계좌정보
-  const [balance, setBalance] = useState(0); // 계좌 잔액
+  const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); //데이터 로딩 상태 
+  const [isLoading, setIsLoading] = useState(true);
 
-  // useEffect(() => {
-  //   const fetchUserData = async () => {
-  //     try {
-  //       const response = await fetch("http://localhost:8080/api/user");
-  //       if (!response.ok) throw new Error("데이터를 불러올 수 없음");
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem("userToken");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
 
-  //       const data = await response.json();
-        
-  //       if (!data.user) {
-  //         navigate("/login"); // 사용자 정보가 없으면 로그인 페이지로 이동
-  //         return;
-  //       }
+      try {
+        const res = await getDashboardInfo(token);
+        const dashboardData = res.data;
 
-  //       setUser(data.user);
-  //       setBalance(data.balance || 0);
-  //       setTransactions(data.transactions || []);
+        setUser(dashboardData.user);
+        setAccounts(dashboardData.account ? [dashboardData.account] : []); // 배열로 처리
+        setTransactions(dashboardData.transactions || []);
+      } catch (error) {
+        console.error("데이터 가져오기 오류:", error);
+        localStorage.removeItem("userToken");
+        navigate("/login");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  //       if (data.account) {
-  //         setAccount(data.account);
-  //       }
-  //     } catch (error) {
-  //       console.error("데이터 가져오기 오류:", error);
-  //       navigate("/login"); // 오류 발생 시 로그인 페이지로 이동
-  //     } finally {
-  //       setIsLoading(false); // 로딩 상태 해제
-  //     }
-  //   };
+    fetchUserData();
+  }, [navigate]);
 
-  //   fetchUserData();
-  // }, [navigate]);
+  const formatAccountNumber = (number) => {
+    return `${number.slice(0, 2)}-${number.slice(2, 6)}-${number.slice(6)}`;
+  };
 
-  // if(isLoading) {
-  //   return(
-  //     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-  //       <p className="text-gray-600 text-lg">로딩 중...</p>
-  //     </div>
-  //   );
-  // }
+  const visibleCards = accounts.slice(0, 3);
+  const totalSlides = visibleCards.length + 1; // +1 for 계좌생성
 
-  // 하드 코딩 중
-  // useEffect(() => {
-  //   setTimeout(() => {
-  //     setUser({name : "apple"});
-  //     setAccount({bankName : "국민은행", accountNumber:"1234567899"});
-  //     setBalance(150000);
-  //     setTransactions([
-  //       {type : "입금", amount : 50000},
-  //       {type: "송금", amount : -1000},
-  //     ]);
-  //     setIsLoading(false);
-  //   }, 1000);
-  // }, []);
+  const handleDotClick = (index) => {
+    setSelectedIndex(index);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <p className="text-gray-600 text-lg">로딩 중...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
       {/* 헤더 */}
       <header className="flex justify-between items-center w-full max-w-lg bg-white shadow-md p-4 rounded-lg">
-        <div>
-          {account ? (
-            <>
-              <h2 className="text-xl font-semibold">{account.bankName}</h2>
-              <p className="text-sm text-gray-600">{user.name} 님</p>
-            </>
-          ) : (
-            <h2 className="text-xl font-semibold text-gray-500">계좌 없음</h2>
-          )}
-        </div>
+        <h2 className="text-xl font-semibold">{user?.name} 님</h2>
         <button onClick={() => setIsMenuOpen(true)}>
           <FiMenu size={28} className="text-gray-700" />
         </button>
       </header>
 
-      {/* 계좌 정보 */}
-      {account ? (
-        <div className="w-full max-w-lg bg-white shadow-md rounded-lg p-6 mt-6">
-          <p className="text-gray-600">계좌번호</p>
-          <p className="text-lg font-semibold">{account.accountNumber}</p>
-          <div className="mt-4 flex justify-between items-center">
-            <p className="text-2xl font-bold">{balance.toLocaleString()} 원</p>
-            <button className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold">
-              이체
+      {/* 계좌 슬라이드 */}
+      <div className="w-full max-w-lg overflow-hidden mt-6">
+        <div
+          className="flex transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${selectedIndex * 100}%)` }}
+        >
+          {visibleCards.map((acc, idx) => (
+            <div key={idx} className="min-w-full bg-white shadow-md rounded-lg p-6">
+              <p className="text-sm text-left text-gray-500">계좌정보</p>
+              <p className="text-lg font-semibold">{formatAccountNumber(acc.accountNumber)}</p>
+              <p className="text-sm text-gray-500">{acc.bankName}</p>
+              <div className="mt-4 flex justify-between items-center">
+                <p className="text-2xl font-bold">{acc.balance.toLocaleString()} 원</p>
+                <button
+                  className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold"
+                  onClick={() => navigate("/transfer")}
+                >
+                  이체
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* 계좌 추가하기 카드 */}
+          <div className="min-w-full bg-white shadow-md rounded-lg p-6 text-center flex flex-col justify-center items-center">
+            <p className="text-gray-600 mb-4">현재 계좌가 없습니다.</p>
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold"
+              onClick={() => navigate("/create-account")}
+            >
+              계좌 생성하기
             </button>
           </div>
         </div>
-      ) : (
-        <div className="w-full max-w-lg bg-white shadow-md rounded-lg p-6 mt-6 text-center">
-          <p className="text-gray-600">현재 계좌가 없습니다.</p>
-          <button
-            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold"
-            onClick={() => navigate("/create-account")}
-          >
-            계좌 생성하기
-          </button>
-        </div>
-      )}
 
-      {/* 최근 거래 내역 */}
+        {/* 인디케이터 */}
+        <div className="flex justify-center mt-4 space-x-2">
+          {Array.from({ length: totalSlides }).map((_, idx) => (
+            <div
+              key={idx}
+              onClick={() => handleDotClick(idx)}
+              className={`w-3 h-3 rounded-full cursor-pointer ${idx === selectedIndex ? "bg-blue-500" : "bg-gray-300"
+                }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* 거래 내역 */}
       <div className="w-full max-w-lg bg-white shadow-md rounded-lg p-6 mt-6">
         <h3 className="text-lg font-semibold">최근 거래 내역</h3>
         {transactions.length > 0 ? (
           <ul className="mt-2 space-y-3">
             {transactions.map((tx, index) => (
-              <li key={index} className="p-3 border rounded-lg bg-gray-100 flex justify-between">
-                <span className="font-semibold">{tx.type}</span>
+              <li
+                key={index}
+                className="p-3 border rounded-lg bg-gray-100 flex justify-between"
+              >
+                <span className="font-semibold">{tx.description}</span>
                 <span>{tx.amount.toLocaleString()} 원</span>
               </li>
             ))}
@@ -125,7 +137,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* 메뉴 모달 (너비 조정 + 자연스럽게) */}
+      {/* 메뉴 */}
       <div
         className={`fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 transition-opacity duration-300 
         ${isMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}
@@ -134,7 +146,7 @@ const Dashboard = () => {
         <div
           className={`fixed top-0 right-0 h-full bg-white shadow-lg p-4 transition-transform duration-300 
           w-64 md:w-1/4 max-w-xs transform ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}
-          onClick={(e) => e.stopPropagation()} // 배경 클릭 시 닫기 방지
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">메뉴</h2>
