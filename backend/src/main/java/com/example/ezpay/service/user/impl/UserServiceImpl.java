@@ -75,9 +75,6 @@ public class UserServiceImpl implements UserService {
         if(userOpt.isPresent()) {
             User user = userOpt.get();
 
-            System.out.println("입력한 비번 : " + loginRequest.getPassword());
-            System.out.println("DB 저장된 해시 : " + user.getPassword());
-
             if(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
                 return jwtUtil.generateToken(user.getEmail());
             }

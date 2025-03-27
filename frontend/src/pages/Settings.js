@@ -54,10 +54,6 @@ const Settings = () => {
         }
     };
 
-
-
-
-
     return (
         <div className="min-h-screen flex flex-col items-center bg-background p-6">
             <h2 className="text-2xl font-semibold text-text">환경설정</h2>
