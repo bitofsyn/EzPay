@@ -155,7 +155,13 @@ const Dashboard = () => {
             </button>
           </div>
           <ul className="mt-6 space-y-4">
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">전체계좌조회</li>
+            <li 
+              className="text-gray-700 hover:text-blue-600 cursor-pointer"
+              onClick={() => {
+                setIsMenuOpen(false);
+                navigate("/accounts");
+              }}
+            >전체계좌조회</li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer">통합거래내역조회</li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer">이체</li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer">환경설정</li>
