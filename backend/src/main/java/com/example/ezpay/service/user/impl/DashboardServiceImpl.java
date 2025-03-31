@@ -9,6 +9,7 @@ import com.example.ezpay.service.user.DashboardService;
 import com.example.ezpay.service.user.TransactionService;
 import com.example.ezpay.service.user.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -23,7 +24,8 @@ public class DashboardServiceImpl implements DashboardService {
     private final TransactionService transactionService;
 
     @Override
-    public DashboardResponse getDashboardInfo(String email) {
+    public DashboardResponse getDashboardInfo(Authentication authentication) {
+        String email = authentication.getName();
         UserResponse user = userService.getUserInfo(email);
         System.out.println("user = " + user);
         List<Accounts> accounts = accountService.getAccountByUserId(user.getId());
