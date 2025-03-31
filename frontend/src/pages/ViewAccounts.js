@@ -1,34 +1,61 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
-
-const dummyAccounts = [
-    { id: 1, bank: "국민은행", accountNumber: "123-456-789", balance: 500000 },
-    { id: 2, bank: "신한은행", accountNumber: "987-654-321", balance: 300000 },
-    { id: 3, bank: "우리은행", accountNumber: "111-222-333", balance: 150000 },
-]
+import { getMyAccounts } from "../api/api";
 
 const ViewAccounts = () => {
     const navigate = useNavigate();
-    const [accounts] = useState(dummyAccounts);
+    const [accounts, setAccounts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        const fetchAccounts = async () => {
+            try {
+                const token = localStorage.getItem("userToken");
+                if (!token) {
+                    setError("로그인이 필요합니다.");
+                    setLoading(false);
+                    return;
+                }
+
+                const data = await getMyAccounts(token);
+                console.log("===== data :", data);
+                setAccounts(data.data);
+            } catch (err) {
+                console.err("계좌 조회 실패 :", err);
+                setError("계좌 정보를 불러오는데 실패했습니다.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAccounts();
+    }, []);
+
+    const formatAccountNumber = (number) => {
+        return `${number.slice(0, 2)}-${number.slice(2, 6)}-${number.slice(6)}`;
+    };
 
     return (
         <div className="min-h-screen flex flex-col items-center bg-gray-100 p-6">
             <h2 className="text-2xl font-semibold">전체 계좌 조회</h2>
 
-            {/* 계좌 리스트 */}
             <div className="w-full max-w-lg mt-6 bg-white shadow-md rounded-lg p-4">
-                {accounts.length > 0 ? (
+                {loading ? (
+                    <p className="text-center text-gray-600">불러오는 중...</p>
+                ) : error ? (
+                    <p className="text-center text-red-500">{error}</p>
+                ) : accounts.length > 0 ? (
                     <ul className="space-y-3">
                         {accounts.map((account) => (
                             <li
-                                key={account.id}
+                                key={account.accountId}
                                 className="p-4 border rounded-lg bg-gray-100 flex justify-between items-center cursor-pointer hover:bg-gray-200"
-                                onClick={() => navigate(`/account/${account.id}`)}
+                                onClick={() => navigate(`/account/${account.accountId}`)}
                             >
                                 <div>
-                                    <p className="font-semibold">{account.bank}</p>
-                                    <p className="text-sm text-gray-600">{account.accountNumber}</p>
+                                    <p className="font-semibold">{account.bankName}</p>
+                                    <p className="text-sm text-gray-600">{formatAccountNumber(account.accountNumber)}</p>
                                 </div>
                                 <p className="font-semibold text-blue-500">
                                     {account.balance.toLocaleString()} 원
@@ -48,7 +75,6 @@ const ViewAccounts = () => {
                 )}
             </div>
 
-            {/* 대시보드 이동 버튼 */}
             <Button
                 text="대시보드로 이동"
                 className="mt-6 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
@@ -57,6 +83,5 @@ const ViewAccounts = () => {
         </div>
     );
 };
-
 
 export default ViewAccounts;
