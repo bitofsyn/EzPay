@@ -8,6 +8,7 @@ import com.example.ezpay.repository.user.UserRepository;
 import com.example.ezpay.request.AccountRequest;
 import com.example.ezpay.service.AccountNumberGenerator;
 import com.example.ezpay.service.user.AccountService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,12 +41,23 @@ public class AccountServiceImpl implements AccountService {
         return accountRepository.save(account);
     }
 
-    // 모든 계좌 조회
+    @Override
     public List<Accounts> getAllAccounts() {
-        return accountRepository.findAll();
+        return List.of();
     }
 
-    // 특정 사용자의 목록 조회
+
+    @Override
+    public List<Accounts> getMyAccounts(Authentication authentication) {
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomNotFoundException("사용자를 찾을 수 없습니다."));
+
+        Long userId = user.getUserId();
+        return accountRepository.findByUserUserId(userId);
+    }
+
     @Override
     public List<Accounts> getAccountByUserId(Long userId) {
         return accountRepository.findByUserUserId(userId);

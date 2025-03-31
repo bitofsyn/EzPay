@@ -5,6 +5,7 @@ import com.example.ezpay.request.AccountRequest;
 import com.example.ezpay.response.CommonResponse;
 import com.example.ezpay.service.user.AccountService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -35,9 +36,9 @@ public class AccountController {
 
 
     // 특정 사용자의 모든 계좌 조회
-    @GetMapping("/{userId}")
-    public ResponseEntity<CommonResponse<List<Accounts>>> getUserAccounts(@PathVariable Long userId) {
-        List<Accounts> accounts = accountService.getAccountByUserId(userId);
+    @GetMapping("/me")
+    public ResponseEntity<CommonResponse<List<Accounts>>> getUserAccounts(Authentication authentication) {
+        List<Accounts> accounts = accountService.getMyAccounts(authentication);
         return ResponseEntity.ok(new CommonResponse<>("success", accounts, "조회 성공"));
     }
 

@@ -49,6 +49,25 @@ export const createAccount = async (token, accountData) => {
   return response.data;
 };
 
+// 전체 계좌 조회(ViewAccount)
+export const getMyAccounts = async (token) => {
+  const response = await axios.get(`${API_BASE_URL}/account/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return response.data;
+};
+
+
+
+
+
+
+
+
+
+
 // 비밀번호 변경
 export const updatePassword = async (token, passwordData) => {
     const response = await fetch(`${API_BASE_URL}/reset-password`, {
