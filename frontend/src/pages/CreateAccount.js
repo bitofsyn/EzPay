@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import { createAccount } from "../api/account";
+import { createAccount } from "../api/userAPI";
 
 const CreateAccount = () => {
     const navigate = useNavigate();
