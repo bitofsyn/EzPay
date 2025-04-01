@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiMenu, FiX } from "react-icons/fi";
 import { getDashboardInfo } from "../api/api";
+import DashboardHeader from "../components/DashboardHeader";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -62,12 +63,16 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
       {/* 헤더 */}
-      <header className="flex justify-between items-center w-full max-w-lg bg-white shadow-md p-4 rounded-lg">
+      {/* <header className="flex justify-between items-center w-full max-w-lg bg-white shadow-md p-4 rounded-lg">
         <h2 className="text-xl font-semibold">{user?.name} 님</h2>
         <button onClick={() => setIsMenuOpen(true)}>
           <FiMenu size={28} className="text-gray-700" />
         </button>
-      </header>
+      </header> */}
+      <DashboardHeader 
+        userName={user?.name}
+        onMenuOpen={() => setIsMenuOpen(true)}
+      />
 
       {/* 계좌 슬라이드 */}
       <div className="w-full max-w-lg overflow-hidden mt-6">
