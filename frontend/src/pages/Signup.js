@@ -80,7 +80,7 @@ const Signup = () => {
           </div>
 
           <button 
-            type="sumbit"
+            type="submit"
             className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold transition hover:bg-blue-700"
           >
             회원가입

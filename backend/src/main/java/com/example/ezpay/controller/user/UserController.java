@@ -63,13 +63,6 @@ public class UserController {
         return ResponseEntity.ok(new CommonResponse<>("success", response, "사용자 정보 조회 성공 "));
     }
 
-    // 전체 회원 조회
-    @GetMapping
-    public ResponseEntity<List<User>> getUsers() {
-        List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
-    }
-
     // 특정 회원 조회
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
