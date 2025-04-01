@@ -1,63 +1,51 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
+const api = axios.create ({
+  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080",
+});
+
+// Interceptro 추가 : 매 요청시 Authorization 헤더 자동 추가
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("userToken");
+    if(token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+)
+
+
 
 // 회원가입(Signup)
-export const signup = async (userData) => {
-  const response = await axios.post(`${API_BASE_URL}/users/signup`, userData, {
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
-  return response.data;
+export const signup = async (formData) => {
+  const res = await api.post("/users/signup", formData);
+  return res.data;
 };
 
 // 로그인(Login)
 export const login = async (userData) => {
-  const response = await axios.post(`${API_BASE_URL}/users/login`, userData);
-  return response.data;
-};
+  const res = api.post("/users/login", userData);
+  return res.data;
+}
 
 // 사용자 정보 조회(Home)
-export const getUserInfo = async (token) => {
-  const response = await axios.get(`${API_BASE_URL}/users/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  return response.data;
-};
+export const getUserInfo = () => api.get("/users/me");
 
 // 대시보드(Dashboard)
-export const getDashboardInfo = async (token) => {
-  const response = await axios.get(`${API_BASE_URL}/dashboard`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  return response.data;
-};
+export const getDashboardInfo = () => api.get("/dashboard");
 
 // 계좌 개설(createAccount)
-export const createAccount = async (token, accountData) => {
-  const response = await axios.post(`${API_BASE_URL}/account`, accountData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
-    }
-  });
+export const createAccount = async (accountData) => {
+  const response = await api.post("/account", accountData);
   return response.data;
 };
 
 // 전체 계좌 조회(ViewAccount)
-export const getMyAccounts = async (token) => {
-  const response = await axios.get(`${API_BASE_URL}/account/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  return response.data;
-};
+export const getMyAccounts = () => api.get("/account/me");
 
 
 
