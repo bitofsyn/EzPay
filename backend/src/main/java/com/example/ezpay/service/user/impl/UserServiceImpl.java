@@ -91,12 +91,6 @@ public class UserServiceImpl implements UserService {
         return new UserResponse(user);
     }
 
-    // 전체 회원 조회
-    @Override
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
-
     // 특정 회원 조회
     @Override
     public User getUserById(Long id) {
