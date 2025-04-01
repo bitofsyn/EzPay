@@ -4,7 +4,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
 // 회원가입(Signup)
 export const signup = async (userData) => {
-  const response = await axios.post(`${API_BASE_URL}/auth/signup`, userData, {
+  const response = await axios.post(`${API_BASE_URL}/users/signup`, userData, {
     headers: {
       "Content-Type": "application/json"
     }

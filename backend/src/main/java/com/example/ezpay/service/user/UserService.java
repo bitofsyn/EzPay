@@ -12,7 +12,7 @@ public interface UserService {
     User registerUser(UserRequest userRequest);
     String login(LoginRequest loginRequest);
     UserResponse getUserInfo(String email);
-    List<User> getAllUsers();
+
     User getUserById(Long id);
     User updateUser(Long id, UserRequest userRequest);
     void deleteUser(Long id);
