@@ -10,6 +10,7 @@ node_modules/
 
 # production
 build/
+public/
 
 # misc
 .DS_Store
@@ -44,3 +45,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+.postcss.config.js
+.tailwind.config.js
+.gitignore
