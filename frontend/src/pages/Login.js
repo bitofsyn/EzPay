@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState} from "react";
-import { login } from "../api/api"; 
+import { login } from "../api/userAPI"; 
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,11 +17,11 @@ const Login = () => {
 
     try{
       const res = await login(form);
-      console.log("로그인 성공 : ", res);
-
       const token = res.data;
-      // 토큰 저장
+      // JWT 토큰 저장
       localStorage.setItem("userToken", token);
+
+      alert("로그인 성공!");
 
       // 홈으로 이동
       navigate("/");

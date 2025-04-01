@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import Input from "../components/Input";
-import { getUserInfo, updatePassword } from "../api/api";
+import { getUserInfo, updatePassword } from "../api/userAPI";
 
 
 const Settings = () => {
@@ -16,14 +16,16 @@ const Settings = () => {
 
     useEffect(() => {
         const fetchUserInfo = async () => {
-            const token = localStorage.getItem("userToken");
-            if (!token) {
+            try {
+                const data = await getUserInfo();
+                setUser({ name: data.name, email: data.email });
+            } catch (error) {
+                console.error("사용자 정보 가져오기 실패:", error);
+                localStorage.removeItem("userToken");
                 navigate("/login");
-                return;
+            } finally {
+                setLoading(false);
             }
-            const data = await getUserInfo(token);
-            setUser({ name: data.name, email: data.email });
-            setLoading(false);
         };
         fetchUserInfo();
     }, [navigate]);
@@ -38,21 +40,26 @@ const Settings = () => {
             return;
         }
 
-        const token = localStorage.getItem("userToken");
-        const response = await updatePassword(token, {
-            oldPassword,
-            newPassword
-        });
+        try {
+            const response = await updatePassword({
+                oldPassword,
+                newPassword,
+            });
 
-        if (response.success) {
-            alert("비밀번호가 성공적으로 변경되었습니다.");
-            setOldpassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-        } else {
-            alert(response.message || "비밀번호 변경에 실패했습니다.");
+            if (response.success) {
+                alert("비밀번호가 성공적으로 변경되었습니다.");
+                setOldpassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+            } else {
+                alert(response.message || "비밀번호 변경에 실패했습니다.");
+            }
+        } catch (error) {
+            console.error("비밀번호 변경 실패:", error);
+            alert("비밀번호 변경 중 오류가 발생했습니다.");
         }
     };
+
 
     return (
         <div className="min-h-screen flex flex-col items-center bg-background p-6">

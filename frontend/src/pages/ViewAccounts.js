@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
-import { getMyAccounts } from "../api/api";
+import { getMyAccounts } from "../api/userAPI";
 
 const ViewAccounts = () => {
     const navigate = useNavigate();
@@ -12,18 +12,11 @@ const ViewAccounts = () => {
     useEffect(() => {
         const fetchAccounts = async () => {
             try {
-                const token = localStorage.getItem("userToken");
-                if (!token) {
-                    setError("로그인이 필요합니다.");
-                    setLoading(false);
-                    return;
-                }
-
-                const data = await getMyAccounts(token);
+                const data = await getMyAccounts();
                 console.log("===== data :", data);
                 setAccounts(data.data);
             } catch (err) {
-                console.err("계좌 조회 실패 :", err);
+                console.error("계좌 조회 실패 :", err);
                 setError("계좌 정보를 불러오는데 실패했습니다.");
             } finally {
                 setLoading(false);
@@ -55,7 +48,9 @@ const ViewAccounts = () => {
                             >
                                 <div>
                                     <p className="font-semibold">{account.bankName}</p>
-                                    <p className="text-sm text-gray-600">{formatAccountNumber(account.accountNumber)}</p>
+                                    <p className="text-sm text-gray-600">
+                                        {formatAccountNumber(account.accountNumber)}
+                                    </p>
                                 </div>
                                 <p className="font-semibold text-blue-500">
                                     {account.balance.toLocaleString()} 원

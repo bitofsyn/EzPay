@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiMenu, FiX } from "react-icons/fi";
-import { getDashboardInfo } from "../api/api";
+import { getDashboardInfo } from "../api/userAPI";
 import DashboardHeader from "../components/DashboardHeader";
 
 const Dashboard = () => {
@@ -16,18 +16,12 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const token = localStorage.getItem("userToken");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
       try {
-        const res = await getDashboardInfo(token);
+        const res = await getDashboardInfo();
         const dashboardData = res.data;
-
+        console.log("dashboardData :", dashboardData);
         setUser(dashboardData.user);
-        setAccounts(dashboardData.account ? [dashboardData.account] : []); // 배열로 처리
+        setAccounts(dashboardData.account ? [dashboardData.account] : []);
         setTransactions(dashboardData.transactions || []);
       } catch (error) {
         console.error("데이터 가져오기 오류:", error);
@@ -46,10 +40,15 @@ const Dashboard = () => {
   };
 
   const visibleCards = accounts.slice(0, 3);
-  const totalSlides = visibleCards.length + 1; // +1 for 계좌생성
+  const totalSlides = visibleCards.length + 1;
 
   const handleDotClick = (index) => {
     setSelectedIndex(index);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("userToken");
+    navigate("/login");
   };
 
   if (isLoading) {
@@ -62,17 +61,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
-      {/* 헤더 */}
-      {/* <header className="flex justify-between items-center w-full max-w-lg bg-white shadow-md p-4 rounded-lg">
-        <h2 className="text-xl font-semibold">{user?.name} 님</h2>
-        <button onClick={() => setIsMenuOpen(true)}>
-          <FiMenu size={28} className="text-gray-700" />
-        </button>
-      </header> */}
-      <DashboardHeader 
-        userName={user?.name}
-        onMenuOpen={() => setIsMenuOpen(true)}
-      />
+      {/* 대시보드 헤더 */}
+      <DashboardHeader userName={user?.name} onMenuOpen={() => setIsMenuOpen(true)} />
 
       {/* 계좌 슬라이드 */}
       <div className="w-full max-w-lg overflow-hidden mt-6">
@@ -160,22 +150,27 @@ const Dashboard = () => {
             </button>
           </div>
           <ul className="mt-6 space-y-4">
-            <li 
+            <li
               className="text-gray-700 hover:text-blue-600 cursor-pointer"
               onClick={() => {
                 setIsMenuOpen(false);
                 navigate("/accounts");
               }}
-            >전체계좌조회</li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">통합거래내역조회</li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">이체</li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">환경설정</li>
+            >
+              전체계좌조회
+            </li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">
+              통합거래내역조회
+            </li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">
+              이체
+            </li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">
+              환경설정
+            </li>
             <li
               className="text-red-600 hover:text-red-700 cursor-pointer"
-              onClick={() => {
-                localStorage.removeItem("userToken");
-                navigate("/login");
-              }}
+              onClick={handleLogout}
             >
               로그아웃
             </li>
