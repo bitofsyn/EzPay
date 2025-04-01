@@ -193,17 +193,17 @@ fabric.properties
 out
 gen
 
-./backend/.env
-./backend/.gradle/
-./backend/build/
-./backend/gradle/
+backend/.env
+backend/.gradle/
+backend/build/
+backend/gradle/
 
-./frontend/.env
-./frontend/public/
-./frontend/.gitignore
-./frontend/nginx.conf
-./frontend/postcss.config.js
-./frontend/tailwind.config.js
+frontend/.env
+frontend/public/
+frontend/.gitignore
+frontend/nginx.conf
+frontend/postcss.config.js
+frontend/tailwind.config.js
 .gradle/
 build/
 build/reports/
