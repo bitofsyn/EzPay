@@ -162,6 +162,15 @@ const Dashboard = () => {
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer">
               통합거래내역조회
             </li>
+            <li
+              className="text-gray-700 hover:text-blue-600 cursor-pointer"
+              onClick={() => {
+                setIsMenuOpen(false);
+                navigate("/transactions");
+              }}
+            >
+              거래 내역조회
+            </li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer">
               이체
             </li>
