@@ -45,7 +45,6 @@ export const getMyAccounts = async () => {
 };
 
 // 송금(SendMoney)
-// 송금(SendMoney)
 export const transferMoney = async (transferData) => {
     console.log("======= transferData: ", transferData);
 
@@ -62,5 +61,11 @@ export const transferMoney = async (transferData) => {
 // 계좌번호로 사용자 조회(SendMoney)
 export const getAccountOwner = async(accountNumber) => {
     const res = await api.get(`/account/${accountNumber}`);
+    return res.data;
+}
+
+// 거래 내역 조회 (TransactionHistory)
+export const getTransactionHistory = async (accountId) => {
+    const res = await api.get(`/transaction/account/${accountId}`);
     return res.data;
 }

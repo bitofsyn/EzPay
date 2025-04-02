@@ -204,6 +204,8 @@ frontend/.gitignore
 frontend/nginx.conf
 frontend/postcss.config.js
 frontend/tailwind.config.js
+frontend/package-lock.json
+frontend/package.json
 .gradle/
 build/
 build/reports/
