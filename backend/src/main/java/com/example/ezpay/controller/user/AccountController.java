@@ -2,8 +2,10 @@ package com.example.ezpay.controller.user;
 
 import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.request.AccountRequest;
+import com.example.ezpay.response.AccountOwnerResponse;
 import com.example.ezpay.response.CommonResponse;
 import com.example.ezpay.service.user.AccountService;
+import com.example.ezpay.service.user.TransactionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +18,11 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:3000")
 public class AccountController {
     private final AccountService accountService;
+    private final TransactionService transactionService;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, TransactionService transactionService) {
         this.accountService = accountService;
+        this.transactionService = transactionService;
     }
 
     // 계좌등록
@@ -34,12 +38,18 @@ public class AccountController {
         return ResponseEntity.ok(new CommonResponse<>("success", accountService.getAllAccounts(), "조회 성공"));
     }
 
-
     // 특정 사용자의 모든 계좌 조회
     @GetMapping("/me")
     public ResponseEntity<CommonResponse<List<Accounts>>> getUserAccounts(Authentication authentication) {
         List<Accounts> accounts = accountService.getMyAccounts(authentication);
         return ResponseEntity.ok(new CommonResponse<>("success", accounts, "조회 성공"));
+    }
+
+    // 계좌번호로 사용자 확인하기
+    @GetMapping("/{accountNumber}")
+    public ResponseEntity<CommonResponse<AccountOwnerResponse>> getAccountOwner(@PathVariable String accountNumber) {
+        AccountOwnerResponse response = transactionService.getOwnerNameByAccountNumber(accountNumber);
+        return ResponseEntity.ok(new CommonResponse<>("success", response, "계좌 소유주 조회 성공"));
     }
 
     // 계좌 잔액 수정

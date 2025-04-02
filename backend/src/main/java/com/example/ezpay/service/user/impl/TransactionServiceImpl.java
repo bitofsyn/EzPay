@@ -12,6 +12,7 @@ import com.example.ezpay.model.user.TransferLimit;
 import com.example.ezpay.repository.user.AccountRepository;
 import com.example.ezpay.repository.user.TransactionRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
+import com.example.ezpay.response.AccountOwnerResponse;
 import com.example.ezpay.service.user.ErrorLogService;
 import com.example.ezpay.service.user.TransactionService;
 import lombok.RequiredArgsConstructor;
@@ -159,5 +160,17 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository.findReceivedTransactions(receiverAccountId);
     }
 
+    @Override
+    public AccountOwnerResponse getOwnerNameByAccountNumber(String accountNumber) {
+        Accounts account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다."));
 
+
+        return new AccountOwnerResponse(
+                account.getAccountNumber(),
+                account.getUser().getName(),
+                account.getAccountId(),
+                account.getBankName()
+        );
+    }
 }

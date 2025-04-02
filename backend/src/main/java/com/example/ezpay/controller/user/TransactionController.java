@@ -5,6 +5,7 @@ import com.example.ezpay.exception.TransferLimitExceededException;
 import com.example.ezpay.kafka.TransactionProducer;
 import com.example.ezpay.model.kafka.TransferEvent;
 import com.example.ezpay.model.user.Transaction;
+import com.example.ezpay.request.TransferRequest;
 import com.example.ezpay.response.CommonResponse;
 import com.example.ezpay.service.user.TransactionService;
 import lombok.RequiredArgsConstructor;
@@ -12,24 +13,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/transaction")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
 public class TransactionController {
     private final TransactionService transactionService;
     private final TransactionProducer transactionProducer;
 
     // 송금 요청
     @PostMapping("/transfer")
-    public ResponseEntity<CommonResponse<String>> transfer(@RequestParam Long fromAccountId,
-                                                           @RequestParam Long toAccountId,
-                                                           @RequestParam BigDecimal amount) {
+    public ResponseEntity<CommonResponse<String>> transfer(@RequestBody TransferRequest transferRequest) {
         try {
             // 💡 Kafka를 사용하지 않고, 즉시 송금 처리
-            transactionService.processTransfer(new TransferEvent(fromAccountId, toAccountId, amount));
+            transactionService.processTransfer(new TransferEvent(transferRequest.getFromAccountId(), transferRequest.getToAccountId(), transferRequest.getAmount()));
             return ResponseEntity.ok(new CommonResponse<>("success", "송금 완료", "TRANSFER_SUCCESS"));
         } catch (IllegalArgumentException | CustomNotFoundException | TransferLimitExceededException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
