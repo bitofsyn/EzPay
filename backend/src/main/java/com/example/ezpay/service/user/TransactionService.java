@@ -2,6 +2,7 @@ package com.example.ezpay.service.user;
 
 import com.example.ezpay.model.kafka.TransferEvent;
 import com.example.ezpay.model.user.Transaction;
+import com.example.ezpay.response.AccountOwnerResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -23,4 +24,6 @@ public interface TransactionService {
     // 특정 계좌에서 받은 거래 조회
     List<Transaction> getReceivedTransactions(Long receiverAccountId);
 
+    // 계좌번호로 소유자 조회
+    AccountOwnerResponse getOwnerNameByAccountNumber(String accountNumber);
 }

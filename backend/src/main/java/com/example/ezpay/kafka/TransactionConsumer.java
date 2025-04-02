@@ -21,6 +21,7 @@ public class TransactionConsumer {
     public void consumerTransferEvent(TransferEvent event, Acknowledgment ack) {
         try {
             // 이벤트 수신 후 송금 처리
+            System.out.println("여긴 오나?");
             transactionService.processTransfer(event);
             ack.acknowledge();
         } catch (Exception e) {
