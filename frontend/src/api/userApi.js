@@ -20,7 +20,7 @@ export const updatePassword = async (passwordData) => {
 };
 
 
-// 사용자 정보 조회(Home)
+// 사용자 정보 조회(Settings)
 export const getUserInfo = async () => {
     const res = await api.get("/users/me");
     return res.data;
@@ -43,3 +43,24 @@ export const getMyAccounts = async () => {
     const res = await api.get("/account/me");
     return res.data;
 };
+
+// 송금(SendMoney)
+// 송금(SendMoney)
+export const transferMoney = async (transferData) => {
+    console.log("======= transferData: ", transferData);
+
+    const res = await api.post("/transaction/transfer", transferData, {
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+
+    return res.data;
+};
+
+
+// 계좌번호로 사용자 조회(SendMoney)
+export const getAccountOwner = async(accountNumber) => {
+    const res = await api.get(`/account/${accountNumber}`);
+    return res.data;
+}
