@@ -79,7 +79,7 @@ const Dashboard = () => {
                 <p className="text-2xl font-bold">{acc.balance.toLocaleString()} 원</p>
                 <button
                   className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold"
-                  onClick={() => navigate("/transfer")}
+                  onClick={() => navigate("/send")}
                 >
                   이체
                 </button>
