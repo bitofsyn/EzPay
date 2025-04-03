@@ -82,10 +82,8 @@ const SendMoney = () => {
                 toAccountId: receiverAccountId,
                 amount: amount,
             };
-            console.log("======== transferData : ", transferData);
 
             const res = await transferMoney(transferData);
-            console.log("========== res : ", res);
 
             if (res.status === "success") {
                 alert(`송금 완료! ${receiverName} 님에게 ${Number(amount).toLocaleString()} 원 송금되었습니다.`);
@@ -146,7 +144,7 @@ const SendMoney = () => {
                     <Button
                         text="송금하기"
                         onClick={handleOpenModal}
-                        className="w-full bg-blue-500 text-white hover:bg-blue-600"
+                        className="w-full bg-[#64748b] text-white hover:bg-[#475569]"
                     />
                 </form>
             </div>
