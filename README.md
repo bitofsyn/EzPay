@@ -1,63 +1,65 @@
 # 🏦 Simple Remittance System (간단한 송금 시스템)
 
-본 프로젝트는 **간단한 송금 시스템**을 구현하는 것으로, 사용자가 손쉽게 송금을 진행할 수 있도록 설계되었습니다.  
-**Spring Boot 기반의 MSA 구조**와 **Kafka를 활용한 비동기 메시징**을 도입하여 안정적인 송금 서비스 운영을 목표로 합니다.  
-프론트엔드는 **React**를 사용하여 직관적인 UI/UX를 제공합니다.
+**간단한 송금 시스템**을 구현한 프로젝트입니다.  
+사용자가 본인의 계좌에서 다른 계좌로 송금하고, 거래 내역을 조회할 수 있도록 설계되었습니다.
+
+**Spring Boot + React 기반의 풀스택 프로젝트**로,  
+실시간 송금 처리와 거래 내역 조회 기능을 포함하고 있습니다.
+
+---
 
 ## 📌 주요 기능
-- ✅ 사용자 인증 및 계좌 관리
-- ✅ 실시간 송금 요청 및 처리
-- ✅ Kafka를 활용한 비동기 송금 프로세스
-- ✅ Docker 기반의 MSA 환경 구축
-- ✅ 거래 내역 조회 및 송금 상태 확인
-- ✅ 사용자 알림 시스템 (notifications API 개발 완료)
-- ✅ 장애 로그 관리 (error_logs API 개발 완료)
+
+- ✅ 사용자 인증 (JWT 기반 로그인)
+- ✅ 계좌 조회 및 송금 기능
+- ✅ 송금 요청 시 금액 검증 및 거래 처리
+- ✅ 거래 내역 전체 조회
+- ✅ 송금/입금 필터, 기간 필터 기능
+- ✅ 계좌번호 포맷 적용 (2-3-3)
+- ✅ 거래 내역 디자인 개선 (송금/입금 아이콘, 금액 강조, 복사 기능 등)
 
 ---
 
 ## 🚀 진행 상황
 
-1. ✅ 현재까지 구현된 기능
-   - users, accounts, transactions, transfer_limits 테이블 CRUD 기능 구현 완료
-   - 사용자 인증 및 계좌 생성 API 개발 완료
-   - 송금 요청 API 및 Kafka 연동 개발 완료
-   - 거래 내역 조회 API 구현
-   - 알림 시스템 (notifications) API 개발 완료
-   - 장애 로그 (error_logs) API 개발 완료
-   - Docker 기반의 컨테이너화 및 MSA 구조 적용
+### 🔥 현재까지 구현된 기능
 
-2. 🔜 앞으로 추가할 기능
+- 사용자 인증 및 계좌 조회 API 개발 완료
+- 송금 요청 API 개발 완료
+- 거래 내역 조회 API 개발 완료
+- 프론트엔드 송금 요청 UI 구현
+- 거래 내역 조회 화면 구현
+    - 거래 필터 기능 (입금/송금/전체)
+    - 기간 필터 기능 (1개월, 3개월, 6개월, 전체)
+    - 거래일 포맷, 계좌번호 포맷, 복사 기능 적용
+    - 거래내역 카드 UI 개선
 
-- 관리자 API 개발
-    - admin_users, admin_accounts, admin_transactions 등 관리자용 테이블 CRUD 기능 구현
-- 관리자 대시보드 API 개발
-- 예외처리 및 보안 강화
-- JWT 및 인증 처리
-- 데이터 유효성 검사 및 예외 처리 추가
-- CI/CD 적용
-- Jenkins를 활용한 자동 배포 환경 구축
-- MSA 및 Kubernetes 적용
-- MSA 구조 최적화 및 Kubernetes 클러스터 적용
-- 프론트엔드 개발 (React)
-    - 송금 UI/UX 디자인 및 API 연동
-- 비트코인 및 블록체인 기능 추가 (추후 확장 계획)
-- 비트코인 지갑 연동 및 송금 기능 추가
-- 블록체인 기반 거래 내역 기록 및 검증
+---
+
+### 🟢 다음 진행 예정 기능
+
+- 거래 상세보기 모달 기능
+- 거래 금액 요약 표시 (이번 달 총 입금/송금 금액)
+- 거래 검색 기능 (상대 계좌번호, 금액 기준)
+- 거래 내역 페이지네이션 또는 무한 스크롤
+- 관리자 기능, 장애 로그, 알림 기능 (추후 확장 예정)
+- CI/CD, MSA, Kubernetes 환경 구축 (추후)
 
 ---
 
 ## 🛠 기술 스택
 
 ### 🔹 Backend
-- **Spring Boot** - 백엔드 API 개발
-- **Kafka** - 비동기 메시지 큐
-- **Docker** - 컨테이너화 및 배포
-- **MSA (Microservices Architecture)** - 독립적인 서비스 구조
+- **Spring Boot** - REST API 서버
+- **PostgreSQL** - 데이터베이스
+- **Docker** - 컨테이너 환경
+- **JWT** - 사용자 인증
 
 ### 🔹 Frontend
 - **React** - UI 개발
 - **Axios** - API 통신
-- **Styled-components** - 스타일링
+- **Tailwind CSS** - UI 스타일링
+- **lucide-react** - 아이콘 사용
 
 ---
 
@@ -69,7 +71,7 @@
 git clone https://github.com/soyoonjeong2328/EzPay.git
 cd simple-remittance-system/backend
 
-# 환경 설정 (Kafka 및 DB 실행)
+# 환경 설정 (DB, Kafka 등)
 docker-compose up -d
 
 # Spring Boot 실행
