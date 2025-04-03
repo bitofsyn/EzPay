@@ -28,18 +28,7 @@ api.interceptors.request.use(
 //   return response.json();
 // };
 
-// // 송금
-// export const transferMoney = async (token, transferData) => {
-//   const response = await fetch(`${API_BASE_URL}/transactions/transfer`, {
-//     method: "POST",
-//     headers: { 
-//       "Content-Type": "application/json",
-//       Authorization: `Bearer ${token}`
-//     },
-//     body: JSON.stringify(transferData),
-//   });
-//   return response.json();
-// };
+
 
 // // 거래 내역 조회
 // export const getTransactions = async (token) => {
