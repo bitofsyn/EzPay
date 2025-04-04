@@ -9,6 +9,7 @@ export const signup = async (formData) => {
 // 🔐 로그인(Login)
 export const login = async (userData) => {
     const res = await api.post("/users/login", userData);
+    localStorage.setItem("userToken", res.data.token);  // 🔥 이 부분 있어야 해
     return res.data;
 };
 
@@ -46,8 +47,6 @@ export const getMyAccounts = async () => {
 
 // 송금(SendMoney)
 export const transferMoney = async (transferData) => {
-    console.log("======= transferData: ", transferData);
-
     const res = await api.post("/transaction/transfer", transferData, {
         headers: {
             "Content-Type": "application/json",
