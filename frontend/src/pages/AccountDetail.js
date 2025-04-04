@@ -20,10 +20,13 @@ const AccountDetail = () => {
         const fetchAccountData = async () => {
             try {
                 const accounts = await getMyAccounts();
+                console.log("accounts :" , accounts);
                 const found = accounts.data.find((acc) => acc.accountId === parseInt(id));
+                console.log("found : ", found);
                 setAccount(found);
 
                 const tx = await getTransactionHistory(id);
+                console.log("tx : " , tx);
                 setTransactions(tx.data);
             } catch (err) {
                 console.error("계좌 상세 정보 불러오기 실패 : ", err);
