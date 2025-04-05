@@ -16,6 +16,9 @@ import com.example.ezpay.response.AccountOwnerResponse;
 import com.example.ezpay.service.user.ErrorLogService;
 import com.example.ezpay.service.user.TransactionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -172,5 +175,17 @@ public class TransactionServiceImpl implements TransactionService {
                 account.getAccountId(),
                 account.getBankName()
         );
+    }
+
+    // 대시보드(최근 거래 내역)
+
+    @Override
+    public List<Transaction> getRecentTransactionByAccount(Long accountId, String sort, int limit) {
+        Sort.Direction direction = sort.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(direction, "transactionDate"));
+        return transactionRepository
+                .findBySenderAccount_AccountIdOrReceiverAccount_AccountId(accountId, accountId, pageable)
+                .getContent();
     }
 }
