@@ -20,14 +20,16 @@ const AccountDetail = () => {
         const fetchAccountData = async () => {
             try {
                 const accounts = await getMyAccounts();
-                console.log("accounts :" , accounts);
+                console.log("accounts : " , accounts);
                 const found = accounts.data.find((acc) => acc.accountId === parseInt(id));
                 console.log("found : ", found);
                 setAccount(found);
 
-                const tx = await getTransactionHistory(id);
-                console.log("tx : " , tx);
-                setTransactions(tx.data);
+                const tx = await getTransactionHistory(parseInt(id));
+                const sortedTx = [...tx.data].sort(
+                    (a, b) => new Date(b.transactionDate) - new Date(a.transactionDate)
+                );
+                setTransactions(sortedTx);
             } catch (err) {
                 console.error("계좌 상세 정보 불러오기 실패 : ", err);
             } finally {
@@ -89,18 +91,15 @@ const AccountDetail = () => {
             setToAccount("");
             setAmount("");
 
-            // ✅ 잔액 업데이트
             const accountsAfter = await getMyAccounts();
             const updatedAccount = accountsAfter.data.find((acc) => acc.accountId === account.accountId);
             setAccount(updatedAccount);
 
-            // ✅ 거래 내역 최신순 정렬
             const updatedTx = await getTransactionHistory(account.accountId);
             const sortedTx = [...updatedTx.data].sort(
                 (a, b) => new Date(b.transactionDate) - new Date(a.transactionDate)
             );
             setTransactions(sortedTx);
-
         } catch (err) {
             if (err.response?.status === 404) {
                 alert("존재하지 않는 계좌번호입니다.");
@@ -112,9 +111,6 @@ const AccountDetail = () => {
             console.error("송금 실패:", err.response?.data || err.message);
         }
     };
-
-
-
 
     if (loading) {
         return (
@@ -168,8 +164,7 @@ const AccountDetail = () => {
                                     <p className="text-xs text-gray-400 mt-1">{formatDate(tx.transactionDate)}</p>
                                 </div>
                                 <p
-                                    className={`text-base font-bold ${tx.type === "DEPOSIT" ? "text-green-500" : "text-rose-500"
-                                        }`}
+                                    className={`text-base font-bold ${tx.type === "DEPOSIT" ? "text-green-500" : "text-rose-500"}`}
                                 >
                                     {tx.amount.toLocaleString()} 원
                                 </p>
