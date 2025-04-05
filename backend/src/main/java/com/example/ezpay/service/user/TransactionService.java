@@ -26,4 +26,7 @@ public interface TransactionService {
 
     // 계좌번호로 소유자 조회
     AccountOwnerResponse getOwnerNameByAccountNumber(String accountNumber);
+
+    // 대시보드 (최근 거래 내역)
+    List<Transaction> getRecentTransactionByAccount(Long accountId, String sort, int limit);
 }

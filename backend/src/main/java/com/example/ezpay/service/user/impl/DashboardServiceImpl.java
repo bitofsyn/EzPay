@@ -45,4 +45,9 @@ public class DashboardServiceImpl implements DashboardService {
                 .transactions(transactions)
                 .build();
     }
+
+    @Override
+    public List<Transaction> getRecentTransactions(Long accountId, String sort, int limit) {
+        return transactionService.getRecentTransactionByAccount(accountId, sort, limit);
+    }
 }
