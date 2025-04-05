@@ -33,6 +33,18 @@ export const getDashboardInfo = async () => {
     return res.data;
 };
 
+// 대시보드-최근 거래 내역(Dashboard)
+export const getRecentTransactions = async (accountId, sort = "desc", limit = 10) => {
+    const token = localStorage.getItem("userToken");
+    const res = await api.get(`/dashboard/accounts/${accountId}/transactions`, {
+        params: { sort, limit },
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    return res.data;
+}
+
 // 🏦 계좌 개설(createAccount)
 export const createAccount = async (accountData) => {
     const response = await api.post("/account", accountData);

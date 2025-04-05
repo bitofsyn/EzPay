@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiMenu, FiX } from "react-icons/fi";
-import { getDashboardInfo } from "../api/userAPI";
+import { getDashboardInfo, getRecentTransactions } from "../api/userAPI";
 import DashboardHeader from "../components/DashboardHeader";
 
 const Dashboard = () => {
@@ -17,12 +17,17 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const res = await getDashboardInfo();
-        const dashboardData = res.data;
-        console.log("dashboardData :", dashboardData);
+        const dashboardRes = await getDashboardInfo();
+        const dashboardData = dashboardRes.data;
+
         setUser(dashboardData.user);
-        setAccounts(dashboardData.account ? [dashboardData.account] : []);
-        setTransactions(dashboardData.transactions || []);
+        const accountList = dashboardData.account ? [dashboardData.account] : [];
+        setAccounts(accountList);
+
+        if (dashboardData.account?.accountId) {
+          const txRes = await getRecentTransactions(dashboardData.account.accountId);
+          setTransactions(txRes.data);
+        }
       } catch (error) {
         console.error("데이터 가져오기 오류:", error);
         localStorage.removeItem("userToken");
@@ -51,6 +56,10 @@ const Dashboard = () => {
     navigate("/login");
   };
 
+  const handleViewAllTransactions = () => {
+    navigate("/transactions");
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -71,14 +80,16 @@ const Dashboard = () => {
           style={{ transform: `translateX(-${selectedIndex * 100}%)` }}
         >
           {visibleCards.map((acc, idx) => (
-            <div key={idx} className="min-w-full bg-white shadow-md rounded-lg p-6">
+            <div key={idx} className="min-w-full bg-white rounded-xl p-6 border">
               <p className="text-sm text-left text-gray-500">계좌정보</p>
               <p className="text-lg font-semibold">{formatAccountNumber(acc.accountNumber)}</p>
               <p className="text-sm text-gray-500">{acc.bankName}</p>
               <div className="mt-4 flex justify-between items-center">
-                <p className="text-2xl font-bold">{acc.balance.toLocaleString()} 원</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  {acc.balance.toLocaleString()} 원
+                </p>
                 <button
-                  className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold"
+                  className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-semibold transition"
                   onClick={() => navigate("/send")}
                 >
                   이체
@@ -88,7 +99,7 @@ const Dashboard = () => {
           ))}
 
           {/* 계좌 추가하기 카드 */}
-          <div className="min-w-full bg-white shadow-md rounded-lg p-6 text-center flex flex-col justify-center items-center">
+          <div className="min-w-full bg-white rounded-xl p-6 border text-center flex flex-col justify-center items-center">
             <p className="text-gray-600 mb-4">현재 계좌가 없습니다.</p>
             <button
               className="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold"
@@ -113,23 +124,65 @@ const Dashboard = () => {
       </div>
 
       {/* 거래 내역 */}
-      <div className="w-full max-w-lg bg-white shadow-md rounded-lg p-6 mt-6">
-        <h3 className="text-lg font-semibold">최근 거래 내역</h3>
-        {transactions.length > 0 ? (
-          <ul className="mt-2 space-y-3">
-            {transactions.map((tx, index) => (
-              <li
-                key={index}
-                className="p-3 border rounded-lg bg-gray-100 flex justify-between"
-              >
-                <span className="font-semibold">{tx.description}</span>
-                <span>{tx.amount.toLocaleString()} 원</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-600 mt-2">거래 내역이 없습니다.</p>
-        )}
+      <div className="w-full max-w-lg bg-white rounded-xl border p-6 mt-6">
+        <h3 className="text-lg font-semibold text-gray-800">최근 거래 내역</h3>
+        <div
+          className="mt-4 max-h-[480px] overflow-y-auto pr-1"
+          style={{
+            scrollbarWidth: "none", // Firefox
+            msOverflowStyle: "none", // IE 10+
+          }}
+        >
+          <style>{`
+            div::-webkit-scrollbar {
+              display: none; /* Chrome, Safari, Opera */
+            }
+          `}</style>
+          {transactions.length > 0 ? (
+            <ul className="space-y-3">
+              {transactions.map((tx, index) => {
+                const isSent = tx.senderAccount.accountId === accounts[0]?.accountId;
+                return (
+                  <li
+                    key={index}
+                    className="p-3 border rounded-lg bg-gray-50 flex justify-between items-center hover:shadow-sm transition"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">
+                        {isSent ? "송금" : "입금"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(tx.transactionDate).toLocaleString()}
+                      </p>
+                    </div>
+                    <div
+                      className={`text-sm font-semibold ${isSent ? "text-red-500" : "text-green-600"
+                        }`}
+                    >
+                      {isSent ? "-" : "+"}
+                      {tx.amount.toLocaleString()} 원
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="text-center text-gray-500 text-sm py-6">
+              <span className="text-2xl">💸</span>
+              <p className="mt-2">최근 거래 내역이 없습니다</p>
+            </div>
+          )}
+        </div>
+
+        {/* 거래 더보기 버튼 */}
+        <div className="mt-4 text-center">
+          <button
+            onClick={handleViewAllTransactions}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            전체 거래 보기 →
+          </button>
+        </div>
       </div>
 
       {/* 메뉴 */}
@@ -150,39 +203,12 @@ const Dashboard = () => {
             </button>
           </div>
           <ul className="mt-6 space-y-4">
-            <li
-              className="text-gray-700 hover:text-blue-600 cursor-pointer"
-              onClick={() => {
-                setIsMenuOpen(false);
-                navigate("/accounts");
-              }}
-            >
-              전체계좌조회
-            </li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">
-              통합거래내역조회
-            </li>
-            <li
-              className="text-gray-700 hover:text-blue-600 cursor-pointer"
-              onClick={() => {
-                setIsMenuOpen(false);
-                navigate("/transactions");
-              }}
-            >
-              거래 내역조회
-            </li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">
-              이체
-            </li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">
-              환경설정
-            </li>
-            <li
-              className="text-red-600 hover:text-red-700 cursor-pointer"
-              onClick={handleLogout}
-            >
-              로그아웃
-            </li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/accounts"); }}>전체계좌조회</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">통합거래내역조회</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/transactions"); }}>거래 내역조회</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">이체</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">환경설정</li>
+            <li className="text-red-600 hover:text-red-700 cursor-pointer" onClick={handleLogout}>로그아웃</li>
           </ul>
         </div>
       </div>
