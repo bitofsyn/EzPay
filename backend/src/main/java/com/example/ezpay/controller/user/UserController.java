@@ -1,11 +1,14 @@
 package com.example.ezpay.controller.user;
 
+import com.example.ezpay.model.user.LoginHistory;
 import com.example.ezpay.model.user.User;
 import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
 import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.response.LoginHistoryResponse;
 import com.example.ezpay.response.UserResponse;
 import com.example.ezpay.service.user.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -38,8 +41,14 @@ public class UserController {
 
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<CommonResponse<String>> login(@RequestBody LoginRequest loginRequest) {
-        String token = userService.login(loginRequest);
+    public ResponseEntity<CommonResponse<String>> login(@RequestBody LoginRequest loginRequest,
+                                                        HttpServletRequest request) {
+        // IP 추출
+        String ip = extractClientIp(request);
+        // device 추출
+        String device = parseDeviceInfo(request);
+
+        String token = userService.login(loginRequest, ip, device);
 
         if (token == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -48,6 +57,29 @@ public class UserController {
 
         return ResponseEntity.ok(new CommonResponse<>("success", token, "Login successful"));
     }
+
+    private String extractClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
+    }
+
+    private String parseDeviceInfo(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+
+        if (userAgent == null) return "Unknown";
+
+        if (userAgent.contains("Windows")) return "Windows PC";
+        if (userAgent.contains("Macintosh")) return "Mac";
+        if (userAgent.contains("iPhone")) return "iPhone";
+        if (userAgent.contains("Android")) return "Android";
+        if (userAgent.contains("Linux")) return "Linux";
+
+        return "기타 브라우저";
+    }
+
 
     // 사용자 정보
     @GetMapping("/me")
@@ -88,6 +120,16 @@ public class UserController {
                 "success", null, "User deleted successfully"
         );
         return ResponseEntity.ok(response);
+    }
+
+    // 로그인 기록 조회
+    @GetMapping("/{id}/login-history")
+    public ResponseEntity<CommonResponse<List<LoginHistoryResponse>>> getLoginHistory(@PathVariable Long id) {
+        List<LoginHistory> history = userService.getRecentLoginHistory(id);
+        List<LoginHistoryResponse> responses = history.stream()
+                .map(LoginHistoryResponse::from)
+                .toList();
+        return ResponseEntity.ok(new CommonResponse<>("success", responses, "최근 로그인 기록 조회 성공"));
     }
 
 }

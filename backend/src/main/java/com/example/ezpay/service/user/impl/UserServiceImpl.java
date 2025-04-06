@@ -2,9 +2,11 @@ package com.example.ezpay.service.user.impl;
 
 import com.example.ezpay.exception.CustomNotFoundException;
 import com.example.ezpay.model.enums.NotificationType;
+import com.example.ezpay.model.user.LoginHistory;
 import com.example.ezpay.model.user.Notification;
 import com.example.ezpay.model.user.TransferLimit;
 import com.example.ezpay.model.user.User;
+import com.example.ezpay.repository.user.LoginHistoryRepository;
 import com.example.ezpay.repository.user.NotificationRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
 import com.example.ezpay.repository.user.UserRepository;
@@ -29,6 +31,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final TransferLimitRepository transferLimitRepository;
     private final NotificationRepository notificationRepository;
+    private final LoginHistoryRepository loginHistoryRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
@@ -69,13 +72,21 @@ public class UserServiceImpl implements UserService {
 
     // 로그인
     @Override
-    public String login(LoginRequest loginRequest) {
+    public String login(LoginRequest loginRequest, String ip, String device) {
         Optional<User> userOpt = userRepository.findByEmail(loginRequest.getEmail());
 
         if(userOpt.isPresent()) {
             User user = userOpt.get();
 
             if(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                // ✅ 로그인 기록 저장
+                LoginHistory loginHistory = LoginHistory.builder()
+                        .user(user)
+                        .ip(ip)              // 🔐 클라이언트에서 전달받은 IP
+                        .device(device)      // 🔐 클라이언트에서 전달받은 기기 정보
+                        .build();
+                loginHistoryRepository.save(loginHistory);
+
                 return jwtUtil.generateToken(user.getEmail());
             }
         }
@@ -99,7 +110,6 @@ public class UserServiceImpl implements UserService {
     }
 
     // 정보 수정
-
     @Override
     public User updateUser(Long id, UserRequest userRequest) {
         User user = userRepository.findById(id)
@@ -113,11 +123,16 @@ public class UserServiceImpl implements UserService {
     }
 
     // 정보 삭제
-
     @Override
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomNotFoundException("사용자를 찾을 수 없습니다." + id));
         userRepository.deleteById(id);
+    }
+
+    // 로그인 기록 조회
+    @Override
+    public List<LoginHistory> getRecentLoginHistory(Long userId) {
+        return loginHistoryRepository.findTop10ByUser_UserIdOrderByTimestampDesc(userId);
     }
 }
