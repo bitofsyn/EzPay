@@ -198,7 +198,6 @@ backend/.gradle/
 backend/build/
 backend/gradle/
 
-frontend/.env
 frontend/public/
 frontend/.gitignore
 frontend/nginx.conf
