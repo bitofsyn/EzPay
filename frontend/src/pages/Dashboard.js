@@ -206,8 +206,8 @@ const Dashboard = () => {
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/accounts"); }}>전체계좌조회</li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer">통합거래내역조회</li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/transactions"); }}>거래 내역조회</li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">이체</li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">환경설정</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => {setIsMenuOpen(false); navigate("/send")}}>이체</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/settings")}}>환경설정</li>
             <li className="text-red-600 hover:text-red-700 cursor-pointer" onClick={handleLogout}>로그아웃</li>
           </ul>
         </div>
