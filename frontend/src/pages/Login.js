@@ -20,6 +20,7 @@ const Login = () => {
       const token = res.data;
       // JWT 토큰 저장
       localStorage.setItem("userToken", token);
+      localStorage.setItem("user", JSON.stringify(res.data.user)); 
 
       alert("로그인 성공!");
 
