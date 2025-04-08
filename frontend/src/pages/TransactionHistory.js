@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
-import { getTransactionHistory, getMyAccounts } from "../api/userAPI";
+import { getTransactionHistory, getMyAccounts } from "../api/UserAPI";
 import { ArrowDownCircle, ArrowUpCircle, Copy } from "lucide-react";
 
 const TransactionHistory = () => {

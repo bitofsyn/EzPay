@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signup} from "../api/userAPI";
+import { signup} from "../api/UserAPI";
 
 const Signup = () => {
   const navigate = useNavigate();

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-// 예: getLoginHistory API가 있다고 가정
-import { getLoginHistory } from "../../api/userAPI";
+import { getLoginHistory } from "../../api/UserAPI";
 
 const LoginHistory = () => {
     const [logs, setLogs] = useState([]);

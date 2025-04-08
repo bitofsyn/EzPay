@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Button from "../components/Button";
-import { getMyAccounts, getTransactionHistory, transferMoney, getAccountOwner } from "../api/userAPI";
+import { getMyAccounts, getTransactionHistory, transferMoney, getAccountOwner } from "../api/UserAPI";
 
 const AccountDetail = () => {
     const { id } = useParams();

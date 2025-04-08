@@ -1,4 +1,4 @@
-import api from "../api/api";
+import api from "./api";
 
 // 🔐 회원가입(Signup)
 export const signup = async (formData) => {
