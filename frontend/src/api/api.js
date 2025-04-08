@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create ({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8080",
+  baseURL: "http://localhost:8080",
 });
 
 // Interceptro 추가 : 매 요청시 Authorization 헤더 자동 추가
