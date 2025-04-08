@@ -11,8 +11,6 @@ import PasswordChange from "./pages/settings/PasswordChange";
 import Notification from "./pages/settings/Notification";
 import TransferLimit from "./pages/settings/TransferLimit";
 import Withdraw from "./pages/settings/Withdraw";
-import LoginHistory from './pages/settings/LoginHistory';
-
 const AppRoutes = () => {
   return (
     <BrowserRouter>
@@ -86,7 +84,6 @@ const AppRoutes = () => {
           <Route path="notification" element={<Notification />} />
           <Route path="transfer-limit" element={<TransferLimit />} />
           <Route path="withdraw" element={<Withdraw />} />
-          <Route path="login-history" element={<LoginHistory />} />
         </Route>
 
         {/* 404 Not Found */}
