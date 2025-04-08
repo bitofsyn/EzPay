@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getTransferLimit, updateTransferLimit } from "../../api/userAPI";
+import { getTransferLimit, updateTransferLimit } from "../../api/UserAPI";
 import toast from "react-hot-toast";
 
 const TransferLimit = () => {

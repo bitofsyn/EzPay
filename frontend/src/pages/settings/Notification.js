@@ -3,7 +3,7 @@ import {
     getUserInfo,
     getNotificationSettings,
     updateNotificationSetting,
-} from "../../api/userAPI";
+} from "../../api/UserAPI";
 
 const Notification = () => {
     const [userId, setUserId] = useState(null);
