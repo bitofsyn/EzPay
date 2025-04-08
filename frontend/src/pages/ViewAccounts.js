@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
-import { getMyAccounts } from "../api/userAPI";
+import { getMyAccounts } from "../api/UserAPI";
 
 const ViewAccounts = () => {
     const navigate = useNavigate();

@@ -11,6 +11,7 @@ import PasswordChange from "./pages/settings/PasswordChange";
 import Notification from "./pages/settings/Notification";
 import TransferLimit from "./pages/settings/TransferLimit";
 import Withdraw from "./pages/settings/Withdraw";
+import LoginHistory from './pages/settings/LoginHistory';
 
 const AppRoutes = () => {
   return (
