@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getUserInfo, deleteUser } from "../../api/UserAPI";
+import toast from "react-hot-toast";
+import { getUserInfo, deleteUser, getLoginHistory } from "../../api/UserAPI";
 
 const UserInfo = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState({ id: null, name: "", email: "" });
+    const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [darkMode, setDarkMode] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -12,11 +14,15 @@ const UserInfo = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const user = await getUserInfo(); // ✅ user만 반환한다고 가정
-                console.log("사용자 정보 조회: ", user);
-                setUser(user);
+                const userRes = await getUserInfo();
+                const userData = userRes.data;
+                const logsRes = await getLoginHistory(userData.id);
+                console.log("사용자 정보:", userRes);
+                console.log("로그인 기록:", logsRes.data);
+                setUser(userData);
+                setLogs(logsRes.data);
             } catch (err) {
-                console.error("사용자 정보 불러오기 실패", err);
+                toast.error("사용자 정보 또는 로그인 기록을 불러오지 못했습니다.");
                 navigate("/login");
             } finally {
                 setLoading(false);
@@ -57,6 +63,31 @@ const UserInfo = () => {
                 <h2 className="text-lg font-semibold mb-3">사용자 정보</h2>
                 <p className="text-sm mb-1"><strong>이름:</strong> {user.name}</p>
                 <p className="text-sm"><strong>이메일:</strong> {user.email}</p>
+            </section>
+
+            {/* 최근 로그인 기록 */}
+            <section className="bg-white shadow rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-3">최근 로그인 기록</h2>
+                {logs.length === 0 ? (
+                    <p className="text-sm text-gray-500">기록이 없습니다.</p>
+                ) : (
+                    <ul className="space-y-2">
+                        {logs.map((log, idx) => (
+                            <li
+                                key={idx}
+                                className="flex justify-between items-center text-sm text-gray-700 border rounded px-3 py-2"
+                            >
+                                <div>
+                                    <p className="font-medium">{log.device || "알 수 없는 기기"}</p>
+                                    <p className="text-xs text-gray-500">{log.ip || "IP 미상"}</p>
+                                </div>
+                                <span className="text-xs text-gray-400">
+                                    {new Date(log.timestamp).toLocaleString()}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </section>
 
             {/* 다크모드 */}
