@@ -1,15 +1,15 @@
 import api from "./api";
 
-// 🔐 회원가입(Signup)
+// 회원가입(Signup)
 export const signup = async (formData) => {
     const res = await api.post("/users/signup", formData);
     return res.data;
 };
 
-// 🔐 로그인(Login)
+// 로그인(Login)
 export const login = async (userData) => {
     const res = await api.post("/users/login", userData);
-    localStorage.setItem("userToken", res.data.token);  // 🔥 이 부분 있어야 해
+    localStorage.setItem("userToken", res.data.token);  
     return res.data;
 };
 
@@ -33,7 +33,7 @@ export const updatePassword = async (newPassword) => {
 };
 
 
-// 🔔 알림 설정 조회(Settings)
+// 알림 설정 조회(Settings)
 export const getNotificationSettings = async (userId) => {
     const token = localStorage.getItem("userToken");
     const res = await api.get(`/notifications/${userId}`, {
@@ -44,7 +44,7 @@ export const getNotificationSettings = async (userId) => {
     return res.data;
 };
 
-// 🔔 알림 설정 변경(Settings)
+// 알림 설정 변경(Settings)
 export const updateNotificationSetting = async (userId, type, isEnabled) => {
     const token = localStorage.getItem("userToken");
     const res = await api.put(
@@ -62,7 +62,7 @@ export const updateNotificationSetting = async (userId, type, isEnabled) => {
     return res.data;
 };
 
-// 💸 송금 한도 조회(Settings)
+// 송금 한도 조회(Settings)
 export const getTransferLimit = async (userId) => {
     const token = localStorage.getItem("userToken");
     const res = await api.get(`/transfer-limits/${userId}`, {
@@ -73,7 +73,7 @@ export const getTransferLimit = async (userId) => {
     return res.data;
 };
 
-// 💸 송금 한도 변경(Settings)
+// 송금 한도 변경(Settings)
 export const updateTransferLimit = async (userId, perLimit, dailyLimit) => {
     const token = localStorage.getItem("userToken");
     const res = await api.put(
@@ -91,7 +91,7 @@ export const updateTransferLimit = async (userId, perLimit, dailyLimit) => {
     return res.data;
 };
 
-// ❌ 회원 탈퇴(Settings)
+// 회원 탈퇴(Settings)
 export const deleteUser = async (userId) => {
     const token = localStorage.getItem("userToken");
     const res = await api.delete(`/users/${userId}`, {
@@ -105,7 +105,12 @@ export const deleteUser = async (userId) => {
 
 // 사용자 정보 조회(Settings)
 export const getUserInfo = async () => {
-    const res = await api.get("/users/me");
+    const token = localStorage.getItem("userToken");
+    const res = await api.get("/users/me", {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        }
+    });
     return res.data;
 }
 
@@ -121,9 +126,14 @@ export const getLoginHistory = async (userId) => {
 };
 
 
-// 📊 대시보드(Dashboard)
+// 대시보드(Dashboard)
 export const getDashboardInfo = async () => {
-    const res = await api.get("/dashboard");
+    const token = localStorage.getItem("userToken");
+    const res = await api.get("/dashboard", {
+        headers : {
+            Authorization: `Bearer ${token}`,
+        }
+    });
     return res.data;
 };
 
