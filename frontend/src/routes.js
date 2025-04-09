@@ -5,7 +5,7 @@ import AccountDetail from "./pages/AccountDetail";
 import PrivateRoute from "./components/PrivateRoute";
 import LayoutSettings from "./pages/settings/LayoutSettings";
 
-// ✨ Settings 하위 페이지들
+
 import Settings from "./pages/settings/Settings";
 import PasswordChange from "./pages/settings/PasswordChange";
 import Notification from "./pages/settings/Notification";
@@ -15,12 +15,12 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* ✅ 비로그인 접근 가능 */}
+        {/* 비로그인 접근 가능 */}
         <Route path="/" element={<pages.Home />} />
         <Route path="/login" element={<pages.Login />} />
         <Route path="/signup" element={<pages.Signup />} />
 
-        {/* 🔐 로그인 후 접근 가능한 페이지 */}
+        {/* 로그인 후 접근 가능한 페이지 */}
         <Route
           path="/dashboard"
           element={
@@ -70,9 +70,9 @@ const AppRoutes = () => {
           }
         />
 
-        {/* ⚙️ 환경설정 (Layout + 하위 라우트 구성) */}
+        {/* 환경설정 */}
         <Route
-          path="/settings"
+          path="/settings/*"
           element={
             <PrivateRoute>
               <LayoutSettings />
