@@ -1,5 +1,3 @@
-// src/pages/settings/Settings.js
-
 import { Routes, Route } from "react-router-dom";
 import UserInfo from "./UserInfo";
 import PasswordChange from "./PasswordChange";

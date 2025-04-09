@@ -13,14 +13,7 @@ const LayoutSettings = () => {
                 <aside className="w-60 bg-white border-r p-6 space-y-4">
                     <h2 className="text-lg font-semibold text-gray-800 mb-2">설정 메뉴</h2>
                     <nav className="space-y-3">
-                        <NavLink
-                            to="/settings"
-                            className={({ isActive }) =>
-                                `block hover:text-blue-600 ${isActive ? "text-blue-600 font-bold" : "text-gray-700"}`
-                            }
-                        >
-                            사용자 정보
-                        </NavLink>
+                        <NavLink to="/settings">사용자 정보</NavLink>
                         <NavLink
                             to="/settings/password"
                             className={({ isActive }) =>
