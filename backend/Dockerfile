@@ -1,7 +1,7 @@
 # 1. 빌드 단계
 FROM openjdk:17-jdk-slim AS build
 WORKDIR /app
-COPY ./backend /app
+COPY . /app
 RUN ./gradlew clean build -x test --no-daemon
 
 # 2. 실행 단계
