@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useState} from "react";
 import { login } from "../api/UserAPI";
+import { jwtDecode } from "jwt-decode"; 
+
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,15 +19,21 @@ const Login = () => {
 
     try{
       const res = await login(form);
+      console.log("로그인 res : ", res);
       const token = res.data;
       // JWT 토큰 저장
       localStorage.setItem("userToken", token);
-      localStorage.setItem("user", JSON.stringify(res.data.user)); 
 
-      alert("로그인 성공!");
+      // user정보 추출
+      const decoded = jwtDecode(token);
+      console.log("decoded : ", decoded);
+      localStorage.setItem("user", JSON.stringify(decoded)); 
 
-      // 홈으로 이동
-      navigate("/");
+      if(decoded.userId) {
+        navigate("/");
+      } else {
+        setError("로그인 정보가 올바르지 않습니다");
+      }
     } catch(err) {
       console.error("로그인 실패 :", err);
       setError("이메일 또는 비밀번호가 올바르지 않습니다.");
