@@ -149,9 +149,17 @@ export const getRecentTransactions = async (accountId, sort = "desc", limit = 10
     return res.data;
 }
 
-// 🏦 계좌 개설(createAccount)
+// 계좌 개설(createAccount)
 export const createAccount = async (accountData) => {
-    const response = await api.post("/account", accountData);
+    const token = localStorage.getItem("userToken");
+
+    const response = await api.post("/account", accountData, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    console.log("response : " , response);
+
     return response.data;
 };
 

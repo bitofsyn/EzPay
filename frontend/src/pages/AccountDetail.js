@@ -91,6 +91,7 @@ const AccountDetail = () => {
             setToAccount("");
             setAmount("");
 
+            // Live Querying 적용 (94~103줄)
             const accountsAfter = await getMyAccounts();
             const updatedAccount = accountsAfter.data.find((acc) => acc.accountId === account.accountId);
             setAccount(updatedAccount);
