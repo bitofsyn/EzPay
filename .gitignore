@@ -194,7 +194,6 @@ out
 gen
 
 backend/.env
-backend/build/
 
 frontend/public/
 frontend/.gitignore
@@ -204,6 +203,9 @@ frontend/tailwind.config.js
 frontend/package-lock.json
 frontend/package.json
 .gradle/
-build/
 build/reports/
-gradle/
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build

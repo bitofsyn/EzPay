@@ -24,7 +24,7 @@ services:
     restart: always
     container_name: frontend
     ports:
-      - "3000:3000"
+      - "3000:80"
     stdin_open: true
     tty: true
     networks:

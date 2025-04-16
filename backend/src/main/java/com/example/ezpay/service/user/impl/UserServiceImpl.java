@@ -79,15 +79,15 @@ public class UserServiceImpl implements UserService {
             User user = userOpt.get();
 
             if(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-                // ✅ 로그인 기록 저장
+                // 로그인 기록 저장
                 LoginHistory loginHistory = LoginHistory.builder()
                         .user(user)
-                        .ip(ip)              // 🔐 클라이언트에서 전달받은 IP
-                        .device(device)      // 🔐 클라이언트에서 전달받은 기기 정보
+                        .ip(ip)              // 라이언트에서 전달받은 IP
+                        .device(device)      // 클라이언트에서 전달받은 기기 정보
                         .build();
                 loginHistoryRepository.save(loginHistory);
 
-                return jwtUtil.generateToken(user.getEmail());
+                return jwtUtil.generateToken(user);
             }
         }
         return null;

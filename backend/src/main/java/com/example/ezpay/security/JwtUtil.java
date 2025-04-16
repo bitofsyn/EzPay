@@ -1,5 +1,6 @@
 package com.example.ezpay.security;
 
+import com.example.ezpay.model.user.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
@@ -17,12 +18,13 @@ public class JwtUtil {
     private final JwtParser parser = Jwts.parser().verifyWith((SecretKey) key).build();
 
     // 1. JWT 생성 메서드
-    public String generateToken(String email) {
+    public String generateToken(User user) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
 
         return Jwts.builder()
-                .subject(email)
+                .subject(user.getEmail())
+                .claim("userId", user.getUserId())
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(key)
