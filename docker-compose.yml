@@ -38,6 +38,8 @@ services:
     restart: always
     ports:
       - "5432:5432"
+    env_file:
+      - backend/.env
     environment:
       POSTGRES_DB: ${SPRING_DATASOURCE_DB}
       POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME}
