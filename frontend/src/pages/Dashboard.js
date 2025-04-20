@@ -19,13 +19,19 @@ const Dashboard = () => {
       try {
         const dashboardRes = await getDashboardInfo();
         const dashboardData = dashboardRes.data;
-
         setUser(dashboardData.user);
+  
         const accountList = dashboardData.account ? [dashboardData.account] : [];
         setAccounts(accountList);
-
+  
+        // 계좌가 있으면 거래 내역을 동시에 요청
         if (dashboardData.account?.accountId) {
-          const txRes = await getRecentTransactions(dashboardData.account.accountId);
+          const accountId = dashboardData.account.accountId;
+  
+          const [txRes] = await Promise.all([
+            getRecentTransactions(accountId),
+          ]);
+  
           setTransactions(txRes.data);
         }
       } catch (error) {
@@ -36,9 +42,10 @@ const Dashboard = () => {
         setIsLoading(false);
       }
     };
-
+  
     fetchUserData();
   }, [navigate]);
+  
 
   const formatAccountNumber = (number) => {
     return `${number.slice(0, 2)}-${number.slice(2, 6)}-${number.slice(6)}`;
@@ -61,9 +68,19 @@ const Dashboard = () => {
   };
 
   if (isLoading) {
+    // Skeleton UI 적용
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <p className="text-gray-600 text-lg">로딩 중...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
+        <div className="w-full max-w-lg bg-white rounded-xl p-6 animate-pulse">
+          <div className="h-6 bg-gray-300 rounded w-1/3 mb-4"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+          <div className="h-10 bg-gray-300 rounded w-full"></div>
+        </div>
+        <div className="w-full max-w-lg bg-white rounded-xl p-6 mt-6 animate-pulse">
+          <div className="h-6 bg-gray-300 rounded w-1/3 mb-4"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+          <div className="h-48 bg-gray-300 rounded"></div>
+        </div>
       </div>
     );
   }
@@ -129,13 +146,13 @@ const Dashboard = () => {
         <div
           className="mt-4 max-h-[480px] overflow-y-auto pr-1"
           style={{
-            scrollbarWidth: "none", // Firefox
-            msOverflowStyle: "none", // IE 10+
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
         >
           <style>{`
             div::-webkit-scrollbar {
-              display: none; /* Chrome, Safari, Opera */
+              display: none;
             }
           `}</style>
           {transactions.length > 0 ? (
@@ -206,8 +223,8 @@ const Dashboard = () => {
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/accounts"); }}>전체계좌조회</li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer">통합거래내역조회</li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/transactions"); }}>거래 내역조회</li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => {setIsMenuOpen(false); navigate("/send")}}>이체</li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/settings")}}>환경설정</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/send"); }}>이체</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/settings"); }}>환경설정</li>
             <li className="text-red-600 hover:text-red-700 cursor-pointer" onClick={handleLogout}>로그아웃</li>
           </ul>
         </div>
