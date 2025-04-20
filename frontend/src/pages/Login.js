@@ -20,34 +20,33 @@ const Login = () => {
 
     try {
       const res = await login(form);
-      console.log("로그인 API 응답:", res.data);
-
-      const token = res.data; 
-      console.log("token :", token);
+      const token = res.data;
 
       if (!token || token.split('.').length !== 3) {
         throw new Error("Invalid token format");
       }
 
-      // ✅ 받은 토큰 바로 디코딩
+      // 받은 토큰 바로 디코딩
       const decoded = jwtDecode(token);
-      console.log("decoded :", decoded);
 
-      // ✅ 디코딩 후 저장
-      if (keepLogin) {
-        localStorage.setItem("userToken", token);
-      } else {
-        sessionStorage.setItem("userToken", token);
+      // 로그인 성공 시 이동
+      if (decoded.userId !== undefined && decoded.userId !== null) {
+      
+        // storage 먼저 저장
+        if (keepLogin) {
+          localStorage.setItem("userToken", token);
+        } else {
+          sessionStorage.setItem("userToken", token);
+        }
+        localStorage.setItem("user", JSON.stringify(decoded));
+      
+        // 저장이 끝난 뒤 navigate 호출
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 0); // 바로 다음 tick에 이동
       }
-      localStorage.setItem("user", JSON.stringify(decoded));
+      
 
-      console.log("decoded userId : ", decoded.userId);
-      // ✅ 로그인 성공 시 이동
-      if (decoded.userId) {
-        navigate("/dashboard");
-      } else {
-        setError("로그인 정보가 올바르지 않습니다.");
-      }
     } catch (err) {
       console.error("로그인 실패:", err);
 
