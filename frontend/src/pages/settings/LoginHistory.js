@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-// 예: getLoginHistory API가 있다고 가정
 import { getLoginHistory } from "../../api/UserAPI";
 
 const LoginHistory = () => {
@@ -10,8 +9,17 @@ const LoginHistory = () => {
     useEffect(() => {
         const fetchLoginLogs = async () => {
             try {
-                const res = await getLoginHistory(); // ✅ userId 필요 없음
-                setLogs(res.data);                   // res 자체가 data 배열이라고 가정
+                const user = JSON.parse(localStorage.getItem("user"));
+                console.log("로그인 기록 user : ", user);
+                const userId = user?.userId;
+
+
+                if (!userId) {
+                    throw new Error("사용자 정보를 찾을 수 없습니다.");
+                }
+
+                const res = await getLoginHistory(userId);
+                setLogs(res.data);
             } catch (err) {
                 toast.error("로그인 기록을 불러오지 못했습니다.");
             } finally {
