@@ -122,8 +122,11 @@ const SendMoney = () => {
                         type="text"
                         placeholder="계좌번호 입력"
                         className="w-3/4 h-12 px-4 rounded-xl border border-gray-300 focus:outline-none focus:ring focus:ring-blue-200"
+                        value={toAccountNumber}
+                        onChange={(e) => setToAccountNumber(e.target.value)}
                     />
                     <button
+                        onClick={handleCheckAccount}
                         className="w-1/4 h-12 bg-[#1E293B] text-white font-semibold rounded-xl shadow hover:bg-[#0f172a]"
                     >
                         계좌 확인

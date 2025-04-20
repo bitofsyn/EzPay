@@ -1,7 +1,12 @@
-import AppRoutes from "./routes";  // ✅ 올바른 import
+import AppRoutes from "./routes";
+import { BrowserRouter } from "react-router-dom"; 
 
 function App() {
-  return <AppRoutes />;
+  return (
+    <BrowserRouter> 
+      <AppRoutes />
+    </BrowserRouter>
+  );
 }
 
 export default App;
