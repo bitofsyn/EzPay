@@ -9,8 +9,9 @@ import PasswordChange from "./pages/settings/PasswordChange";
 import Notification from "./pages/settings/Notification";
 import TransferLimit from "./pages/settings/TransferLimit";
 import Withdraw from "./pages/settings/Withdraw";
+import LoginHistory from "./pages/settings/LoginHistory";
 
-const AppRoutes = () => {
+const AppRoutes = ({ darkMode, setDarkMode }) => {
   return (
     <Routes>
       {/* 비로그인 접근 가능 */}
@@ -18,7 +19,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<pages.Login />} />
       <Route path="/signup" element={<pages.Signup />} />
 
-      {/* 로그인 후 접근 가능한 페이지 */}
+      {/* 로그인 후 접근 가능 */}
       <Route path="/dashboard" element={<PrivateRoute><pages.Dashboard /></PrivateRoute>} />
       <Route path="/send" element={<PrivateRoute><pages.SendMoney /></PrivateRoute>} />
       <Route path="/create-account" element={<PrivateRoute><pages.CreateAccount /></PrivateRoute>} />
@@ -33,9 +34,10 @@ const AppRoutes = () => {
         <Route path="notification" element={<Notification />} />
         <Route path="transfer-limit" element={<TransferLimit />} />
         <Route path="withdraw" element={<Withdraw />} />
+        <Route path="login-history" element={<LoginHistory />} />
       </Route>
 
-      {/* 404 Not Found */}
+      {/* 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
