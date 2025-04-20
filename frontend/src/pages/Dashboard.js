@@ -20,18 +20,18 @@ const Dashboard = () => {
         const dashboardRes = await getDashboardInfo();
         const dashboardData = dashboardRes.data;
         setUser(dashboardData.user);
-  
+
         const accountList = dashboardData.account ? [dashboardData.account] : [];
         setAccounts(accountList);
-  
+
         // 계좌가 있으면 거래 내역을 동시에 요청
         if (dashboardData.account?.accountId) {
           const accountId = dashboardData.account.accountId;
-  
+
           const [txRes] = await Promise.all([
             getRecentTransactions(accountId),
           ]);
-  
+
           setTransactions(txRes.data);
         }
       } catch (error) {
@@ -42,10 +42,10 @@ const Dashboard = () => {
         setIsLoading(false);
       }
     };
-  
+
     fetchUserData();
   }, [navigate]);
-  
+
 
   const formatAccountNumber = (number) => {
     return `${number.slice(0, 2)}-${number.slice(2, 6)}-${number.slice(6)}`;
@@ -106,11 +106,12 @@ const Dashboard = () => {
                   {acc.balance.toLocaleString()} 원
                 </p>
                 <button
-                  className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-semibold transition"
+                  className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl shadow-md font-semibold transition-all"
                   onClick={() => navigate("/send")}
                 >
                   이체
                 </button>
+
               </div>
             </div>
           ))}
@@ -119,11 +120,12 @@ const Dashboard = () => {
           <div className="min-w-full bg-white rounded-xl p-6 border text-center flex flex-col justify-center items-center">
             <p className="text-gray-600 mb-4">현재 계좌가 없습니다.</p>
             <button
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold"
+              className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl shadow-md font-semibold transition-all"
               onClick={() => navigate("/create-account")}
             >
               계좌 생성하기
             </button>
+
           </div>
         </div>
 
