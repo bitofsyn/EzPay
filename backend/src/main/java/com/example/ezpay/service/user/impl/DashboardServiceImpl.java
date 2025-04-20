@@ -26,22 +26,24 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardResponse getDashboardInfo(Authentication authentication) {
         String email = authentication.getName();
+
+        // 유저 정보 가져오기
         UserResponse user = userService.getUserInfo(email);
-        System.out.println("user = " + user);
+
+        // 계좌 리스트 가져오기
         List<Accounts> accounts = accountService.getAccountByUserId(user.getId());
-        System.out.println("accounts = " + accounts);
-
         Accounts mainAccount = accounts.isEmpty() ? null : accounts.get(0);
-        BigDecimal balance = mainAccount != null ? mainAccount.getBalance() : BigDecimal.ZERO;
 
-        List<Transaction> transactions = mainAccount != null ?
-                transactionService.getTransactionByAccount(mainAccount.getAccountId()) :
-                Collections.emptyList();
+        // 거래 내역 대시보드 진입에서는 "최근 5개만 보여주도록"
+        List<Transaction> transactions = Collections.emptyList();
+        if(mainAccount != null) {
+            transactions = transactionService.getRecentTransactionByAccount(mainAccount.getAccountId(), "DESC", 5);
+        }
 
         return DashboardResponse.builder()
                 .user(user)
                 .account(mainAccount)
-                .balance(balance)
+                .balance(mainAccount != null? mainAccount.getBalance(): BigDecimal.ZERO)
                 .transactions(transactions)
                 .build();
     }
