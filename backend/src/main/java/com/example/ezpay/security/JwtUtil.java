@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 
 @Component
@@ -14,7 +15,7 @@ public class JwtUtil {
     private static final String SECRET_KEY = SecretKeyGenerator.createSecretKey();
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24; // 24시간
 
-    private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    private final Key key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(SECRET_KEY));
     private final JwtParser parser = Jwts.parser().verifyWith((SecretKey) key).build();
 
     // 1. JWT 생성 메서드
