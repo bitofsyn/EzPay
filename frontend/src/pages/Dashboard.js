@@ -175,7 +175,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                     <div
-                      className={`text-sm font-semibold ${isSent ? "text-red-500" : "text-green-600"
+                      className={`text-sm font-semibold ${isSent ? "text-rose-500" : "text-sky-600"
                         }`}
                     >
                       {isSent ? "-" : "+"}
