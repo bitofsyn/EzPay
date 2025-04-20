@@ -9,7 +9,6 @@ export const signup = async (formData) => {
 // 로그인(Login)
 export const login = async (userData) => {
     const res = await api.post("/users/login", userData);
-    localStorage.setItem("userToken", res.data.token);  
     return res.data;
 };
 
