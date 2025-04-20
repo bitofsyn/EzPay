@@ -5,7 +5,9 @@ const LayoutSettings = () => {
         <div className="min-h-screen flex flex-col bg-gray-100">
             {/* 상단 헤더 */}
             <header className="bg-gray-800 text-white p-4 font-bold text-lg">
-                EzPay
+                <NavLink to="/dashboard">
+                    EzPay
+                </NavLink>
             </header>
 
             <div className="flex flex-1">
@@ -37,6 +39,14 @@ const LayoutSettings = () => {
                             }
                         >
                             송금 한도
+                        </NavLink>
+                        <NavLink
+                            to="/settings/login-history" 
+                            className={({ isActive }) =>
+                                `block hover:text-blue-600 ${isActive ? "text-blue-600 font-bold" : "text-gray-700"}`
+                            }
+                        >
+                            로그인 기록
                         </NavLink>
                         <NavLink
                             to="/settings/withdraw"

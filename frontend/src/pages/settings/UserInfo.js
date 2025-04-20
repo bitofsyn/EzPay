@@ -8,7 +8,6 @@ const UserInfo = () => {
     const [user, setUser] = useState({ id: null, name: "", email: "" });
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [darkMode, setDarkMode] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     useEffect(() => {
@@ -17,8 +16,6 @@ const UserInfo = () => {
                 const userRes = await getUserInfo();
                 const userData = userRes.data;
                 const logsRes = await getLoginHistory(userData.id);
-                console.log("사용자 정보:", userRes);
-                console.log("로그인 기록:", logsRes.data);
                 setUser(userData);
                 setLogs(logsRes.data);
             } catch (err) {
@@ -71,52 +68,57 @@ const UserInfo = () => {
                 {logs.length === 0 ? (
                     <p className="text-sm text-gray-500">기록이 없습니다.</p>
                 ) : (
-                    <ul className="space-y-2">
-                        {logs.map((log, idx) => (
-                            <li
-                                key={idx}
-                                className="flex justify-between items-center text-sm text-gray-700 border rounded px-3 py-2"
-                            >
-                                <div>
-                                    <p className="font-medium">{log.device || "알 수 없는 기기"}</p>
-                                    <p className="text-xs text-gray-500">{log.ip || "IP 미상"}</p>
-                                </div>
-                                <span className="text-xs text-gray-400">
-                                    {new Date(log.timestamp).toLocaleString()}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
+                    <>
+                        <ul className="space-y-2">
+                            {logs.slice(0, 5).map((log, idx) => (
+                                <li
+                                    key={idx}
+                                    className="flex justify-between items-center text-sm text-gray-700 border rounded px-3 py-2"
+                                >
+                                    <div>
+                                        <p className="font-medium">{log.device || "알 수 없는 기기"}</p>
+                                        <p className="text-xs text-gray-500">{log.ip || "IP 미상"}</p>
+                                    </div>
+                                    <span className="text-xs text-gray-400">
+                                        {new Date(log.timestamp).toLocaleString()}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        {/* 전체 로그인 기록 보기 버튼 */}
+                        {logs.length > 5 && (
+                            <div className="mt-4 text-center">
+                                <button
+                                    onClick={() => navigate("/settings/login-history")}
+                                    className="text-blue-600 hover:underline text-sm font-medium"
+                                >
+                                    전체 로그인 기록 보기 →
+                                </button>
+                            </div>
+                        )}
+                    </>
                 )}
             </section>
 
-            {/* 다크모드 */}
-            <section className="bg-white shadow rounded-xl p-6 flex items-center justify-between">
-                <span className="text-gray-800 font-medium">다크모드</span>
-                <input
-                    type="checkbox"
-                    checked={darkMode}
-                    onChange={(e) => setDarkMode(e.target.checked)}
-                    className="toggle toggle-md"
-                />
-            </section>
-
             {/* 로그아웃 + 탈퇴 */}
-            <div className="text-center space-y-2">
+            <div className="flex flex-col items-center gap-4 mt-8">
                 <button
                     onClick={handleLogout}
-                    className="text-red-500 font-semibold"
+                    className="w-60 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-2 rounded-xl shadow-md transition-all"
                 >
                     로그아웃
                 </button>
-                <br />
+
                 <button
                     onClick={() => setShowDeleteModal(true)}
-                    className="text-gray-500 underline text-sm"
+                    className="text-sm text-gray-400 hover:text-gray-600 hover:underline transition-all"
                 >
-                    회원 탈퇴
+                    회원 탈퇴하기
                 </button>
             </div>
+
+
 
             {/* 탈퇴 모달 */}
             {showDeleteModal && (
