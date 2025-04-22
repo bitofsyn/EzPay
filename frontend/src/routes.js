@@ -1,5 +1,5 @@
-import { Routes, Route } from "react-router-dom"; 
-import pages from "./utils/loadPage";
+import { Routes, Route } from "react-router-dom";
+import pages from "./utils/loadPage"; // 여기서 다 가져옴
 import NotFound from "./pages/NotFound";
 import AccountDetail from "./pages/AccountDetail";
 import PrivateRoute from "./components/PrivateRoute";
@@ -11,7 +11,7 @@ import TransferLimit from "./pages/settings/TransferLimit";
 import Withdraw from "./pages/settings/Withdraw";
 import LoginHistory from "./pages/settings/LoginHistory";
 
-const AppRoutes = ({ darkMode, setDarkMode }) => {
+const AppRoutes = () => {
   return (
     <Routes>
       {/* 비로그인 접근 가능 */}
@@ -26,6 +26,9 @@ const AppRoutes = ({ darkMode, setDarkMode }) => {
       <Route path="/transactions" element={<PrivateRoute><pages.TransactionHistory /></PrivateRoute>} />
       <Route path="/accounts" element={<PrivateRoute><pages.ViewAccounts /></PrivateRoute>} />
       <Route path="/account/:id" element={<PrivateRoute><AccountDetail /></PrivateRoute>} />
+
+      {/* 달력 관련 */}
+      <Route path="/calendar" element={<PrivateRoute><pages.CalendarPage /></PrivateRoute>} />
 
       {/* 환경설정 */}
       <Route path="/settings/*" element={<PrivateRoute><LayoutSettings /></PrivateRoute>}>
