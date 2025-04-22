@@ -223,7 +223,7 @@ const Dashboard = () => {
           </div>
           <ul className="mt-6 space-y-4">
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/accounts"); }}>전체계좌조회</li>
-            <li className="text-gray-700 hover:text-blue-600 cursor-pointer">통합거래내역조회</li>
+            <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/calendar"); }}>월별 소비 통계</li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/transactions"); }}>거래 내역조회</li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/send"); }}>이체</li>
             <li className="text-gray-700 hover:text-blue-600 cursor-pointer" onClick={() => { setIsMenuOpen(false); navigate("/settings"); }}>환경설정</li>
