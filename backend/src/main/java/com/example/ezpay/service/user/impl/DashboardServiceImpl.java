@@ -32,18 +32,21 @@ public class DashboardServiceImpl implements DashboardService {
 
         // 계좌 리스트 가져오기
         List<Accounts> accounts = accountService.getAccountByUserId(user.getId());
-        Accounts mainAccount = accounts.isEmpty() ? null : accounts.get(0);
 
         // 거래 내역 대시보드 진입에서는 "최근 5개만 보여주도록"
         List<Transaction> transactions = Collections.emptyList();
-        if(mainAccount != null) {
+        if(!accounts.isEmpty()) {
+            // 대표 계좌 찾기 (isMain) 없으면 accounts.get(0)
+            Accounts mainAccount = accounts.stream()
+                    .filter(Accounts::isMain)
+                    .findFirst()
+                    .orElse(accounts.get(0));
             transactions = transactionService.getRecentTransactionByAccount(mainAccount.getAccountId(), "DESC", 5);
         }
 
         return DashboardResponse.builder()
                 .user(user)
-                .account(mainAccount)
-                .balance(mainAccount != null? mainAccount.getBalance(): BigDecimal.ZERO)
+                .account(accounts)
                 .transactions(transactions)
                 .build();
     }

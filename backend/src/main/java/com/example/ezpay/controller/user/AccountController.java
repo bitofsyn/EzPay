@@ -15,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/account")
-@CrossOrigin(origins = "http://localhost:3000")
 public class AccountController {
     private final AccountService accountService;
     private final TransactionService transactionService;
@@ -64,5 +63,13 @@ public class AccountController {
     public ResponseEntity<CommonResponse<String>> deleteAccount(@PathVariable Long accountId) {
         accountService.deleteAccount(accountId);
         return ResponseEntity.ok(new CommonResponse<>("success", "Account deleted", "DELETE SUCCESS"));
+    }
+
+    // 대표계좌 설정
+    @PatchMapping("/{accountId}/main")
+    public ResponseEntity<CommonResponse<String>> setMainAccount(Authentication authentication,
+                                                                 @PathVariable Long accountId) {
+        accountService.setMainAccount(authentication.getName(), accountId);
+        return ResponseEntity.ok(new CommonResponse<>("success", null, "대표 계좌 설정 완료"));
     }
 }
