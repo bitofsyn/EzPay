@@ -30,10 +30,13 @@ public class Accounts {
     @Column(nullable = false, unique = true)
     private String accountNumber;
     private String bankName;
+    @Column(nullable = false)
+    private boolean isMain; // 대표계좌
 
     @Column(nullable = false, precision = 18, scale = 4)
     private BigDecimal balance; // 잔액
 
     @CreationTimestamp
     private Timestamp createdAt;
+
 }
