@@ -6,7 +6,6 @@ import DashboardHeader from "../components/DashboardHeader";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-
   const [user, setUser] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -21,17 +20,14 @@ const Dashboard = () => {
         const dashboardData = dashboardRes.data;
         setUser(dashboardData.user);
 
-        const accountList = dashboardData.account ? [dashboardData.account] : [];
+        // 계좌 목록 가져오기
+        const accountList = dashboardData.account || [];
         setAccounts(accountList);
 
-        // 계좌가 있으면 거래 내역을 동시에 요청
-        if (dashboardData.account?.accountId) {
-          const accountId = dashboardData.account.accountId;
-
-          const [txRes] = await Promise.all([
-            getRecentTransactions(accountId),
-          ]);
-
+        // 최근 거래 내역
+        if (accountList.length > 0) {
+          const mainAccount = accountList.find(acc => acc.main) || accountList[0];
+          const txRes = await getRecentTransactions(mainAccount.accountId);
           setTransactions(txRes.data);
         }
       } catch (error) {
@@ -46,12 +42,15 @@ const Dashboard = () => {
     fetchUserData();
   }, [navigate]);
 
-
   const formatAccountNumber = (number) => {
     return `${number.slice(0, 2)}-${number.slice(2, 6)}-${number.slice(6)}`;
   };
 
-  const visibleCards = accounts.slice(0, 3);
+  // 대표 계좌를 맨 앞에 정렬
+  const mainAccount = accounts.find(acc => acc.main);
+  const otherAccounts = accounts.filter(acc => !acc.main);
+  const sortedAccounts = mainAccount ? [mainAccount, ...otherAccounts] : accounts;
+  const visibleCards = sortedAccounts.slice(0, 3);
   const totalSlides = visibleCards.length + 1;
 
   const handleDotClick = (index) => {
@@ -68,18 +67,12 @@ const Dashboard = () => {
   };
 
   if (isLoading) {
-    // Skeleton UI 적용
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
         <div className="w-full max-w-lg bg-white rounded-xl p-6 animate-pulse">
           <div className="h-6 bg-gray-300 rounded w-1/3 mb-4"></div>
           <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
           <div className="h-10 bg-gray-300 rounded w-full"></div>
-        </div>
-        <div className="w-full max-w-lg bg-white rounded-xl p-6 mt-6 animate-pulse">
-          <div className="h-6 bg-gray-300 rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
-          <div className="h-48 bg-gray-300 rounded"></div>
         </div>
       </div>
     );
@@ -111,21 +104,19 @@ const Dashboard = () => {
                 >
                   이체
                 </button>
-
               </div>
             </div>
           ))}
 
           {/* 계좌 추가하기 카드 */}
           <div className="min-w-full bg-white rounded-xl p-6 border text-center flex flex-col justify-center items-center">
-            <p className="text-gray-600 mb-4">현재 계좌가 없습니다.</p>
+            <p className="text-gray-600 mb-4">계좌를 추가해보세요</p>
             <button
-              className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl shadow-md font-semibold transition-all"
+              className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl font-semibold"
               onClick={() => navigate("/create-account")}
             >
               계좌 생성하기
             </button>
-
           </div>
         </div>
 
@@ -135,49 +126,29 @@ const Dashboard = () => {
             <div
               key={idx}
               onClick={() => handleDotClick(idx)}
-              className={`w-3 h-3 rounded-full cursor-pointer ${idx === selectedIndex ? "bg-blue-500" : "bg-gray-300"
-                }`}
+              className={`w-3 h-3 rounded-full cursor-pointer ${idx === selectedIndex ? "bg-blue-500" : "bg-gray-300"}`}
             />
           ))}
         </div>
       </div>
 
-      {/* 거래 내역 */}
+      {/* 최근 거래 내역 */}
       <div className="w-full max-w-lg bg-white rounded-xl border p-6 mt-6">
         <h3 className="text-lg font-semibold text-gray-800">최근 거래 내역</h3>
-        <div
-          className="mt-4 max-h-[480px] overflow-y-auto pr-1"
-          style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
-        >
-          <style>{`
-            div::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
+        <div className="mt-4 max-h-[480px] overflow-y-auto pr-1">
           {transactions.length > 0 ? (
             <ul className="space-y-3">
               {transactions.map((tx, index) => {
-                const isSent = tx.senderAccount.accountId === accounts[0]?.accountId;
+                const isSent = tx.senderAccount.accountId === sortedAccounts[0]?.accountId;
                 return (
-                  <li
-                    key={index}
-                    className="p-3 border rounded-lg bg-gray-50 flex justify-between items-center hover:shadow-sm transition"
-                  >
+                  <li key={index} className="p-3 border rounded-lg bg-gray-50 flex justify-between items-center hover:shadow-sm">
                     <div>
-                      <p className="text-sm font-medium text-gray-800">
-                        {isSent ? "송금" : "입금"}
-                      </p>
+                      <p className="text-sm font-medium text-gray-800">{isSent ? "송금" : "입금"}</p>
                       <p className="text-xs text-gray-500">
                         {new Date(tx.transactionDate).toLocaleString()}
                       </p>
                     </div>
-                    <div
-                      className={`text-sm font-semibold ${isSent ? "text-rose-500" : "text-sky-600"
-                        }`}
-                    >
+                    <div className={`text-sm font-semibold ${isSent ? "text-rose-500" : "text-sky-600"}`}>
                       {isSent ? "-" : "+"}
                       {tx.amount.toLocaleString()} 원
                     </div>
@@ -206,13 +177,11 @@ const Dashboard = () => {
 
       {/* 메뉴 */}
       <div
-        className={`fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 transition-opacity duration-300 
-        ${isMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}
+        className={`fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 transition-opacity duration-300 ${isMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}
         onClick={() => setIsMenuOpen(false)}
       >
         <div
-          className={`fixed top-0 right-0 h-full bg-white shadow-lg p-4 transition-transform duration-300 
-          w-64 md:w-1/4 max-w-xs transform ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+          className={`fixed top-0 right-0 h-full bg-white shadow-lg p-4 w-64 max-w-xs transform transition-transform duration-300 ${isMenuOpen ? "translate-x-0" : "translate-x-full"}`}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex justify-between items-center">

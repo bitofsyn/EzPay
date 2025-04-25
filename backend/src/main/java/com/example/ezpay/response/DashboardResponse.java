@@ -14,7 +14,6 @@ import java.util.List;
 @Builder
 public class DashboardResponse {
     private UserResponse user;
-    private Accounts account;
-    private BigDecimal balance;
+    private List<Accounts> account;
     private List<Transaction> transactions;
 }

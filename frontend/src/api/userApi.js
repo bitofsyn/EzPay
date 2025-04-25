@@ -34,7 +34,6 @@ export const updatePassword = async (newPassword) => {
 
 // 알림 설정 조회(Settings)
 export const getNotificationSettings = async (userId) => {
-    const token = localStorage.getItem("userToken");
     const res = await api.get(`/notifications/${userId}`);
     return res.data;
 };
@@ -59,7 +58,6 @@ export const updateNotificationSetting = async (userId, type, isEnabled) => {
 
 // 송금 한도 조회(Settings)
 export const getTransferLimit = async (userId) => {
-    const token = localStorage.getItem("userToken");
     const res = await api.get(`/transfer-limits/${userId}`);
     return res.data;
 };
@@ -84,7 +82,6 @@ export const updateTransferLimit = async (userId, perLimit, dailyLimit) => {
 
 // 회원 탈퇴(Settings)
 export const deleteUser = async (userId) => {
-    const token = localStorage.getItem("userToken");
     const res = await api.delete(`/users/${userId}`);
     return res.data;
 };
@@ -92,14 +89,12 @@ export const deleteUser = async (userId) => {
 
 // 사용자 정보 조회(Settings)
 export const getUserInfo = async () => {
-    const token = localStorage.getItem("userToken");
     const res = await api.get("/users/me");
     return res.data;
 }
 
 // 최근 로그인 기록 조회(Settings)
 export const getLoginHistory = async (userId) => {
-    const token = localStorage.getItem("userToken");
     const res = await api.get(`/users/${userId}/login-history`);
     return res.data;
 };
@@ -107,7 +102,6 @@ export const getLoginHistory = async (userId) => {
 
 // 대시보드(Dashboard)
 export const getDashboardInfo = async () => {
-    const token = localStorage.getItem("userToken");
     const res = await api.get("/dashboard");
     return res.data;
 };
@@ -126,11 +120,7 @@ export const getRecentTransactions = async (accountId, sort = "desc", limit = 10
 
 // 계좌 개설(createAccount)
 export const createAccount = async (accountData) => {
-    const token = localStorage.getItem("userToken");
-
     const response = await api.post("/account", accountData);
-    console.log("response : " , response);
-
     return response.data;
 };
 
@@ -148,7 +138,7 @@ export const transferMoney = async (transferData) => {
 
 
 // 계좌번호로 사용자 조회(SendMoney)
-export const getAccountOwner = async(accountNumber) => {
+export const getAccountOwner = async (accountNumber) => {
     const res = await api.get(`/account/${accountNumber}`);
     return res.data;
 }
@@ -158,3 +148,9 @@ export const getTransactionHistory = async (accountId) => {
     const res = await api.get(`/transaction/account/${accountId}`);
     return res.data;
 }
+
+
+// 대표 계좌 설정(Settings)
+export const setMainAccount = async (accountId) => {
+    return await api.patch(`/account/${accountId}/main`);
+};

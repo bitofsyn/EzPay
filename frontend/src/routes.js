@@ -10,6 +10,7 @@ import Notification from "./pages/settings/Notification";
 import TransferLimit from "./pages/settings/TransferLimit";
 import Withdraw from "./pages/settings/Withdraw";
 import LoginHistory from "./pages/settings/LoginHistory";
+import MainAccountSettings from "./pages/settings/MainAccountSettings";
 
 const AppRoutes = () => {
   return (
@@ -38,6 +39,7 @@ const AppRoutes = () => {
         <Route path="transfer-limit" element={<TransferLimit />} />
         <Route path="withdraw" element={<Withdraw />} />
         <Route path="login-history" element={<LoginHistory />} />
+        <Route path="main-account" element={<MainAccountSettings />} />
       </Route>
 
       {/* 404 */}

@@ -87,4 +87,26 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다." + accountId));
         accountRepository.delete(account);
     }
+
+    @Override
+    public void setMainAccount(String email, Long accountId) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("사용자 정보를 찾을 수 없습니다."));
+
+        List<Accounts> accounts = accountRepository.findByUser(user);
+
+        // 모든 계좌 isMain false로 초기화
+        for(Accounts account : accounts) {
+            account.setMain(false);
+        }
+
+        // 선택한 계좌만 isMain true
+        Accounts mainAccount = accounts.stream()
+                .filter(x -> x.getAccountId().equals(accountId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("선택한 계좌를 찾을 수 없습니다."));
+
+        mainAccount.setMain(true);
+        accountRepository.saveAll(accounts);
+    }
 }
