@@ -161,3 +161,35 @@ export const findEmail = async (formData) => {
     const res = await api.post("/users/find-email", formData);
     return res.data;
 };
+
+// 비밀번호 재설정 요청(FindPassword)
+export const requestPasswordReset = async (email) => {
+    const res = await api.post("/password-reset/request", { email });
+    return res.data;
+};
+
+// 비밀번호 재설정 토큰 유효성 검사(ResetPassword)
+export const validatePasswordResetToken = async (token) => {
+    return await api.get("/password-reset/validate", {
+        params: { token },
+    });
+};
+
+
+
+// 비밀번호 재설정(ResetPassword)
+export const resetPassword = async (token, newPassword) => {
+    const res = await api.put(
+        `/password-reset/reset-password`,
+        {},
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            params: {
+                newPassword,
+            },
+        }
+    );
+    return res.data;
+};

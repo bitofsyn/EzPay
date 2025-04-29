@@ -25,14 +25,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public void doFilterInternal(HttpServletRequest request,
                                  HttpServletResponse response,
                                  FilterChain chain) throws IOException, ServletException {
+
+        String uri = request.getRequestURI();
+
+        // 요청만 필터 제외: 토큰 필요 없음
+        if (uri.equals("/password-reset/request")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // 그 외는 토큰 확인 필요
         String token = getJwtFromRequest(request);
 
         if (token != null && jwtUtil.validateToken(token)) {
             String email = jwtUtil.getEmailFromToken(token);
-
-            // 권한 설정도 가능
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 

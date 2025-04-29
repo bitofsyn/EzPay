@@ -23,9 +23,8 @@ public class PasswordRequestController {
 
     // 토큰 유효성 검증
     @GetMapping("/validate")
-    public ResponseEntity<CommonResponse<String>> validatePasswordResetToken(@RequestHeader("Authorization") String tokenHeader) {
+    public ResponseEntity<CommonResponse<String>> validatePasswordResetToken(@RequestParam("token") String token) {
         try {
-            String token = tokenHeader.replace("Bearer ", "");
             boolean valid = passwordResetService.validatePasswordResetToken(token);
 
             if (valid) {

@@ -12,6 +12,8 @@ import Withdraw from "./pages/settings/Withdraw";
 import LoginHistory from "./pages/settings/LoginHistory";
 import MainAccountSettings from "./pages/settings/MainAccountSettings";
 import FindEmail from "./pages/FindEmail";
+import FindPassword from "./pages/FindPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const AppRoutes = () => {
   return (
@@ -21,6 +23,9 @@ const AppRoutes = () => {
       <Route path="/login" element={<pages.Login />} />
       <Route path="/signup" element={<pages.Signup />} />
       <Route path="/find-email" element={<FindEmail/>} />
+      <Route path="/find-password" element={<FindPassword/>} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
 
       {/* 로그인 후 접근 가능 */}
       <Route path="/dashboard" element={<PrivateRoute><pages.Dashboard /></PrivateRoute>} />
