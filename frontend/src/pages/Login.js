@@ -144,7 +144,7 @@ const Login = () => {
             className="text-gray-700 cursor-pointer hover:underline"
             onClick={() => navigate("/find-id")}
           >
-            아이디 찾기
+            이메일 찾기
           </span>
           <span className="mx-2 text-gray-400">|</span>
           <span
