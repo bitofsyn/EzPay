@@ -46,7 +46,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     public boolean validatePasswordResetToken(String token) {
         Optional<PasswordReset> request = passwordResetRepository.findByResetToken(token);
 
-        // 🔥 만료시간 체크 로직 수정
+        // 만료시간 체크 로직 수정
         return request.isPresent() && request.get().getExpirationTime().isAfter(LocalDateTime.now()) && !request.get().getUsed();
     }
 
@@ -57,7 +57,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         PasswordReset request = passwordResetRepository.findByResetToken(token)
                 .orElseThrow(() -> new CustomNotFoundException("유효하지 않은 비밀번호 재설정 토큰입니다."));
 
-        // 🔥 만료시간 및 사용 여부 체크 로직 수정
+        // 만료시간 및 사용 여부 체크 로직 수정
         if (request.getUsed()) {
             throw new IllegalArgumentException("이미 사용된 비밀번호 재설정 토큰입니다.");
         }
@@ -83,7 +83,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     }
 
     private void validatePasswordStrength(String password) {
-        // ✅ 최소 8자 이상, 숫자, 대문자, 특수문자 포함
+        // 최소 8자 이상, 숫자, 대문자, 특수문자 포함
         String passwordPattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
 
         if (!password.matches(passwordPattern)) {
