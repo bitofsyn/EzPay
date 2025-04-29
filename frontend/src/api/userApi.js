@@ -154,3 +154,10 @@ export const getTransactionHistory = async (accountId) => {
 export const setMainAccount = async (accountId) => {
     return await api.patch(`/account/${accountId}/main`);
 };
+
+
+// 이메일 찾기 (FindEmail)
+export const findEmail = async (formData) => {
+    const res = await api.post("/users/find-email", formData);
+    return res.data;
+};

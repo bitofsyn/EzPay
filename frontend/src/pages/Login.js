@@ -142,7 +142,7 @@ const Login = () => {
           <span className="mx-2 text-gray-400">|</span>
           <span
             className="text-gray-700 cursor-pointer hover:underline"
-            onClick={() => navigate("/find-id")}
+            onClick={() => navigate("/find-email")}
           >
             이메일 찾기
           </span>
