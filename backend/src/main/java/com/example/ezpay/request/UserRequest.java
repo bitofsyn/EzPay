@@ -12,11 +12,13 @@ public class UserRequest {
     private String email;
     private String password;
     private String name;
+    private String phoneNumber;
 
     public User toEntity(String encodedPassword) {
         return User.builder()
                 .name(this.name)
                 .email(this.email)
+                .phoneNumber(this.phoneNumber)
                 .password(encodedPassword)
                 .status(Status.ACTIVE)
                 .build();
