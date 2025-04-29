@@ -10,6 +10,7 @@ import com.example.ezpay.repository.user.LoginHistoryRepository;
 import com.example.ezpay.repository.user.NotificationRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
 import com.example.ezpay.repository.user.UserRepository;
+import com.example.ezpay.request.FindEmailRequest;
 import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
 import com.example.ezpay.response.UserResponse;
@@ -134,5 +135,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<LoginHistory> getRecentLoginHistory(Long userId) {
         return loginHistoryRepository.findTop10ByUser_UserIdOrderByTimestampDesc(userId);
+    }
+
+    // 이메일 찾기
+    @Override
+    @Transactional(readOnly = true)
+    public String findByEmail(FindEmailRequest request) {
+        return userRepository.findByNameAndPhoneNumber(request.getName(), request.getPhoneNumber())
+                .map(User::getEmail)
+                .orElseThrow(() -> new IllegalArgumentException("일치하는 회원이 없습니다."));
     }
 }

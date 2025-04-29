@@ -2,9 +2,11 @@ package com.example.ezpay.controller.user;
 
 import com.example.ezpay.model.user.LoginHistory;
 import com.example.ezpay.model.user.User;
+import com.example.ezpay.request.FindEmailRequest;
 import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
 import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.response.FindEmailResponse;
 import com.example.ezpay.response.LoginHistoryResponse;
 import com.example.ezpay.response.UserResponse;
 import com.example.ezpay.service.user.UserService;
@@ -130,6 +132,14 @@ public class UserController {
                 .map(LoginHistoryResponse::from)
                 .toList();
         return ResponseEntity.ok(new CommonResponse<>("success", responses, "최근 로그인 기록 조회 성공"));
+    }
+
+    // 이메일 찾기
+    @PostMapping("/find-email")
+    public ResponseEntity<FindEmailResponse> findEmail(@RequestBody FindEmailRequest request) {
+        String email = userService.findByEmail(request);
+
+        return ResponseEntity.ok(new FindEmailResponse(email));
     }
 
 }

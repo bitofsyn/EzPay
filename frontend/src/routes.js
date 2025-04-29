@@ -11,6 +11,7 @@ import TransferLimit from "./pages/settings/TransferLimit";
 import Withdraw from "./pages/settings/Withdraw";
 import LoginHistory from "./pages/settings/LoginHistory";
 import MainAccountSettings from "./pages/settings/MainAccountSettings";
+import FindEmail from "./pages/FindEmail";
 
 const AppRoutes = () => {
   return (
@@ -19,6 +20,7 @@ const AppRoutes = () => {
       <Route path="/" element={<pages.Home />} />
       <Route path="/login" element={<pages.Login />} />
       <Route path="/signup" element={<pages.Signup />} />
+      <Route path="/find-email" element={<FindEmail/>} />
 
       {/* 로그인 후 접근 가능 */}
       <Route path="/dashboard" element={<PrivateRoute><pages.Dashboard /></PrivateRoute>} />
