@@ -26,6 +26,8 @@ public class User {
     private String email;
     private String password;
     private String name;
+    @Column(name = "phone_number")
+    private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

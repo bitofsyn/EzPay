@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signup} from "../api/UserAPI";
+import { signup } from "../api/UserAPI";
 
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name : "",
-    email : "",
-    password : ""
+    name: "",
+    email: "",
+    password: "",
+    phoneNumber: "" // 🔵 추가
   });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name] : e.target.value});
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -19,17 +20,15 @@ const Signup = () => {
 
     console.log("회원 가입 정보 : ", formData);
 
-    try{
+    try {
       const response = await signup(formData);
       console.log("회원가입 성공 :", response.data);
       alert("회원가입이 완료되었습니다");
       navigate("/login");
-
     } catch (error) {
       console.log("회원가입 오류 : ", error);
-      
-      if(error.response && error.response.data && error.response.data.message) {
-        alert(`회원가입 실패: ${error.message.data.message}`);
+      if (error.response && error.response.data && error.response.data.message) {
+        alert(`회원가입 실패: ${error.response.data.message}`);
       } else {
         alert("회원가입 실패했습니다. 다시 시도해주세요.");
       }
@@ -50,7 +49,7 @@ const Signup = () => {
               placeholder="이름을 입력하세요"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-4 py-2 mt-1 border rounded-lg focus:ring-2 focus:ring-blue-500 focks:outline-none" 
+              className="w-full px-4 py-2 mt-1 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" 
               required
             />
           </div>
@@ -62,7 +61,7 @@ const Signup = () => {
               placeholder="이메일을 입력하세요"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-2 mt-1 border rounded-lg focus:ring-2 focus:ring-blue-500 focks:outline-none" 
+              className="w-full px-4 py-2 mt-1 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" 
               required
             />
           </div>
@@ -74,7 +73,19 @@ const Signup = () => {
               placeholder="비밀번호를 입력하세요"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-2 mt-1 border rounded-lg focus:ring-2 focus:ring-blue-500 focks:outline-none" 
+              className="w-full px-4 py-2 mt-1 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" 
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold">핸드폰 번호</label>
+            <input 
+              type="text" 
+              name="phoneNumber"
+              placeholder="핸드폰 번호를 입력하세요 (01012345678)"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              className="w-full px-4 py-2 mt-1 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" 
               required
             />
           </div>
@@ -87,10 +98,8 @@ const Signup = () => {
           </button>
         </form>
 
-        {/* 로그인 페이지 이동 링크 */}
         <p className="text-center text-gray-600 mt-4">
-          이미 계정이 있나요? {" "}
-
+          이미 계정이 있나요?{" "}
           <span 
             className="text-blue-600 font-semibold cursor-pointer hover:underline"
             onClick={() => navigate("/login")}
