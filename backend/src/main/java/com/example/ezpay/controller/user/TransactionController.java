@@ -28,7 +28,8 @@ public class TransactionController {
     public ResponseEntity<CommonResponse<String>> transfer(@RequestBody TransferRequest transferRequest) {
         try {
             // 💡 Kafka를 사용하지 않고, 즉시 송금 처리
-            transactionService.processTransfer(new TransferEvent(transferRequest.getFromAccountId(), transferRequest.getToAccountId(), transferRequest.getAmount()));
+            transactionService.processTransfer(new TransferEvent(transferRequest.getFromAccountId(), transferRequest.getToAccountId(), transferRequest.getAmount(),
+                    transferRequest.getMemo(), transferRequest.getCategory()));
             return ResponseEntity.ok(new CommonResponse<>("success", "송금 완료", "TRANSFER_SUCCESS"));
         } catch (IllegalArgumentException | CustomNotFoundException | TransferLimitExceededException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

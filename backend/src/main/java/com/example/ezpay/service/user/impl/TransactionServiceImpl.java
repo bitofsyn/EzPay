@@ -1,5 +1,6 @@
 package com.example.ezpay.service.user.impl;
 
+import com.example.ezpay.model.user.TrainingData;
 import com.example.ezpay.exception.CustomNotFoundException;
 import com.example.ezpay.exception.TransferLimitExceededException;
 import com.example.ezpay.kafka.TransactionProducer;
@@ -10,8 +11,10 @@ import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.model.user.TransferLimit;
 import com.example.ezpay.repository.user.AccountRepository;
+import com.example.ezpay.repository.user.TrainingDataRepository;
 import com.example.ezpay.repository.user.TransactionRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
+import com.example.ezpay.request.TransferRequest;
 import com.example.ezpay.response.AccountOwnerResponse;
 import com.example.ezpay.service.user.ErrorLogService;
 import com.example.ezpay.service.user.TransactionService;
@@ -33,13 +36,15 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionProducer transactionProducer;
     private final TransferLimitRepository transferLimitRepository;
+    private final TrainingDataRepository trainingDataRepository;
     private final ErrorLogService errorLogService;
 
     // 송금 요청 (kafka 이벤트 발행)
     @Override
-    public void transferMoney(Long fromAccountId, Long toAccountId, BigDecimal amount) {
+    public void transferMoney(TransferRequest transferRequest) {
         // 1. 송금 이벤트 객체 생성
-        TransferEvent event = new TransferEvent(fromAccountId, toAccountId, amount);
+        TransferEvent event = new TransferEvent(transferRequest.getFromAccountId(), transferRequest.getToAccountId(), transferRequest.getAmount(),
+                transferRequest.getMemo(), transferRequest.getCategory());
 
         // 2. Kafka에 이벤트 발행
         transactionProducer.sendTransferEvent(event);
@@ -63,12 +68,12 @@ public class TransactionServiceImpl implements TransactionService {
                 throw new IllegalArgumentException("잔액 부족으로 송금할 수 없습니다.");
             }
 
-            // ✅ 1회 송금 한도 체크
+            // 1회 송금 한도 체크
             if (event.getAmount().compareTo(transferLimit.getPerTransactionLimit()) > 0) {
                 throw new TransferLimitExceededException("1회 송금 한도를 초과했습니다.");
             }
 
-            // ✅ 하루 총 송금 한도 체크(QueryDSL)
+            // 하루 총 송금 한도 체크(QueryDSL)
             BigDecimal todayTotalTransfers = transactionRepository.sumTodayTransactionBySender(fromAccount.getAccountId(), LocalDate.now());
             if (todayTotalTransfers == null) {
                 todayTotalTransfers = BigDecimal.ZERO;
@@ -78,25 +83,32 @@ public class TransactionServiceImpl implements TransactionService {
                 throw new TransferLimitExceededException("하루 송금 한도를 초과했습니다.");
             }
 
-            // ✅ 잔액 체크
+            // 잔액 체크
             if (fromAccount.getBalance().compareTo(event.getAmount()) <= 0) {
                 throw new IllegalArgumentException("잔액 부족으로 송금할 수 없습니다.");
             }
 
-            // ✅ 송금 처리
+            // 송금 처리
             fromAccount.setBalance(fromAccount.getBalance().subtract(event.getAmount()));
             toAccount.setBalance(toAccount.getBalance().add(event.getAmount()));
 
             accountRepository.save(fromAccount);
             accountRepository.save(toAccount);
 
-            // ✅ 거래 기록 저장
+            // 거래 기록 저장
             Transaction transaction = new Transaction();
             transaction.setSenderAccount(fromAccount);
             transaction.setReceiverAccount(toAccount);
             transaction.setAmount(event.getAmount());
             transaction.setStatus(TransactionStatus.SUCCESS);
             transaction.setDescription("송금 완료");
+
+            // training_data에 저장
+            TrainingData trainingData = new TrainingData();
+            trainingData.setMemo(event.getMemo());
+            trainingData.setReceiverName(toAccount.getUser().getName());
+            trainingData.setCategory(event.getCategory());
+            trainingDataRepository.save(trainingData);
 
             return transactionRepository.save(transaction);
         }catch (CustomNotFoundException | TransferLimitExceededException | IllegalArgumentException e) {
