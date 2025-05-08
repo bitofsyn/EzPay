@@ -29,11 +29,10 @@ const SendMoney = () => {
                 console.error("계좌 목록 불러오기 실패", err);
             }
         };
-
         fetchAccounts();
     }, []);
 
-    // 메모 변경 시 자동 카테고리 예측 요청
+    // 메모 변경 시 자동 카테고리 예측
     useEffect(() => {
         const predictCategory = async () => {
             if (memo.length > 1) {
@@ -41,18 +40,18 @@ const SendMoney = () => {
                     const res = await fetch("http://localhost:5001/predict", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ text: memo + " " + receiverName }),
+                        body: JSON.stringify({ text: memo }),
                     });
                     const result = await res.json();
-                    setCategory(result.category); // 예측된 카테고리 자동 반영
+                    console.log("[예측 결과]", result);
+                    setCategory(result.category);
                 } catch (error) {
                     console.error("카테고리 예측 실패", error);
                 }
             }
         };
-
         predictCategory();
-    }, [memo, receiverName]);
+    }, [memo]);
 
     const handleCheckAccount = async () => {
         try {
@@ -95,7 +94,6 @@ const SendMoney = () => {
                 memo,
                 category,
             };
-
             await transferMoney(transferData);
             alert("송금 완료!");
             navigate(`/account/${fromAccountId}`);
@@ -114,12 +112,7 @@ const SendMoney = () => {
                 "잔액이 부족합니다.": "출금 계좌에 잔액이 부족합니다.",
                 "계좌가 존재하지 않습니다.": "존재하지 않는 계좌입니다.",
             };
-
-            const errorMessage =
-                knownMessages[err.response?.data?.message] ||
-                err.response?.data?.message ||
-                "송금에 실패했습니다. 다시 시도해주세요.";
-
+            const errorMessage = knownMessages[err.response?.data?.message] || err.response?.data?.message || "송금에 실패했습니다. 다시 시도해주세요.";
             setError(errorMessage);
             console.error("송금 실패:", errorMessage);
         }
