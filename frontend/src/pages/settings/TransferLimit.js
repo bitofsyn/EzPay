@@ -11,7 +11,6 @@ const TransferLimit = () => {
         const fetchLimit = async () => {
             try {
                 const userData = JSON.parse(localStorage.getItem("user"));
-                console.log("userData :", userData);
                 if (!userData || !userData.userId) {
                     toast.error("로그인 정보가 없습니다. 다시 로그인 해주세요.");
                     return;
@@ -20,7 +19,6 @@ const TransferLimit = () => {
 
 
                 const res = await getTransferLimit(userData.userId);
-                console.log("res : " + res);
                 setPerLimit(res.data.perTransactionLimit);
                 setDailyLimit(res.data.dailyLimit);
             } catch (err) {

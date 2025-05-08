@@ -60,7 +60,7 @@ const CalendarPage = () => {
             selectedDate && day.isSame(selectedDate, "day") ? "bg-blue-100 text-black" : ""
           }`}
           onClick={() => setSelectedDate(cloneDay)}
-          style={{ width: "48px", height: "48px" }} // ✅ 고정
+          style={{ width: "48px", height: "48px" }} 
         >
           <div
             className={`text-sm ${
