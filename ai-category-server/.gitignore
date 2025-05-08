@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtualenv
+.venv/
+env/
+venv/
+
+# VSCode / PyCharm
+.vscode/
+.idea/
+
+# 환경 변수
+config/.env
+
+# 모델 파일
+models/*.pkl
+
+# 로그 파일
+*.log
+
+# Mac/Linux/Windows
+.DS_Store
+Thumbs.db
