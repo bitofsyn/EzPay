@@ -31,18 +31,18 @@ const Login = () => {
 
       // 로그인 성공 시 이동
       if (decoded.userId !== undefined && decoded.userId !== null) {
-      
+
         // storage 먼저 저장
-        if (keepLogin) {
-          localStorage.setItem("userToken", token);
-        } else {
-          sessionStorage.setItem("userToken", token);
-        }
-        localStorage.setItem("user", JSON.stringify(decoded));
-      
+      if (keepLogin) {
+        localStorage.setItem("userToken", token);
+      } else {
+        sessionStorage.setItem("userToken", token);
+      }
+      localStorage.setItem("user", JSON.stringify(decoded));
+
         // 저장이 끝난 뒤 navigate 호출
         setTimeout(() => {
-          navigate("/dashboard");
+        navigate("/dashboard");
         }, 0); // 바로 다음 tick에 이동
       }
       

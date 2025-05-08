@@ -2,6 +2,7 @@ package com.example.ezpay.service.user;
 
 import com.example.ezpay.model.kafka.TransferEvent;
 import com.example.ezpay.model.user.Transaction;
+import com.example.ezpay.request.TransferRequest;
 import com.example.ezpay.response.AccountOwnerResponse;
 
 import java.math.BigDecimal;
@@ -9,7 +10,7 @@ import java.util.List;
 
 public interface TransactionService {
     // kafka 이벤트 발생
-    void transferMoney(Long fromAccountId, Long toAccountId, BigDecimal amount);
+    void transferMoney(TransferRequest transferRequest);
 
     // 송금 처리 및 거래 기록 저장
     Transaction processTransfer(TransferEvent transferEvent);
