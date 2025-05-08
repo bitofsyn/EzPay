@@ -26,7 +26,6 @@ const AppRoutes = () => {
       <Route path="/find-password" element={<FindPassword/>} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-
       {/* 로그인 후 접근 가능 */}
       <Route path="/dashboard" element={<PrivateRoute><pages.Dashboard /></PrivateRoute>} />
       <Route path="/send" element={<PrivateRoute><pages.SendMoney /></PrivateRoute>} />
