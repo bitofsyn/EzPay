@@ -10,6 +10,8 @@ const SendMoney = () => {
     const [accounts, setAccounts] = useState([]);
     const [toAccountNumber, setToAccountNumber] = useState("");
     const [amount, setAmount] = useState("");
+    const [memo, setMemo] = useState("");
+    const [category, setCategory] = useState("기타");
     const [receiverName, setReceiverName] = useState("");
     const [receiverAccountId, setReceiverAccountId] = useState(null);
     const [error, setError] = useState("");
@@ -30,6 +32,27 @@ const SendMoney = () => {
 
         fetchAccounts();
     }, []);
+
+    // 메모 변경 시 자동 카테고리 예측 요청
+    useEffect(() => {
+        const predictCategory = async () => {
+            if (memo.length > 1) {
+                try {
+                    const res = await fetch("http://localhost:5001/predict", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: memo + " " + receiverName }),
+                    });
+                    const result = await res.json();
+                    setCategory(result.category); // 예측된 카테고리 자동 반영
+                } catch (error) {
+                    console.error("카테고리 예측 실패", error);
+                }
+            }
+        };
+
+        predictCategory();
+    }, [memo, receiverName]);
 
     const handleCheckAccount = async () => {
         try {
@@ -69,14 +92,19 @@ const SendMoney = () => {
                 fromAccountId,
                 toAccountId: receiverAccountId,
                 amount: parsedAmount,
+                memo,
+                category,
             };
 
             await transferMoney(transferData);
             alert("송금 완료!");
-            navigate(`/account/${fromAccountId}`); // 계좌 상세 페이지로 이동
+            navigate(`/account/${fromAccountId}`);
 
+            // 초기화
             setToAccountNumber("");
             setAmount("");
+            setMemo("");
+            setCategory("기타");
             setReceiverName("");
             setReceiverAccountId(null);
             setError("");
@@ -144,6 +172,29 @@ const SendMoney = () => {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                 />
+
+                <Input
+                    label="메모"
+                    type="text"
+                    placeholder="송금 메모 입력"
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                />
+
+                <div className="space-y-2">
+                    <label className="text-sm text-gray-600 font-medium">카테고리 선택</label>
+                    <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
+                    >
+                        <option value="식비">식비</option>
+                        <option value="교통">교통</option>
+                        <option value="주거">주거</option>
+                        <option value="가족">가족</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
 
                 {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
 
