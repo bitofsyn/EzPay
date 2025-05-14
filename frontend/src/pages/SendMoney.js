@@ -33,11 +33,12 @@ const SendMoney = () => {
     }, []);
 
     // 메모 변경 시 자동 카테고리 예측
+    // 메모 변경 시 자동 카테고리 예측
     useEffect(() => {
         const predictCategory = async () => {
             if (memo.length > 1) {
                 try {
-                    const res = await fetch("http://localhost:5001/predict", {
+                    const res = await fetch("http://localhost:5001/predict-prob", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ text: memo }),
@@ -45,6 +46,11 @@ const SendMoney = () => {
                     const result = await res.json();
                     console.log("[예측 결과]", result);
                     setCategory(result.category);
+
+                    // confidence 활용 가능 (예: 0.4 미만이면 사용자 선택 유도)
+                    if (result.confidence < 0.4) {
+                        console.warn("신뢰도 낮음: 사용자 수동 선택 유도 필요");
+                    }
                 } catch (error) {
                     console.error("카테고리 예측 실패", error);
                 }
@@ -52,6 +58,7 @@ const SendMoney = () => {
         };
         predictCategory();
     }, [memo]);
+
 
     const handleCheckAccount = async () => {
         try {
