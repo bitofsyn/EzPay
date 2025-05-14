@@ -25,6 +25,6 @@ def predict_with_confidence(text: str, threshold : float = 0.4) -> dict:
         }
 
     return {
-        "category": model.classes_[max_idx],
+        "category": predicted_category,
         "confidence": float(proba[max_idx])  # JSON 직렬화 위해 float 변환
     }
