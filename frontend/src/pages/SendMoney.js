@@ -12,6 +12,7 @@ const SendMoney = () => {
     const [amount, setAmount] = useState("");
     const [memo, setMemo] = useState("");
     const [category, setCategory] = useState("기타");
+    const [confidence, setConfidence] = useState(0); // 예측 신뢰도
     const [receiverName, setReceiverName] = useState("");
     const [receiverAccountId, setReceiverAccountId] = useState(null);
     const [error, setError] = useState("");
@@ -33,10 +34,9 @@ const SendMoney = () => {
     }, []);
 
     // 메모 변경 시 자동 카테고리 예측
-    // 메모 변경 시 자동 카테고리 예측
     useEffect(() => {
         const predictCategory = async () => {
-            if (memo.length > 1) {
+            if (memo.trim().length > 1) {
                 try {
                     const res = await fetch("http://localhost:5001/predict-prob", {
                         method: "POST",
@@ -45,20 +45,22 @@ const SendMoney = () => {
                     });
                     const result = await res.json();
                     console.log("[예측 결과]", result);
-                    setCategory(result.category);
 
-                    // confidence 활용 가능 (예: 0.4 미만이면 사용자 선택 유도)
                     if (result.confidence < 0.4) {
-                        console.warn("신뢰도 낮음: 사용자 수동 선택 유도 필요");
+                        setCategory("기타");
+                    } else {
+                        setCategory(result.category);
                     }
+
+                    setConfidence(result.confidence);
                 } catch (error) {
                     console.error("카테고리 예측 실패", error);
+                    Sentry.captureException(error);
                 }
             }
         };
         predictCategory();
     }, [memo]);
-
 
     const handleCheckAccount = async () => {
         try {
@@ -113,6 +115,7 @@ const SendMoney = () => {
             setReceiverName("");
             setReceiverAccountId(null);
             setError("");
+            setConfidence(0);
         } catch (err) {
             const knownMessages = {
                 "송금 한도 정보를 찾을 수 없습니다.": "송금 한도 설정이 되어 있지 않습니다. 관리자에게 문의해주세요.",
@@ -122,6 +125,7 @@ const SendMoney = () => {
             const errorMessage = knownMessages[err.response?.data?.message] || err.response?.data?.message || "송금에 실패했습니다. 다시 시도해주세요.";
             setError(errorMessage);
             console.error("송금 실패:", errorMessage);
+            Sentry.captureException(err);
         }
     };
 
@@ -181,7 +185,7 @@ const SendMoney = () => {
                     onChange={(e) => setMemo(e.target.value)}
                 />
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                     <label className="text-sm text-gray-600 font-medium">카테고리 선택</label>
                     <select
                         value={category}
@@ -194,6 +198,11 @@ const SendMoney = () => {
                         <option value="가족">가족</option>
                         <option value="기타">기타</option>
                     </select>
+                    {confidence > 0 && (
+                        <p className="text-xs text-gray-500">
+                            AI 추천 신뢰도: {(confidence * 100).toFixed(1)}%
+                        </p>
+                    )}
                 </div>
 
                 {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
