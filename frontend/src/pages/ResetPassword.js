@@ -22,6 +22,7 @@ const ResetPassword = () => {
             } catch (err) {
                 setIsTokenValid(false);
                 setError("유효하지 않거나 만료된 토큰입니다.");
+                Sentry.captureException(err);
             } finally {
                 setLoading(false);
             }
@@ -64,6 +65,7 @@ const ResetPassword = () => {
             }, 2500);
         } catch (err) {
             setError(err.response?.data?.message || "비밀번호 변경에 실패했습니다.");
+            Sentry.captureException(err);
         }
     };
 
