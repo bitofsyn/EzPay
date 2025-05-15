@@ -65,3 +65,10 @@ logging:
               BasicBinder: TRACE  # 바인딩 값 출력
       springframework:
         security: DEBUG  # Spring Security 디버그 레벨
+
+
+sentry:
+  dsn: https://9f7f38650127a9230745a97cfc007353@o4509325284802560.ingest.us.sentry.io/4509325286244352
+  # Add data like request headers and IP for users,
+  # see https://docs.sentry.io/platforms/java/guides/spring-boot/data-management/data-collected/ for more info
+  send-default-pii: true

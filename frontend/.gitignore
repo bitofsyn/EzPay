@@ -49,3 +49,6 @@ Thumbs.db
 .postcss.config.js
 .tailwind.config.js
 .gitignore
+
+# Sentry Config File
+.sentryclirc

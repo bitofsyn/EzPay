@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.2'
     id 'io.spring.dependency-management' version '1.1.7'
+    id "io.sentry.jvm.gradle" version "5.5.0"
 }
 
 group = 'com.example'
@@ -25,7 +26,7 @@ repositories {
 }
 
 dependencies {
-    // ✅ JPA & Spring Data 관련 라이브러리
+    // JPA & Spring Data 관련 라이브러리
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -41,28 +42,28 @@ dependencies {
     // Password 암호화 (BCrypt)
     implementation 'org.springframework.security:spring-security-crypto:5.6.1'
 
-    // ✅ Kafka 관련 라이브러리
+    // Kafka 관련 라이브러리
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.apache.kafka:kafka-streams'
 
-    // ✅ Database 관련 라이브러리
+    // Database 관련 라이브러리
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.postgresql:postgresql' // PostgreSQL
     implementation 'com.h2database:h2' // H2 DB (테스트용)
 
-    // ✅ QueryDSL 최신 버전 (5.0.0, Jakarta 버전)
+    // QueryDSL 최신 버전 (5.0.0, Jakarta 버전)
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'
 
-    // ✅ QueryDSL 자동 생성 클래스 관련 설정
+    // QueryDSL 자동 생성 클래스 관련 설정
     annotationProcessor 'jakarta.persistence:jakarta.persistence-api:3.1.0'
     annotationProcessor 'jakarta.annotation:jakarta.annotation-api:2.1.0'
 
-    // ✅ Lombok
+    // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    // ✅ 테스트 관련 라이브러리
+    // 테스트 관련 라이브러리
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
@@ -79,6 +80,9 @@ dependencies {
     // 개발 중 자동 리로드 지원
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     implementation 'org.postgresql:postgresql:42.6.0'
+
+    // sentry 모니터링
+    implementation 'io.sentry:sentry-spring-boot-starter:6.0.0'
 }
 
 tasks.named('bootBuildImage') {
@@ -110,4 +114,11 @@ tasks.withType(Test).configureEach {
 tasks.named('bootJar') {
     archiveFileName = 'app.jar'
     mainClass = 'com.example.ezpay.EzPayApplication' // ✅ 실제 Application 클래스 경로로 수정
+}
+
+sentry {
+    includeSourceContext = true
+    org = "soyounjeong"
+    projectName = "java-spring-boot"
+    authToken = System.getenv("SENTRY_AUTH_TOKEN")
 }
