@@ -3,6 +3,7 @@ import Button from "../components/Button";
 import Input from "../components/Input";
 import { getAccountOwner, transferMoney, getMyAccounts } from "../api/UserAPI";
 import { useNavigate } from "react-router-dom";
+import * as Sentry from "@sentry/react";
 
 const SendMoney = () => {
     const navigate = useNavigate();

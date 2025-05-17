@@ -5,8 +5,6 @@
   "dependencies": {
     "@headlessui/react": "^2.2.2",
     "@sentry/cli": "^2.45.0",
-    "@sentry/react": "^9.19.0",
-    "@sentry/tracing": "^7.120.3",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
@@ -32,10 +30,10 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && npm run sentry:sourcemaps",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org soyounjeong --project javascript-react ./out && sentry-cli sourcemaps upload --org soyounjeong --project javascript-react ./out"
+    "sentry:sourcemaps": "sentry-cli sourcemaps upload --org soyounjeong --project javascript-react ./build"
   },
   "eslintConfig": {
     "extends": [

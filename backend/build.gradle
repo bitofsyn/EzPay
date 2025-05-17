@@ -116,9 +116,14 @@ tasks.named('bootJar') {
     mainClass = 'com.example.ezpay.EzPayApplication' // ✅ 실제 Application 클래스 경로로 수정
 }
 
-sentry {
-    includeSourceContext = true
-    org = "soyounjeong"
-    projectName = "java-spring-boot"
-    authToken = System.getenv("SENTRY_AUTH_TOKEN")
-}
+//sentry {
+//    includeSourceContext = true
+//    org = "soyounjeong"
+//    projectName = "java-spring-boot"
+//    authToken = System.getenv("SENTRY_AUTH_TOKEN")
+//
+//    autoInstallation {
+//        enabled.set(true)
+//        sentryVersion.set("8.11.1")
+//    }
+//}

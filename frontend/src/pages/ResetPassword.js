@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { resetPassword, validatePasswordResetToken } from "../api/UserAPI";
+import * as Sentry from "@sentry/react";
 
 const ResetPassword = () => {
     const [newPassword, setNewPassword] = useState("");
