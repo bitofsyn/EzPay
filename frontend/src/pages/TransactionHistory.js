@@ -22,6 +22,7 @@ const TransactionHistory = () => {
           setMyAccountNumber(account.accountNumber);
 
           const txRes = await getTransactionHistory(account.accountId);
+          console.log("txRes : " + txRes);
           if (txRes.status === "success") {
             setTransactions(txRes.data);
 
