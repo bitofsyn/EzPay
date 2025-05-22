@@ -22,17 +22,23 @@ const SendMoney = () => {
         const fetchAccounts = async () => {
             try {
                 const res = await getMyAccounts();
-                const accountList = res.data;
+                let accountList = res.data;
+
+                // ✅ 대표 계좌가 맨 앞에 오도록 정렬
+                accountList.sort((a, b) => (b.main === true ? 1 : -1));
+
                 setAccounts(accountList);
-                if (accountList.length > 0) {
-                    setFromAccountId(accountList[0].accountId);
-                }
+
+                // ✅ 대표 계좌로 초기 설정
+                const mainAccount = accountList.find(acc => acc.main) || accountList[0];
+                setFromAccountId(mainAccount.accountId);
             } catch (err) {
                 console.error("계좌 목록 불러오기 실패", err);
             }
         };
         fetchAccounts();
     }, []);
+
 
     // 메모 변경 시 자동 카테고리 예측
     useEffect(() => {
