@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getMyAccounts, getTransactionHistory } from "../api/UserAPI";
-import { LineChart, Line, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  Tooltip,
+  ResponsiveContainer,
+  YAxis,
+  XAxis,
+} from "recharts";
 import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import CountUp from "react-countup";
 
@@ -16,20 +23,39 @@ const AccountDetail = () => {
     const fetchData = async () => {
       try {
         const accounts = await getMyAccounts();
-        const found = accounts.data.find((acc) => acc.accountId === parseInt(id));
+        const found = accounts.data.find(
+          (acc) => acc.accountId === parseInt(id)
+        );
         setAccount(found);
 
         const tx = await getTransactionHistory(parseInt(id));
         const sortedTx = [...tx.data].sort(
           (a, b) => new Date(a.transactionDate) - new Date(b.transactionDate)
         );
-        setTransactions(sortedTx);
 
-        const chart = sortedTx.map((tx, idx) => ({
-          name: idx + 1,
-          amount: tx.balanceAfterTransaction || 0,
-        }));
-        setChartData(chart);
+        setTransactions([...sortedTx].reverse()); // 최신순으로 보여줌
+
+        // 잔액 그래프 계산
+        let runningBalance = found.balance;
+        const reversed = [...sortedTx].reverse();
+
+        const reversedChart = reversed.map((tx) => {
+          if (tx.senderAccount.accountId === found.accountId) {
+            runningBalance += tx.amount; // 내가 보낸 경우: 이전 잔액은 더 커야 함
+          } else {
+            runningBalance -= tx.amount; // 내가 받은 경우: 이전 잔액은 더 작음
+          }
+          return {
+            date: new Date(tx.transactionDate).toLocaleDateString("ko-KR", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            }),
+            balance: runningBalance,
+          };
+        });
+
+        setChartData(reversedChart.reverse());
       } catch (err) {
         console.error("계좌 상세 조회 실패", err);
       }
@@ -45,31 +71,61 @@ const AccountDetail = () => {
     );
   }
 
+  const formatAccountNumber = (number) => {
+    if (!number || number.length < 10) return number;
+    return `${number.slice(0, 2)}-${number.slice(2, 6)}-${number.slice(6)}`;
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-6">
-      {/* 상단 정보 카드 */}
+      {/* 상단 카드 */}
       <div className="bg-white shadow-md rounded-2xl p-6 w-full max-w-lg">
-        {/* 수정된 flex 구조 */}
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold text-slate-800">{account.bankName}</h2>
-            <p className="text-sm text-gray-400">{account.accountNumber}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-slate-900">
-              <CountUp end={account.balance} duration={1.5} separator="," /> 원
+            <h2 className="text-2xl font-bold text-slate-800">
+              {account.bankName}
+            </h2>
+            <p className="text-sm text-gray-400">
+              {formatAccountNumber(account.accountNumber)}
             </p>
           </div>
+          <p className="text-2xl font-bold text-slate-900">
+            <CountUp end={account.balance} duration={1.5} separator="," /> 원
+          </p>
         </div>
 
-        {/* 그래프 */}
+        {/* 잔액 그래프 */}
         <div className="w-full h-40 mt-6">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <Tooltip formatter={(value) => `${value.toLocaleString()} 원`} />
-              <Line type="monotone" dataKey="amount" stroke="#38bdf8" strokeWidth={2} dot={false} />
+              {/* 날짜 기준 x축 추가 */}
+              <XAxis dataKey="date" hide />
+
+              <YAxis
+                domain={
+                  chartData.length
+                    ? [
+                      Math.min(...chartData.map((d) => d.balance)) - 5000,
+                      Math.max(...chartData.map((d) => d.balance)) + 5000,
+                    ]
+                    : [0, 100000]
+                }
+                hide
+              />
+              <Tooltip
+                labelFormatter={(label) => `날짜: ${label}`}
+                formatter={(value) => [`잔액: ${value.toLocaleString()} 원`]}
+              />
+              <Line
+                type="monotone"
+                dataKey="balance"
+                stroke="#38bdf8"
+                strokeWidth={2}
+                dot={false}
+              />
             </LineChart>
           </ResponsiveContainer>
+
         </div>
       </div>
 
@@ -79,7 +135,7 @@ const AccountDetail = () => {
         {transactions.length > 0 ? (
           <div className="space-y-4">
             {transactions.map((tx) => {
-              const isSent = tx.type === "WITHDRAW";
+              const isSent = tx.senderAccount.accountId === account.accountId;
               return (
                 <div
                   key={tx.transactionId}
@@ -92,13 +148,22 @@ const AccountDetail = () => {
                       <ArrowDownCircle className="text-sky-500" size={20} />
                     )}
                     <div>
-                      <p className="text-sm font-semibold text-gray-700">{isSent ? "출금" : "입금"}</p>
-                      <p className="text-xs text-gray-400">{new Date(tx.transactionDate).toLocaleDateString()}</p>
+                      <p className="text-sm font-semibold text-gray-700">
+                        {isSent ? "출금" : "입금"}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(tx.transactionDate).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
-                  <div className={`text-base font-bold ${isSent ? "text-rose-500" : "text-sky-600"}`}>
-                    {(isSent ? "-" : "+") + Number(tx.amount).toLocaleString()} 원
-                  </div>
+                  <p
+                    className={`text-base font-bold ${isSent ? "text-rose-500" : "text-sky-600"
+                      }`}
+                  >
+                    {(isSent ? "-" : "+") +
+                      Number(tx.amount).toLocaleString()}{" "}
+                    원
+                  </p>
                 </div>
               );
             })}
@@ -108,7 +173,7 @@ const AccountDetail = () => {
         )}
       </div>
 
-      {/* 대시보드 이동 버튼 */}
+      {/* 대시보드 이동 */}
       <button
         onClick={() => navigate("/dashboard")}
         className="mt-8 bg-gray-700 text-white font-semibold py-2 px-6 rounded-xl hover:bg-gray-800"

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getTransactionHistory, getMyAccounts } from "../api/UserAPI";
-import { LineChart, Line, Tooltip, ResponsiveContainer, YAxis } from "recharts";
 import { ArrowDownCircle, ArrowUpCircle, Copy } from "lucide-react";
 import Button from "../components/Button";
 
@@ -11,35 +10,29 @@ const TransactionHistory = () => {
   const [myAccountNumber, setMyAccountNumber] = useState("");
   const [filterType, setFilterType] = useState("전체");
   const [dateFilter, setDateFilter] = useState("전체");
-  const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
         const accountRes = await getMyAccounts();
-        if (accountRes.status === "success" && accountRes.data.length > 0) {
-          const account = accountRes.data[0];
-          setMyAccountNumber(account.accountNumber);
+        console.log("accountRes : ", accountRes.data);
 
-          const txRes = await getTransactionHistory(account.accountId);
-          console.log("txRes : " + txRes);
+        if (accountRes.status === "success" && accountRes.data.length > 0) {
+          const mainAccount = accountRes.data.find(acc => acc.main === true) || accountRes.data[0];
+          setMyAccountNumber(mainAccount.accountNumber);
+
+          const txRes = await getTransactionHistory(mainAccount.accountId);
+          console.log("txRes : ", txRes);
+
           if (txRes.status === "success") {
             setTransactions(txRes.data);
-
-            // 차트 데이터 준비
-            const chart = txRes.data
-              .sort((a, b) => new Date(a.transactionDate) - new Date(b.transactionDate))
-              .map((tx, idx) => ({
-                name: idx + 1,
-                amount: tx.balanceAfterTransaction || 0,
-              }));
-            setChartData(chart);
           }
         }
       } catch (err) {
         console.error("거래 내역 조회 실패:", err);
       }
     };
+
     fetchTransactions();
   }, []);
 
@@ -73,7 +66,12 @@ const TransactionHistory = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "short" });
+    return date.toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    });
   };
 
   const formatAccountNumber = (accountNumber) => {
@@ -112,24 +110,6 @@ const TransactionHistory = () => {
           <option value="3개월">최근 3개월</option>
           <option value="6개월">최근 6개월</option>
         </select>
-      </div>
-
-      {/* 소형 잔액 그래프 */}
-      <div className="w-full max-w-lg h-48 mt-8 bg-white shadow rounded-2xl p-4">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <YAxis domain={['dataMin - 50000', 'dataMax + 50000']} hide />
-            <Tooltip formatter={(value) => `${value.toLocaleString()} 원`} />
-            <Line
-              type="monotone"
-              dataKey="amount"
-              stroke="#38bdf8"
-              strokeWidth={3}
-              dot={false}
-              activeDot={{ r: 5 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
       </div>
 
       {/* 거래 리스트 */}
