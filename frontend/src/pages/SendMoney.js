@@ -24,12 +24,12 @@ const SendMoney = () => {
                 const res = await getMyAccounts();
                 let accountList = res.data;
 
-                // ✅ 대표 계좌가 맨 앞에 오도록 정렬
+                // 대표 계좌가 맨 앞에 오도록 정렬
                 accountList.sort((a, b) => (b.main === true ? 1 : -1));
 
                 setAccounts(accountList);
 
-                // ✅ 대표 계좌로 초기 설정
+                // 대표 계좌로 초기 설정
                 const mainAccount = accountList.find(acc => acc.main) || accountList[0];
                 setFromAccountId(mainAccount.accountId);
             } catch (err) {
