@@ -25,8 +25,12 @@ const TransactionHistory = () => {
           console.log("txRes : ", txRes);
 
           if (txRes.status === "success") {
-            setTransactions(txRes.data);
+            const sorted = [...txRes.data].sort(
+              (a, b) => new Date(b.transactionDate) - new Date(a.transactionDate)
+            );
+            setTransactions(sorted);
           }
+
         }
       } catch (err) {
         console.error("거래 내역 조회 실패:", err);
@@ -41,7 +45,7 @@ const TransactionHistory = () => {
 
     if (filterType !== "전체") {
       if (filterType === "입금" && tx.receiverAccount.accountNumber !== myAccountNumber) isValid = false;
-      if (filterType === "송금" && tx.senderAccount.accountNumber !== myAccountNumber) isValid = false;
+      if (filterType === "출금" && tx.senderAccount.accountNumber !== myAccountNumber) isValid = false;
     }
 
     const transactionDate = new Date(tx.transactionDate);
@@ -97,7 +101,7 @@ const TransactionHistory = () => {
         >
           <option value="전체">전체</option>
           <option value="입금">입금</option>
-          <option value="송금">송금</option>
+          <option value="출금">출금</option>
         </select>
 
         <select
@@ -132,7 +136,7 @@ const TransactionHistory = () => {
                     <ArrowDownCircle className="text-sky-500" />
                   )}
                   <div>
-                    <p className="font-semibold text-slate-800">{isSent ? "송금" : "입금"}</p>
+                    <p className="font-semibold text-slate-800">{isSent ? "출금" : "입금"}</p>
                     <div className="flex items-center space-x-2 mt-1">
                       <p className="text-xs text-gray-500">{formatAccountNumber(targetAccount)}</p>
                       <Copy
