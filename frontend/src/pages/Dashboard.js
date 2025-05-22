@@ -143,7 +143,7 @@ const Dashboard = () => {
                 return (
                   <li key={index} className="p-3 border rounded-lg bg-gray-50 flex justify-between items-center hover:shadow-sm">
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{isSent ? "송금" : "입금"}</p>
+                      <p className="text-sm font-medium text-gray-800">{isSent ? "출금" : "입금"}</p>
                       <p className="text-xs text-gray-500">
                         {new Date(tx.transactionDate).toLocaleString()}
                       </p>
