@@ -4,25 +4,27 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Virtualenv
+# Virtual Environments
 .venv/
 env/
 venv/
 
-# VSCode / PyCharm
+# IDE / Editor
 .vscode/
 .idea/
 
-# 환경 변수
+# Environment files (sensitive)
 config/.env
 
-# 모델 파일
+# Model files (large binaries)
 models/*.pkl
 
-# 로그 파일
+# Log files
 *.log
 
-# Mac/Linux/Windows
+# OS-specific files
 .DS_Store
 Thumbs.db
+
+# Python version file (local use only)
 .python-version
