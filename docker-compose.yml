@@ -9,7 +9,8 @@ services:
       - "8080:8080"
     env_file:
       - backend/.env
-#    depends_on:
+    depends_on:
+      - ai-category
 #      postgres:
 #        condition: service_healthy
     networks:
@@ -53,6 +54,18 @@ services:
 #      retries: 5
 #    networks:
 #      - my_network
+  ai-category:
+    build:
+      context: ./ai-category-server
+      dockerfile: Dockerfile
+    restart: always
+    container_name: ai-category
+    ports:
+      - "8000:8000"
+    env_file:
+      - ai-category-server/config/.env
+    networks:
+      - my_network
 
   kafka:
     image: confluentinc/cp-kafka:7.5.1
