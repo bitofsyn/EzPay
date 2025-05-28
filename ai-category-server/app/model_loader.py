@@ -1,6 +1,6 @@
 import joblib
 import os
-from logger import logger
+from app.logger import logger
 
 def load_model_and_vectorizer():
     model_path = os.path.join("models", "model.pkl")
