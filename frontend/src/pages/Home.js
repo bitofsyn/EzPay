@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { FaSignInAlt, FaUserPlus, FaWallet } from "react-icons/fa";
+import { FaSignInAlt, FaUserPlus} from "react-icons/fa";
 
 const Home = () => {
   const navigate = useNavigate();
