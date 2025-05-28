@@ -6,13 +6,11 @@ import { BrowserRouter } from "react-router-dom";
 
 // Sentry import
 import * as Sentry from "@sentry/react";
-import { BrowserTracing } from "@sentry/tracing";
 
 // Sentry 초기화
 Sentry.init({
   dsn: process.env.REACT_APP_SENTRY_DSN,  
-  integrations: [new BrowserTracing()],
-  tracesSampleRate: 1.0, // 성능 추적 
+  sendDefaultPii: true
 });
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
