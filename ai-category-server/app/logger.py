@@ -1,4 +1,4 @@
-import logger
+import logging
 
 # 로거 초기화
 logger = logging.getLogger("ai-category-server")

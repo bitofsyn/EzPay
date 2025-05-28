@@ -1,5 +1,5 @@
-from model_loader import load_model_and_vectorizer
-from logger import logger
+from app.model_loader import load_model_and_vectorizer
+from app.logger import logger
 
 # 앱 시작시 한번만 메모리에 로드
 model, vectorizer = load_model_and_vectorizer()
