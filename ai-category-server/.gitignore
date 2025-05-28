@@ -17,7 +17,7 @@ venv/
 config/.env
 
 # 모델 파일
-models/*.pkl
+#models/*.pkl
 
 # 로그 파일
 *.log
@@ -25,3 +25,4 @@ models/*.pkl
 # Mac/Linux/Windows
 .DS_Store
 Thumbs.db
+.python-version
