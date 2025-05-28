@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiMenu, FiX } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import { getDashboardInfo, getRecentTransactions } from "../api/UserAPI";
 import DashboardHeader from "../components/DashboardHeader";
 
