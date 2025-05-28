@@ -60,6 +60,6 @@ if __name__ == "__main__":
         model, vectorizer, y_true, y_pred, labels = train_model()
         save_model(model, vectorizer)
         plot_confusion_matrix(y_true, y_pred, labels)
-        logger.info("[학습 스크립트 완료")
+        logger.info("[학습 스크립트 완료]")
     except Exception as e:
         logger.error(f"학습 중 오류 발생 : {e}")
