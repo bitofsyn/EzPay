@@ -18,6 +18,7 @@ const CalendarPage = () => {
       try {
         if (!userId) return;
         const result = await fetchMonthlyStatistics(userId, currentMonth.year(), currentMonth.month() + 1);
+        console.log("result", result);
         setMonthlyData(result);
       } catch (error) {
         console.error(error);
