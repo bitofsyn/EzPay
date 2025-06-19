@@ -22,6 +22,18 @@ spring:
   jackson:
     time-zone: Asia/Seoul
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect  # DB 방언 설정 (PostgreSQL)
     hibernate:
