@@ -23,6 +23,8 @@ const Withdraw = () => {
     const handleDelete = async () => {
         try {
             await deleteUser(userId);
+            sessionStorage.clear();
+            localStorage.clear();
             alert("회원 탈퇴가 완료되었습니다.");
             localStorage.removeItem("userToken");
             navigate("/login");
