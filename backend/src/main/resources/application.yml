@@ -19,6 +19,8 @@ spring:
         core-size: 10  # 기본 스레드 수
         max-size: 100  # 최대 스레드 수
         queue-capacity: 500  # 대기 큐 사이즈
+  jackson:
+    time-zone: Asia/Seoul
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect  # DB 방언 설정 (PostgreSQL)

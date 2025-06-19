@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -36,7 +37,8 @@ public class TransactionStatisticsServiceImpl implements TransactionStatisticsSe
         List<Transaction> transactions = transactionStatisticsRepository.findTransactionByMonth(userId, start, end);
 
         Map<LocalDate, List<Transaction>> groupedByDate = transactions.stream()
-                .collect(Collectors.groupingBy(t -> t.getTransactionDate().toLocalDateTime().toLocalDate()));
+                .collect(Collectors.groupingBy(t -> t.getTransactionDate().toInstant()
+                        .atZone(ZoneId.of("Asia/Seoul")).toLocalDate()));
 
         List<DailySummaryResponse> summary = new ArrayList<>();
         for(LocalDate date : groupedByDate.keySet()) {
