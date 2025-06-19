@@ -8,6 +8,6 @@ import java.util.Optional;
 
 public interface TransferLimitRepository extends JpaRepository<TransferLimit, Long> {
     Optional<TransferLimit> findByUserId(Long userId);
-
     Long user(User user);
+    void deleteByUser_UserId(Long userId);
 }

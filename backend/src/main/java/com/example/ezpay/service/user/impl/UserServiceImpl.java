@@ -2,14 +2,8 @@ package com.example.ezpay.service.user.impl;
 
 import com.example.ezpay.exception.CustomNotFoundException;
 import com.example.ezpay.model.enums.NotificationType;
-import com.example.ezpay.model.user.LoginHistory;
-import com.example.ezpay.model.user.Notification;
-import com.example.ezpay.model.user.TransferLimit;
-import com.example.ezpay.model.user.User;
-import com.example.ezpay.repository.user.LoginHistoryRepository;
-import com.example.ezpay.repository.user.NotificationRepository;
-import com.example.ezpay.repository.user.TransferLimitRepository;
-import com.example.ezpay.repository.user.UserRepository;
+import com.example.ezpay.model.user.*;
+import com.example.ezpay.repository.user.*;
 import com.example.ezpay.request.FindEmailRequest;
 import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
@@ -33,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final TransferLimitRepository transferLimitRepository;
     private final NotificationRepository notificationRepository;
     private final LoginHistoryRepository loginHistoryRepository;
+    private final AccountRepository accountRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
@@ -124,10 +119,20 @@ public class UserServiceImpl implements UserService {
     }
 
     // 정보 삭제
+    @Transactional
     @Override
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomNotFoundException("사용자를 찾을 수 없습니다." + id));
+
+        transferLimitRepository.deleteByUser_UserId(user.getUserId());
+        notificationRepository.deleteByUser(user);
+        List<Accounts> accounts = accountRepository.findByUser(user);
+        for(Accounts account: accounts) {
+            transferLimitRepository.deleteById(account.getAccountId());
+            accountRepository.delete(account);
+        }
+        loginHistoryRepository.deleteByUser_UserId(user.getUserId());
         userRepository.deleteById(id);
     }
 
