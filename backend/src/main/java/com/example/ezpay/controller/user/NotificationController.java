@@ -19,7 +19,7 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     // 사용자 알림 설정 조회
-    @GetMapping("{userId}")
+    @GetMapping("/{userId}")
     public ResponseEntity<CommonResponse<List<NotificationResponse>>> getUserNotifications(@PathVariable Long userId) {
         try {
             List<NotificationResponse> notifications = notificationService.getUserNotifications(userId);

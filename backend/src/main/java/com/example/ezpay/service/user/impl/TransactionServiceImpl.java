@@ -1,22 +1,18 @@
 package com.example.ezpay.service.user.impl;
 
-import com.example.ezpay.model.user.TrainingData;
+import com.example.ezpay.model.enums.NotificationType;
+import com.example.ezpay.model.user.*;
 import com.example.ezpay.exception.CustomNotFoundException;
 import com.example.ezpay.exception.TransferLimitExceededException;
 import com.example.ezpay.kafka.TransactionProducer;
 import com.example.ezpay.model.enums.ErrorLogStatus;
 import com.example.ezpay.model.enums.TransactionStatus;
 import com.example.ezpay.model.kafka.TransferEvent;
-import com.example.ezpay.model.user.Accounts;
-import com.example.ezpay.model.user.Transaction;
-import com.example.ezpay.model.user.TransferLimit;
-import com.example.ezpay.repository.user.AccountRepository;
-import com.example.ezpay.repository.user.TrainingDataRepository;
-import com.example.ezpay.repository.user.TransactionRepository;
-import com.example.ezpay.repository.user.TransferLimitRepository;
+import com.example.ezpay.repository.user.*;
 import com.example.ezpay.request.TransferRequest;
 import com.example.ezpay.response.AccountOwnerResponse;
 import com.example.ezpay.service.user.ErrorLogService;
+import com.example.ezpay.service.user.NotificationService;
 import com.example.ezpay.service.user.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -37,7 +33,9 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionProducer transactionProducer;
     private final TransferLimitRepository transferLimitRepository;
     private final TrainingDataRepository trainingDataRepository;
+    private final NotificationRepository notificationRepository;
     private final ErrorLogService errorLogService;
+    private final NotificationService notificationService;
 
     // 송금 요청 (kafka 이벤트 발행)
     @Override
@@ -103,6 +101,20 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setStatus(TransactionStatus.SUCCESS);
             transaction.setDescription("송금 완료");
 
+            User sender = fromAccount.getUser();
+            User receiver = toAccount.getUser();
+
+            System.out.println("📨 이메일 발송 조건 충족: " + sender.getEmail());
+
+            if(isEmailNotificationEnabled(sender)) {
+                notificationService.sendMail(
+                        sender.getEmail(),
+                        event.getAmount().longValue(),
+                        receiver.getName()
+                );
+            }
+            System.out.println("=== 완료 ===");
+
             // training_data에 저장
             TrainingData trainingData = new TrainingData();
             trainingData.setMemo(event.getMemo());
@@ -120,6 +132,13 @@ public class TransactionServiceImpl implements TransactionService {
             errorLogService.logError("Transaction Service", "알수 없는 오류 발생:" + e.getMessage(), ErrorLogStatus.UNRESOLVED);
             throw e;
         }
+    }
+
+    private boolean isEmailNotificationEnabled(User user) {
+        return notificationRepository
+                .findByUserAndNotificationType(user, NotificationType.EMAIL)
+                .map(Notification::getIsEnabled)
+                .orElse(false);
     }
 
     @Override

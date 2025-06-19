@@ -83,6 +83,9 @@ dependencies {
 
     // sentry 모니터링
     implementation 'io.sentry:sentry-spring-boot-starter:6.0.0'
+
+    // SMTP
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('bootBuildImage') {

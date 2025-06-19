@@ -11,4 +11,7 @@ public interface NotificationService {
 
     // 사용자 알림 삭제
     void deleteNotification(Long notificationId);
+
+    // 이메일 발송
+    void sendMail(String to, Long amount, String receiverName);
 }
