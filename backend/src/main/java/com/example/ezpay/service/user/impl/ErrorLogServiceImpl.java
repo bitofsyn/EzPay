@@ -1,6 +1,6 @@
 package com.example.ezpay.service.user.impl;
 
-import com.example.ezpay.model.enums.ErrorLogStatus;
+import com.example.ezpay.shared.common.enums.ErrorLogStatus;
 import com.example.ezpay.model.user.ErrorLog;
 import com.example.ezpay.repository.user.ErrorLogRepository;
 import com.example.ezpay.request.ErrorLogRequest;

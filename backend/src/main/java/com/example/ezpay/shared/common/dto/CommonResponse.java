@@ -1,4 +1,4 @@
-package com.example.ezpay.response;
+package com.example.ezpay.shared.common.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

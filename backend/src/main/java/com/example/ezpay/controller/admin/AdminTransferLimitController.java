@@ -2,7 +2,7 @@ package com.example.ezpay.controller.admin;
 
 import com.example.ezpay.model.user.TransferLimit;
 import com.example.ezpay.request.TransferLimitRequest;
-import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.shared.common.dto.CommonResponse;
 import com.example.ezpay.service.user.TransferLimitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

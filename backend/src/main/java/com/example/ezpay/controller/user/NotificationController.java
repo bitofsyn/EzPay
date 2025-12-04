@@ -1,7 +1,7 @@
 package com.example.ezpay.controller.user;
 
 import com.example.ezpay.request.NotificationRequest;
-import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.shared.common.dto.CommonResponse;
 import com.example.ezpay.response.NotificationResponse;
 import com.example.ezpay.service.user.NotificationService;
 import jakarta.persistence.EntityNotFoundException;

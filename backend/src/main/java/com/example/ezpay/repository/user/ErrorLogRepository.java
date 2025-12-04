@@ -1,6 +1,6 @@
 package com.example.ezpay.repository.user;
 
-import com.example.ezpay.model.enums.ErrorLogStatus;
+import com.example.ezpay.shared.common.enums.ErrorLogStatus;
 import com.example.ezpay.model.user.ErrorLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

@@ -3,7 +3,7 @@ package com.example.ezpay.controller.user;
 import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.request.AccountRequest;
 import com.example.ezpay.response.AccountOwnerResponse;
-import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.shared.common.dto.CommonResponse;
 import com.example.ezpay.service.user.AccountService;
 import com.example.ezpay.service.user.TransactionService;
 import org.springframework.http.ResponseEntity;

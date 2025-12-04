@@ -1,6 +1,6 @@
 package com.example.ezpay.request;
 
-import com.example.ezpay.model.enums.ErrorLogStatus;
+import com.example.ezpay.shared.common.enums.ErrorLogStatus;
 import com.example.ezpay.model.user.ErrorLog;
 import lombok.Getter;
 import lombok.Setter;

@@ -1,14 +1,14 @@
 package com.example.ezpay.service.user.impl;
 
-import com.example.ezpay.exception.CustomNotFoundException;
-import com.example.ezpay.model.enums.NotificationType;
+import com.example.ezpay.shared.exception.CustomNotFoundException;
+import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.model.user.*;
 import com.example.ezpay.repository.user.*;
 import com.example.ezpay.request.FindEmailRequest;
 import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
 import com.example.ezpay.response.UserResponse;
-import com.example.ezpay.security.JwtUtil;
+import com.example.ezpay.shared.security.JwtUtil;
 import com.example.ezpay.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;

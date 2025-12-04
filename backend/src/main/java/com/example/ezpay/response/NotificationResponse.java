@@ -1,6 +1,6 @@
 package com.example.ezpay.response;
 
-import com.example.ezpay.model.enums.NotificationType;
+import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.model.user.Notification;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

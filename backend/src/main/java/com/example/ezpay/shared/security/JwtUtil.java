@@ -1,4 +1,4 @@
-package com.example.ezpay.security;
+package com.example.ezpay.shared.security;
 
 import com.example.ezpay.model.user.User;
 import io.jsonwebtoken.*;

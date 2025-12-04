@@ -1,6 +1,6 @@
-package com.example.ezpay.exception;
+package com.example.ezpay.shared.exception;
 
-import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.shared.common.dto.CommonResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

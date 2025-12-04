@@ -1,6 +1,6 @@
 package com.example.ezpay.model.user;
 
-import com.example.ezpay.model.enums.TransactionStatus;
+import com.example.ezpay.shared.common.enums.TransactionStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

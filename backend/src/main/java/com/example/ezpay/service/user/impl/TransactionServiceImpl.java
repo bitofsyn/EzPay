@@ -1,13 +1,13 @@
 package com.example.ezpay.service.user.impl;
 
-import com.example.ezpay.model.enums.NotificationType;
+import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.model.user.*;
-import com.example.ezpay.exception.CustomNotFoundException;
-import com.example.ezpay.exception.TransferLimitExceededException;
+import com.example.ezpay.shared.exception.CustomNotFoundException;
+import com.example.ezpay.shared.exception.TransferLimitExceededException;
 import com.example.ezpay.kafka.TransactionProducer;
-import com.example.ezpay.model.enums.ErrorLogStatus;
-import com.example.ezpay.model.enums.TransactionStatus;
-import com.example.ezpay.model.kafka.TransferEvent;
+import com.example.ezpay.shared.common.enums.ErrorLogStatus;
+import com.example.ezpay.shared.common.enums.TransactionStatus;
+import com.example.ezpay.shared.messaging.events.TransferEvent;
 import com.example.ezpay.repository.user.*;
 import com.example.ezpay.request.TransferRequest;
 import com.example.ezpay.response.AccountOwnerResponse;

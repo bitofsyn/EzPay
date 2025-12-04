@@ -1,4 +1,4 @@
-package com.example.ezpay.exception;
+package com.example.ezpay.shared.exception;
 
 public class TransferLimitExceededException extends RuntimeException {
     public TransferLimitExceededException(String message) {

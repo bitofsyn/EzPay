@@ -1,13 +1,13 @@
 spring:
   application:
     name: EzPay  # 애플리케이션 이름
-  config:
-    import: optional:file:.env  # 환경변수 파일(.env) 불러오기
+#  config:
+#    import: optional:file:.env  # 환경변수 파일(.env) 불러오기
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL}  # DB 연결 URL (env로부터 불러옴)
-    username: ${SPRING_DATASOURCE_USERNAME}  # DB 사용자명
-    password: ${SPRING_DATASOURCE_PASSWORD}  # DB 비밀번호
+    url: jdbc:postgresql://host.docker.internal:5432/postgres  # ← .env에 있는 값 그대로
+    username: postgres                               # ← .env 값
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver  # PostgreSQL 드라이버 설정
     hikari:
       maximum-pool-size: 10  # 커넥션 풀 최대 크기
@@ -46,7 +46,7 @@ spring:
           time_zone: Asia/Seoul  # DB 타임존 한국 시간으로 설정
 
   kafka:
-    bootstrap-servers: localhost:9092  # Kafka 서버 연결 주소
+    bootstrap-servers: kafka:9092  # Kafka 서버 연결 주소
     producer:
       acks: 1  # 프로듀서가 서버로부터 응답 받을 때까지 기다림
       retries: 3  # 전송 실패 시 재시도 횟수

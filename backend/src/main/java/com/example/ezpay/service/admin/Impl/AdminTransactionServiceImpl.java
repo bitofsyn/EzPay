@@ -1,6 +1,6 @@
 package com.example.ezpay.service.admin.Impl;
 
-import com.example.ezpay.exception.CustomNotFoundException;
+import com.example.ezpay.shared.exception.CustomNotFoundException;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.repository.user.TransactionRepository;
 import com.example.ezpay.service.admin.AdminTransactionService;
