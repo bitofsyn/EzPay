@@ -5,7 +5,7 @@ import com.example.ezpay.model.user.User;
 import com.example.ezpay.request.FindEmailRequest;
 import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
-import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.shared.common.dto.CommonResponse;
 import com.example.ezpay.response.FindEmailResponse;
 import com.example.ezpay.response.LoginHistoryResponse;
 import com.example.ezpay.response.UserResponse;

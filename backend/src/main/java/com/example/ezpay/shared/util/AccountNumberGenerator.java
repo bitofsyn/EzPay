@@ -1,4 +1,4 @@
-package com.example.ezpay.service;
+package com.example.ezpay.shared.util;
 
 import java.util.HashMap;
 import java.util.Map;

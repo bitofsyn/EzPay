@@ -1,7 +1,7 @@
 package com.example.ezpay.request;
 
 
-import com.example.ezpay.model.enums.Status;
+import com.example.ezpay.shared.common.enums.Status;
 import com.example.ezpay.model.user.User;
 import lombok.Getter;
 import lombok.Setter;

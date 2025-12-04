@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.2'
     id 'io.spring.dependency-management' version '1.1.7'
-    id "io.sentry.jvm.gradle" version "5.5.0"
+//    id "io.sentry.jvm.gradle" version "5.5.0"
 }
 
 group = 'com.example'
@@ -40,7 +40,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
     // Password 암호화 (BCrypt)
-    implementation 'org.springframework.security:spring-security-crypto:5.6.1'
+    implementation 'org.springframework.security:spring-security-crypto:6.4.5'
 
     // Kafka 관련 라이브러리
     implementation 'org.springframework.kafka:spring-kafka'
@@ -79,7 +79,7 @@ dependencies {
 
     // 개발 중 자동 리로드 지원
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    implementation 'org.postgresql:postgresql:42.6.0'
+    implementation 'org.postgresql:postgresql:42.7.7'
 
     // sentry 모니터링
     implementation 'io.sentry:sentry-spring-boot-starter:6.0.0'

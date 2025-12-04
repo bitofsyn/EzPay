@@ -1,7 +1,7 @@
 package com.example.ezpay.controller.user;
 
 import com.example.ezpay.model.user.Transaction;
-import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.shared.common.dto.CommonResponse;
 import com.example.ezpay.response.DashboardResponse;
 import com.example.ezpay.service.user.DashboardService;
 import lombok.RequiredArgsConstructor;

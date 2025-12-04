@@ -1,4 +1,4 @@
-package com.example.ezpay.model.kafka;
+package com.example.ezpay.shared.messaging.events;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,12 +1,12 @@
 package com.example.ezpay.service.user.impl;
 
-import com.example.ezpay.exception.CustomNotFoundException;
+import com.example.ezpay.shared.exception.CustomNotFoundException;
 import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.model.user.User;
 import com.example.ezpay.repository.user.AccountRepository;
 import com.example.ezpay.repository.user.UserRepository;
 import com.example.ezpay.request.AccountRequest;
-import com.example.ezpay.service.AccountNumberGenerator;
+import com.example.ezpay.shared.util.AccountNumberGenerator;
 import com.example.ezpay.service.user.AccountService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;

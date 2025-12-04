@@ -1,12 +1,12 @@
 package com.example.ezpay.controller.user;
 
-import com.example.ezpay.exception.CustomNotFoundException;
-import com.example.ezpay.exception.TransferLimitExceededException;
+import com.example.ezpay.shared.exception.CustomNotFoundException;
+import com.example.ezpay.shared.exception.TransferLimitExceededException;
 import com.example.ezpay.kafka.TransactionProducer;
-import com.example.ezpay.model.kafka.TransferEvent;
+import com.example.ezpay.shared.messaging.events.TransferEvent;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.request.TransferRequest;
-import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.shared.common.dto.CommonResponse;
 import com.example.ezpay.service.user.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,7 +27,7 @@ public class TransactionController {
     @PostMapping("/transfer")
     public ResponseEntity<CommonResponse<String>> transfer(@RequestBody TransferRequest transferRequest) {
         try {
-            // 💡 Kafka를 사용하지 않고, 즉시 송금 처리
+            // Kafka를 사용하지 않고, 즉시 송금 처리
             transactionService.processTransfer(new TransferEvent(transferRequest.getFromAccountId(), transferRequest.getToAccountId(), transferRequest.getAmount(),
                     transferRequest.getMemo(), transferRequest.getCategory()));
             return ResponseEntity.ok(new CommonResponse<>("success", "송금 완료", "TRANSFER_SUCCESS"));

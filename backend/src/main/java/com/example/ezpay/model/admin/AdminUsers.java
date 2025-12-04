@@ -1,6 +1,6 @@
 package com.example.ezpay.model.admin;
 
-import com.example.ezpay.model.enums.Status;
+import com.example.ezpay.shared.common.enums.Status;
 import jakarta.persistence.*;
 
 import java.sql.Timestamp;

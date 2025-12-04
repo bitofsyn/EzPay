@@ -1,4 +1,4 @@
-package com.example.ezpay.security;
+package com.example.ezpay.shared.security;
 
 import com.example.ezpay.service.user.impl.UserServiceImpl;
 import org.springframework.context.annotation.Bean;

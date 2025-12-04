@@ -1,6 +1,6 @@
 package com.example.ezpay.service.user.impl;
 
-import com.example.ezpay.model.enums.NotificationType;
+import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.model.user.Notification;
 import com.example.ezpay.model.user.User;
 import com.example.ezpay.repository.user.NotificationRepository;
