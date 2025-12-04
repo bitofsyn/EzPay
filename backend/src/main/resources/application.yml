@@ -5,8 +5,8 @@ spring:
 #    import: optional:file:.env  # 환경변수 파일(.env) 불러오기
 
   datasource:
-    url: jdbc:postgresql://host.docker.internal:5432/postgres  # ← .env에 있는 값 그대로
-    username: postgres                               # ← .env 값
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver  # PostgreSQL 드라이버 설정
     hikari:
