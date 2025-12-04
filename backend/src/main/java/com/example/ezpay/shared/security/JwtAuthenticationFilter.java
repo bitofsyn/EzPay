@@ -1,4 +1,4 @@
-package com.example.ezpay.security;
+package com.example.ezpay.shared.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

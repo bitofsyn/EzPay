@@ -1,6 +1,6 @@
 package com.example.ezpay.model.user;
 
-import com.example.ezpay.model.enums.Status;
+import com.example.ezpay.shared.common.enums.Status;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;

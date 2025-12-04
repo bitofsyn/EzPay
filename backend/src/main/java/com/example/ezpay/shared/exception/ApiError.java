@@ -1,4 +1,4 @@
-package com.example.ezpay.exception;
+package com.example.ezpay.shared.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ApiError {
-    private String status; // 에러 상태 (예: "error")
+    private String status; // 에러 상태
     private String message; // 에러 메시지
     private int code;
 }

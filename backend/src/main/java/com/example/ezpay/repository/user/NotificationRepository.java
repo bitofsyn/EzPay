@@ -1,6 +1,6 @@
 package com.example.ezpay.repository.user;
 
-import com.example.ezpay.model.enums.NotificationType;
+import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.model.user.Notification;
 import com.example.ezpay.model.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;

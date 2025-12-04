@@ -1,4 +1,4 @@
-package com.example.ezpay.security;
+package com.example.ezpay.shared.security;
 
 import java.security.SecureRandom;
 import java.util.Base64;

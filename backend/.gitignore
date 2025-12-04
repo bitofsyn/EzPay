@@ -20,4 +20,3 @@ build/
 Thumbs.db
 
 # Environment files (sensitive)
-.env

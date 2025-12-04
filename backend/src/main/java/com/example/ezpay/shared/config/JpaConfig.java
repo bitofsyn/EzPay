@@ -1,4 +1,4 @@
-package com.example.ezpay.config;
+package com.example.ezpay.shared.config;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;

@@ -1,7 +1,7 @@
 package com.example.ezpay.controller.user;
 
 import com.example.ezpay.request.PasswordResetRequest;
-import com.example.ezpay.response.CommonResponse;
+import com.example.ezpay.shared.common.dto.CommonResponse;
 import com.example.ezpay.service.user.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

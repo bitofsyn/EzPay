@@ -1,6 +1,6 @@
 package com.example.ezpay.service.user.impl;
 
-import com.example.ezpay.exception.CustomNotFoundException;
+import com.example.ezpay.shared.exception.CustomNotFoundException;
 import com.example.ezpay.model.user.TransferLimit;
 import com.example.ezpay.model.user.User;
 import com.example.ezpay.repository.user.TransferLimitRepository;

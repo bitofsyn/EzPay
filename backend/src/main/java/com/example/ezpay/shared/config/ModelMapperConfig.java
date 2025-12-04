@@ -1,4 +1,4 @@
-package com.example.ezpay.config;
+package com.example.ezpay.shared.config;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
