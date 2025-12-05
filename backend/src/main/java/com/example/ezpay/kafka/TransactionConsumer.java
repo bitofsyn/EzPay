@@ -1,7 +1,7 @@
 package com.example.ezpay.kafka;
 
+import com.example.ezpay.modules.payment.internal.service.TransactionService;
 import com.example.ezpay.shared.messaging.events.TransferEvent;
-import com.example.ezpay.service.user.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
