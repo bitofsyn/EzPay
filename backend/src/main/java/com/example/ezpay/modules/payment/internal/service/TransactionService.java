@@ -1,13 +1,15 @@
-package com.example.ezpay.service.user;
+package com.example.ezpay.modules.payment.internal.service;
 
 import com.example.ezpay.shared.messaging.events.TransferEvent;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.request.TransferRequest;
 import com.example.ezpay.response.AccountOwnerResponse;
 
-import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Payment 모듈 내부 서비스 - 거래 처리
+ */
 public interface TransactionService {
     // kafka 이벤트 발생
     void transferMoney(TransferRequest transferRequest);

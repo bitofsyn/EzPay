@@ -1,4 +1,4 @@
-package com.example.ezpay.service.user.impl;
+package com.example.ezpay.modules.payment.internal.service;
 
 import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.model.user.*;
@@ -13,7 +13,6 @@ import com.example.ezpay.request.TransferRequest;
 import com.example.ezpay.response.AccountOwnerResponse;
 import com.example.ezpay.service.user.ErrorLogService;
 import com.example.ezpay.service.user.NotificationService;
-import com.example.ezpay.service.user.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

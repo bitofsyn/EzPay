@@ -2,12 +2,12 @@ package com.example.ezpay.service.user.impl;
 
 import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.model.user.Transaction;
+import com.example.ezpay.modules.payment.internal.service.TransactionService;
 import com.example.ezpay.modules.user.api.dto.UserInfo;
 import com.example.ezpay.modules.user.api.facade.UserFacade;
 import com.example.ezpay.response.DashboardResponse;
 import com.example.ezpay.service.user.AccountService;
 import com.example.ezpay.service.user.DashboardService;
-import com.example.ezpay.service.user.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
