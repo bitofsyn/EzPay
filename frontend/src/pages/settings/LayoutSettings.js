@@ -17,6 +17,7 @@ const LayoutSettings = () => {
           <nav className="space-y-3">
             <NavLink
               to="/settings"
+              end
               className={({ isActive }) =>
                 `block hover:text-blue-600 ${isActive ? "text-blue-600 font-bold" : "text-gray-700"}`
               }
