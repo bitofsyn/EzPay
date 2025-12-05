@@ -1,11 +1,11 @@
 package com.example.ezpay.controller.user;
 
 import com.example.ezpay.model.user.Accounts;
+import com.example.ezpay.modules.account.internal.service.AccountService;
 import com.example.ezpay.modules.payment.internal.service.TransactionService;
 import com.example.ezpay.request.AccountRequest;
 import com.example.ezpay.response.AccountOwnerResponse;
 import com.example.ezpay.shared.common.dto.CommonResponse;
-import com.example.ezpay.service.user.AccountService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
