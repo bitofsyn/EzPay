@@ -1,6 +1,6 @@
-package com.example.ezpay.service.user;
+package com.example.ezpay.modules.auth.internal.service;
 
-import com.example.ezpay.request.PasswordResetRequest;
+import com.example.ezpay.modules.auth.api.dto.PasswordResetRequest;
 
 public interface PasswordResetService {
     // 비밀번호 재설정 요청 생성

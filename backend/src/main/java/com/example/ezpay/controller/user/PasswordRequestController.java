@@ -1,8 +1,8 @@
 package com.example.ezpay.controller.user;
 
-import com.example.ezpay.request.PasswordResetRequest;
+import com.example.ezpay.modules.auth.api.dto.PasswordResetRequest;
+import com.example.ezpay.modules.auth.api.facade.AuthFacade;
 import com.example.ezpay.shared.common.dto.CommonResponse;
-import com.example.ezpay.service.user.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,13 +11,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/password-reset")
 @RequiredArgsConstructor
 public class PasswordRequestController {
-    private final PasswordResetService passwordResetService;
+    private final AuthFacade authFacade;
 
     // 비밀번호 재설정 요청 생성
     @PostMapping("/request")
     public ResponseEntity<CommonResponse<String>> requestPasswordReset(@RequestBody PasswordResetRequest passwordResetRequest) {
-        String token = passwordResetService.createPasswordResetRequest(passwordResetRequest);
-        return ResponseEntity.ok(new CommonResponse<>("success", token, "비밀번호 재설정 요청이 완료되었습니다. 30분 내에 비밀번호를 변경해주세요."));
+        authFacade.initiatePasswordReset(passwordResetRequest.getEmail());
+        return ResponseEntity.ok(new CommonResponse<>("success", null, "비밀번호 재설정 요청이 완료되었습니다. 30분 내에 비밀번호를 변경해주세요."));
     }
 
 
@@ -25,7 +25,7 @@ public class PasswordRequestController {
     @GetMapping("/validate")
     public ResponseEntity<CommonResponse<String>> validatePasswordResetToken(@RequestParam("token") String token) {
         try {
-            boolean valid = passwordResetService.validatePasswordResetToken(token);
+            boolean valid = authFacade.verifyResetToken(token);
 
             if (valid) {
                 return ResponseEntity.ok(new CommonResponse<>("success", "토큰이 유효합니다.", "VALID TOKEN"));
@@ -42,7 +42,7 @@ public class PasswordRequestController {
     public ResponseEntity<CommonResponse<String>> confirmPasswordReset(@RequestHeader("Authorization") String tokenHeader,
                                                                        @RequestParam String newPassword) {
         String token = tokenHeader.replace("Bearer ", "");
-        passwordResetService.resetPassword(token, newPassword);
+        authFacade.resetPassword(token, newPassword);
         return ResponseEntity.ok(new CommonResponse<>("success", "비밀번호 재설정 완료", "PASSWORD RESET SUCCESS"));
     }
 }
