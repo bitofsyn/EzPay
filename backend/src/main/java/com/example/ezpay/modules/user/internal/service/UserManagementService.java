@@ -1,20 +1,18 @@
-package com.example.ezpay.modules.user.api.facade;
+package com.example.ezpay.modules.user.internal.service;
 
-import com.example.ezpay.modules.user.api.dto.UserInfo;
 import com.example.ezpay.modules.user.api.dto.LoginHistoryInfo;
+import com.example.ezpay.modules.user.api.dto.UserInfo;
 import com.example.ezpay.modules.user.api.dto.UserUpdateRequest;
 
 import java.util.List;
 
-/**
-    다른 모듈에서 사용자 정보에 접근할 때 이 인터페이스를 통해서만 접근
- */
-public interface UserFacade {
+//사용자 정보 관리 및 로그인 이력 관리
+public interface UserManagementService {
 
-    // 사용자 ID로 사용자 정보 조회
+    // 사용자 ID로 조회
     UserInfo getUserById(Long userId);
 
-    // 이메일로 사용자 정보 조회
+    // 이메일로 조회
     UserInfo getUserByEmail(String email);
 
     // 사용자 존재 여부 확인
