@@ -1,24 +1,17 @@
 package com.example.ezpay.service.user.impl;
 
 import com.example.ezpay.shared.exception.CustomNotFoundException;
-import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.model.user.*;
 import com.example.ezpay.repository.user.*;
-import com.example.ezpay.request.FindEmailRequest;
-import com.example.ezpay.request.LoginRequest;
 import com.example.ezpay.request.UserRequest;
 import com.example.ezpay.response.UserResponse;
-import com.example.ezpay.shared.security.JwtUtil;
 import com.example.ezpay.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,65 +22,6 @@ public class UserServiceImpl implements UserService {
     private final LoginHistoryRepository loginHistoryRepository;
     private final AccountRepository accountRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
-
-    // 회원 가입
-    @Transactional
-    public User registerUser(UserRequest userRequest) {
-        // 이메일 중복 체크
-        if(userRepository.existsByEmail(userRequest.getEmail())) {
-            throw new IllegalArgumentException("이미 등록된 이메일입니다.");
-        }
-
-        // 비밀번호 암호화
-        String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
-
-        // 사용자 생성
-        User user = userRequest.toEntity(encodedPassword);
-        User savedUser = userRepository.save(user);
-
-        // 기본 송금 한도 자동 추가
-        TransferLimit transferLimit = TransferLimit
-                .builder()
-                .user(savedUser)
-                .dailyLimit(new BigDecimal("1000000.00"))
-                .perTransactionLimit(new BigDecimal("100000.00"))
-                .build();
-        transferLimitRepository.save(transferLimit);
-
-        // 기본 알림 설정 자동 등록
-        List<Notification> defaultNotifications = Arrays.asList(
-                Notification.builder().user(user).notificationType(NotificationType.EMAIL).isEnabled(true).build(),
-                Notification.builder().user(user).notificationType(NotificationType.PUSH).isEnabled(true).build()
-        );
-        notificationRepository.saveAll(defaultNotifications);
-
-        // 사용자 저장
-        return savedUser;
-    }
-
-    // 로그인
-    @Override
-    public String login(LoginRequest loginRequest, String ip, String device) {
-        Optional<User> userOpt = userRepository.findByEmail(loginRequest.getEmail());
-
-        if(userOpt.isPresent()) {
-            User user = userOpt.get();
-
-            if(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-                // 로그인 기록 저장
-                LoginHistory loginHistory = LoginHistory.builder()
-                        .user(user)
-                        .ip(ip)              // 라이언트에서 전달받은 IP
-                        .device(device)      // 클라이언트에서 전달받은 기기 정보
-                        .build();
-                loginHistoryRepository.save(loginHistory);
-
-                return jwtUtil.generateToken(user);
-            }
-        }
-        return null;
-    }
 
     // 사용자 정보 조회
     @Override
@@ -140,14 +74,5 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<LoginHistory> getRecentLoginHistory(Long userId) {
         return loginHistoryRepository.findTop10ByUser_UserIdOrderByTimestampDesc(userId);
-    }
-
-    // 이메일 찾기
-    @Override
-    @Transactional(readOnly = true)
-    public String findByEmail(FindEmailRequest request) {
-        return userRepository.findByNameAndPhoneNumber(request.getName(), request.getPhoneNumber())
-                .map(User::getEmail)
-                .orElseThrow(() -> new IllegalArgumentException("일치하는 회원이 없습니다."));
     }
 }

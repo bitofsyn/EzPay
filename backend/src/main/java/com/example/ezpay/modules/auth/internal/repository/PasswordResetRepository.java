@@ -1,6 +1,6 @@
-package com.example.ezpay.repository.user;
+package com.example.ezpay.modules.auth.internal.repository;
 
-import com.example.ezpay.model.user.PasswordReset;
+import com.example.ezpay.modules.auth.internal.entity.PasswordReset;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

@@ -1,5 +1,6 @@
-package com.example.ezpay.model.user;
+package com.example.ezpay.modules.auth.internal.entity;
 
+import com.example.ezpay.model.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

@@ -1,12 +1,12 @@
-package com.example.ezpay.service.user.impl;
+package com.example.ezpay.modules.auth.internal.service;
 
 import com.example.ezpay.shared.exception.CustomNotFoundException;
-import com.example.ezpay.model.user.PasswordReset;
+import com.example.ezpay.modules.auth.internal.entity.PasswordReset;
 import com.example.ezpay.model.user.User;
-import com.example.ezpay.repository.user.PasswordResetRepository;
+import com.example.ezpay.modules.auth.internal.repository.PasswordResetRepository;
 import com.example.ezpay.repository.user.UserRepository;
-import com.example.ezpay.request.PasswordResetRequest;
-import com.example.ezpay.service.user.PasswordResetService;
+import com.example.ezpay.modules.auth.api.dto.PasswordResetRequest;
+import com.example.ezpay.modules.auth.internal.service.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
