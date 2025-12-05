@@ -1,6 +1,5 @@
 package com.example.ezpay.shared.security;
 
-import com.example.ezpay.service.user.impl.UserServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;

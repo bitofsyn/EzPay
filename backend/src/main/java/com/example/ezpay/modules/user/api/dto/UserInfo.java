@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 사용자 정보 DTO (읽기 전용)
- * 다른 모듈에 노출되는 사용자 정보
+    사용자 정보 DTO (읽기 전용)
+    다른 모듈에 노출되는 사용자 정보
  */
 @Getter
 @Builder

@@ -2,24 +2,23 @@ package com.example.ezpay.service.user.impl;
 
 import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.model.user.Transaction;
+import com.example.ezpay.modules.user.api.dto.UserInfo;
+import com.example.ezpay.modules.user.api.facade.UserFacade;
 import com.example.ezpay.response.DashboardResponse;
-import com.example.ezpay.response.UserResponse;
 import com.example.ezpay.service.user.AccountService;
 import com.example.ezpay.service.user.DashboardService;
 import com.example.ezpay.service.user.TransactionService;
-import com.example.ezpay.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class DashboardServiceImpl implements DashboardService {
-    private final UserService userService;
+    private final UserFacade userFacade;
     private final AccountService accountService;
     private final TransactionService transactionService;
 
@@ -28,10 +27,10 @@ public class DashboardServiceImpl implements DashboardService {
         String email = authentication.getName();
 
         // 유저 정보 가져오기
-        UserResponse user = userService.getUserInfo(email);
+        UserInfo user = userFacade.getUserByEmail(email);
 
         // 계좌 리스트 가져오기
-        List<Accounts> accounts = accountService.getAccountByUserId(user.getId());
+        List<Accounts> accounts = accountService.getAccountByUserId(user.getUserId());
 
         // 거래 내역 대시보드 진입에서는 "최근 5개만 보여주도록"
         List<Transaction> transactions = Collections.emptyList();

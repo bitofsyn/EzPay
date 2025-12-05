@@ -15,10 +15,12 @@ const TransferLimit = () => {
                     toast.error("로그인 정보가 없습니다. 다시 로그인 해주세요.");
                     return;
                 }
+                console.log(`userData : ` ,  userData);
                 setUserId(userData.userId);
 
 
                 const res = await getTransferLimit(userData.userId);
+                console.log(`res : `, res);
                 setPerLimit(res.data.perTransactionLimit);
                 setDailyLimit(res.data.dailyLimit);
             } catch (err) {
