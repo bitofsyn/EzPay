@@ -1,4 +1,4 @@
-package com.example.ezpay.service.user.impl;
+package com.example.ezpay.modules.notification.internal.service;
 
 import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.model.user.Notification;
@@ -7,10 +7,8 @@ import com.example.ezpay.repository.user.NotificationRepository;
 import com.example.ezpay.repository.user.UserRepository;
 import com.example.ezpay.request.NotificationRequest;
 import com.example.ezpay.response.NotificationResponse;
-import com.example.ezpay.service.user.NotificationService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -25,7 +23,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
-    private final ModelMapper modelMapper;
     private final JavaMailSender mailSender;
 
     @Override
@@ -37,7 +34,6 @@ public class NotificationServiceImpl implements NotificationService {
                 .map(n -> new NotificationResponse(n.getNotificationId(), n.getNotificationType(), n.getIsEnabled(), n.getCreatedAt()))
                 .collect(Collectors.toList());
     }
-
 
     @Override
     @Transactional
@@ -53,7 +49,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notification);
 
         if(notification.getNotificationType() == NotificationType.EMAIL
-        && Boolean.TRUE.equals(notificationRequest.getIsEnabled())) {
+                && Boolean.TRUE.equals(notificationRequest.getIsEnabled())) {
             initEmail(user.getEmail());
         }
 
@@ -84,5 +80,47 @@ public class NotificationServiceImpl implements NotificationService {
         message.setSubject("EzPay 송금 완료 알림");
         message.setText(String.format("%s님에게 %s원이 성공적으로 송금되었습니다.", receiverName, amount));
         mailSender.send(message);
+    }
+
+    @Override
+    public void sendTestEmail(String email) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("EzPay 테스트 이메일");
+        message.setText("테스트 이메일이 성공적으로 발송되었습니다.");
+        mailSender.send(message);
+    }
+
+    @Override
+    public boolean isNotificationEnabled(Long userId, NotificationType type) {
+        User user = userRepository.findById(userId)
+                .orElse(null);
+
+        if (user == null) {
+            return false;
+        }
+
+        return notificationRepository.findByUserAndNotificationType(user, type)
+                .map(Notification::getIsEnabled)
+                .orElse(false);
+    }
+
+    @Override
+    @Transactional
+    public void initializeNotificationSettings(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 기본 알림 설정 생성 (EMAIL, PUSH 등)
+        for (NotificationType type : NotificationType.values()) {
+            if (notificationRepository.findByUserAndNotificationType(user, type).isEmpty()) {
+                Notification notification = Notification.builder()
+                        .user(user)
+                        .notificationType(type)
+                        .isEnabled(type == NotificationType.EMAIL) // EMAIL만 기본 활성화
+                        .build();
+                notificationRepository.save(notification);
+            }
+        }
     }
 }
