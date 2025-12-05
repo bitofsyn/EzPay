@@ -1,6 +1,6 @@
-package com.example.ezpay.request;
+package com.example.ezpay.modules.auth.api.dto;
 
-import com.example.ezpay.model.user.PasswordReset;
+import com.example.ezpay.modules.auth.internal.entity.PasswordReset;
 import com.example.ezpay.model.user.User;
 import lombok.Getter;
 import lombok.Setter;
