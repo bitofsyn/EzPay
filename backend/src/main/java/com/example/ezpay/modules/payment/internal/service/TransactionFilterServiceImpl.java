@@ -1,4 +1,4 @@
-package com.example.ezpay.service.user.impl;
+package com.example.ezpay.modules.payment.internal.service;
 
 import com.example.ezpay.model.user.TransactionFilter;
 import com.example.ezpay.model.user.User;
@@ -6,7 +6,6 @@ import com.example.ezpay.repository.user.TransactionFilterRepository;
 import com.example.ezpay.repository.user.UserRepository;
 import com.example.ezpay.request.TransactionFilterRequest;
 import com.example.ezpay.response.TransactionFilterResponse;
-import com.example.ezpay.service.user.TransactionFilterService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,20 +37,17 @@ public class TransactionFilterServiceImpl implements TransactionFilterService {
         return transactionFilterRepository.findByUser_UserId(userId);
     }
 
-    // 특정 필터 조회
     @Override
     public TransactionFilter getFilterById(Long id) {
         return transactionFilterRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("필터를 찾을 수 없습니다."));
     }
 
-    // 필터 조건 검색(날짜 범위, 금액 범위로 검색)
     @Override
     @Transactional(readOnly = true)
     public List<TransactionFilter> searchFilter(TransactionFilterRequest transactionFilterRequest) {
         return transactionFilterRepository.searchFilters(transactionFilterRequest);
     }
-
 
     @Override
     @Transactional
@@ -66,10 +62,8 @@ public class TransactionFilterServiceImpl implements TransactionFilterService {
 
         transactionFilterRepository.save(filter);
 
-        return new TransactionFilterResponse(filter);  // ✅ DTO 변환하여 반환
+        return new TransactionFilterResponse(filter);
     }
-
-
 
     @Override
     @Transactional

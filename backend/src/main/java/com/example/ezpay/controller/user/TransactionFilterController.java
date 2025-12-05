@@ -1,10 +1,10 @@
 package com.example.ezpay.controller.user;
 
 import com.example.ezpay.model.user.TransactionFilter;
+import com.example.ezpay.modules.payment.internal.service.TransactionFilterService;
 import com.example.ezpay.request.TransactionFilterRequest;
 import com.example.ezpay.shared.common.dto.CommonResponse;
 import com.example.ezpay.response.TransactionFilterResponse;
-import com.example.ezpay.service.user.TransactionFilterService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
