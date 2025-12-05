@@ -1,8 +1,8 @@
 package com.example.ezpay.controller.user;
 
 
+import com.example.ezpay.modules.analytics.internal.service.TransactionStatisticsService;
 import com.example.ezpay.response.DailySummaryResponse;
-import com.example.ezpay.service.user.TransactionStatisticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,13 +1,10 @@
-package com.example.ezpay.service.user.impl;
+package com.example.ezpay.modules.analytics.internal.service;
 
-import com.example.ezpay.model.user.DailyDetail;
-import com.example.ezpay.model.user.DailySummary;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.repository.user.TransactionStatisticsRepository;
 import com.example.ezpay.response.CategoryAmountResponse;
 import com.example.ezpay.response.DailyDetailResponse;
 import com.example.ezpay.response.DailySummaryResponse;
-import com.example.ezpay.service.user.TransactionStatisticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
