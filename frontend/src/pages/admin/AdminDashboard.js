@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiUsers, FiActivity, FiDollarSign, FiAlertCircle, FiCreditCard, FiMenu, FiSearch, FiBell, FiSettings, FiMail, FiTrendingUp } from "react-icons/fi";
-import { getAdminDashboardStats, getRecentActivities, getTodayHourlyTransactions, getWeeklyTransactionTrend } from "../../api/AdminAPI";
-import toast from "react-hot-toast";
-import { Line, Doughnut, Bar } from "react-chartjs-2";
+import CircularProgress from "../../components/admin/CircularProgress";
+import TransactionTrendChart from "../../components/admin/TransactionTrendChart";
+import UserStatusChart from "../../components/admin/UserStatusChart";
+import HourlyTransactionChart from "../../components/admin/HourlyTransactionChart";
+import { formatAmount } from "../../utils/adminUtils";
+import { useAdminStats, useRealtimeActivities, useHourlyTransactions, useWeeklyTrend } from "../../hooks/useAdminDashboard";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -32,211 +35,15 @@ ChartJS.register(
   Filler
 );
 
-// 원형 프로그레스 바 컴포넌트
-const CircularProgress = ({ value, max, label, gradient }) => {
-  const percentage = max > 0 ? (value / max) * 100 : 0;
-  const circumference = 2 * Math.PI * 45; // radius = 45
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-32 h-32">
-        <svg className="transform -rotate-90 w-32 h-32">
-          <defs>
-            <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={gradient[0]} />
-              <stop offset="100%" stopColor={gradient[1]} />
-            </linearGradient>
-          </defs>
-          {/* Background circle */}
-          <circle
-            cx="64"
-            cy="64"
-            r="45"
-            stroke="rgba(255, 255, 255, 0.1)"
-            strokeWidth="8"
-            fill="none"
-          />
-          {/* Progress circle */}
-          <circle
-            cx="64"
-            cy="64"
-            r="45"
-            stroke={`url(#gradient-${label})`}
-            strokeWidth="8"
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            className="transition-all duration-1000 ease-out"
-            style={{ filter: 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.5))' }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-white">{value?.toLocaleString() || 0}</span>
-        </div>
-      </div>
-      <p className="mt-3 text-xs text-gray-400 uppercase tracking-wider">{label}</p>
-    </div>
-  );
-};
-
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [realtimeActivities, setRealtimeActivities] = useState([]);
-  const [hourlyTransactions, setHourlyTransactions] = useState([]);
-  const [weeklyTrend, setWeeklyTrend] = useState([]);
 
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        const response = await getAdminDashboardStats();
-
-        // CommonResponse 구조: { status, data, message }
-        if (response.status === "success" && response.data) {
-          setStats(response.data);
-        } else {
-          throw new Error(response.message || "데이터 조회 실패");
-        }
-      } catch (error) {
-        console.error("대시보드 통계 조회 실패:", error);
-        toast.error("대시보드 데이터를 불러오는데 실패했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDashboardStats();
-
-    // 30초마다 자동 갱신
-    const interval = setInterval(() => {
-      fetchDashboardStats();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // 시간 차이를 상대 시간으로 변환하는 함수
-  const getRelativeTime = (timestamp) => {
-    const now = new Date();
-    const past = new Date(timestamp);
-    const diffInSeconds = Math.floor((now - past) / 1000);
-
-    if (diffInSeconds < 60) return '방금 전';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
-    return `${Math.floor(diffInSeconds / 86400)}일 전`;
-  };
-
-  // 타입과 상태에 따라 색상 결정
-  const getActivityColor = (type, status) => {
-    if (status === 'failed') return 'red';
-    if (status === 'warning') return 'yellow';
-
-    switch (type) {
-      case 'user': return 'cyan';
-      case 'transaction': return 'green';
-      case 'error': return 'red';
-      case 'system': return 'blue';
-      default: return 'gray';
-    }
-  };
-
-  // 금액을 3자리 콤마로 포맷팅
-  const formatActivityDescription = (description) => {
-    if (!description) return '';
-
-    // 숫자 패턴 찾기 (콤마가 있거나 없는 숫자, 소수점 포함)
-    return description.replace(/(\d+),?(\d+),?(\d+)(\.\d+)?|(\d{4,})(\.\d+)?/g, (match) => {
-      // 콤마와 소수점 제거 후 숫자로 변환 (소수점 버림)
-      const number = match.replace(/[,\.]\d*/g, '').replace(/,/g, '');
-      // 3자리 콤마 포맷팅 후 "원" 붙이기
-      return parseInt(number).toLocaleString() + '원';
-    });
-  };
-
-  // 실시간 활동 로그 조회
-  useEffect(() => {
-    const fetchRecentActivities = async () => {
-      try {
-        const response = await getRecentActivities(10);
-
-        if (response.status === "success" && response.data) {
-          const formattedActivities = response.data.map(activity => ({
-            type: activity.type,
-            text: formatActivityDescription(activity.description),
-            time: getRelativeTime(activity.timestamp),
-            color: getActivityColor(activity.type, activity.status),
-            userName: activity.userName
-          }));
-
-          setRealtimeActivities(formattedActivities);
-        }
-      } catch (error) {
-        console.error("활동 로그 조회 실패:", error);
-      }
-    };
-
-    fetchRecentActivities();
-
-    // 10초마다 자동 갱신
-    const interval = setInterval(() => {
-      fetchRecentActivities();
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // 시간대별 거래량 조회
-  useEffect(() => {
-    const fetchHourlyTransactions = async () => {
-      try {
-        const response = await getTodayHourlyTransactions();
-
-        if (response.status === "success" && response.data) {
-          setHourlyTransactions(response.data);
-        }
-      } catch (error) {
-        console.error("시간대별 거래량 조회 실패:", error);
-      }
-    };
-
-    fetchHourlyTransactions();
-
-    // 30초마다 자동 갱신
-    const interval = setInterval(() => {
-      fetchHourlyTransactions();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // 주간 거래 추이 조회
-  useEffect(() => {
-    const fetchWeeklyTrend = async () => {
-      try {
-        const response = await getWeeklyTransactionTrend();
-
-        if (response.status === "success" && response.data) {
-          setWeeklyTrend(response.data);
-        }
-      } catch (error) {
-        console.error("주간 거래 추이 조회 실패:", error);
-      }
-    };
-
-    fetchWeeklyTrend();
-
-    // 30초마다 자동 갱신
-    const interval = setInterval(() => {
-      fetchWeeklyTrend();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // 커스텀 훅으로 데이터 관리
+  const { stats, isLoading } = useAdminStats();
+  const realtimeActivities = useRealtimeActivities();
+  const hourlyTransactions = useHourlyTransactions();
+  const weeklyTrend = useWeeklyTrend();
 
   if (isLoading) {
     return (
@@ -253,144 +60,6 @@ const AdminDashboard = () => {
   const totalUsers = stats?.totalUsers || 0;
   const activeUsers = stats?.activeUsers || 0;
   const inactiveUsers = stats?.inactiveUsers || 0;
-
-  // 금액 포맷팅 함수
-  const formatAmount = (amount) => {
-    if (!amount) return 0;
-    // BigDecimal이 문자열로 올 경우를 대비
-    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return Math.floor(numAmount).toLocaleString();
-  };
-
-  // 최근 7일 거래 추이 데이터
-  const transactionTrendData = {
-    labels: weeklyTrend.map(d => d.dayOfWeek) || [],
-    datasets: [
-      {
-        label: '거래 건수',
-        data: weeklyTrend.map(d => d.transactionCount) || [],
-        borderColor: 'rgba(34, 211, 238, 1)',
-        backgroundColor: 'rgba(34, 211, 238, 0.1)',
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: 'rgba(34, 211, 238, 1)',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-      }
-    ]
-  };
-
-  // 사용자 상태 분포 데이터
-  const userStatusData = {
-    labels: ['활성', '비활성', '잠금'],
-    datasets: [
-      {
-        data: [activeUsers, inactiveUsers, stats?.lockedUsers || 0],
-        backgroundColor: [
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(251, 146, 60, 0.8)',
-          'rgba(239, 68, 68, 0.8)',
-        ],
-        borderColor: [
-          'rgba(16, 185, 129, 1)',
-          'rgba(251, 146, 60, 1)',
-          'rgba(239, 68, 68, 1)',
-        ],
-        borderWidth: 2,
-      }
-    ]
-  };
-
-  // 시간대별 거래량 데이터
-  const hourlyTransactionData = {
-    labels: hourlyTransactions.map(h => h.hour) || [],
-    datasets: [
-      {
-        label: '거래 건수',
-        data: hourlyTransactions.map(h => h.transactionCount) || [],
-        backgroundColor: (context) => {
-          const ctx = context.chart.ctx;
-          const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-          gradient.addColorStop(0, 'rgba(236, 72, 153, 0.8)');
-          gradient.addColorStop(1, 'rgba(168, 85, 247, 0.8)');
-          return gradient;
-        },
-        borderColor: 'rgba(236, 72, 153, 1)',
-        borderWidth: 2,
-        borderRadius: 8,
-      }
-    ]
-  };
-
-  // 차트 공통 옵션
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        labels: {
-          color: 'rgba(156, 163, 175, 1)',
-          font: { size: 12 }
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(17, 24, 39, 0.9)',
-        titleColor: 'rgba(34, 211, 238, 1)',
-        bodyColor: 'rgba(229, 231, 235, 1)',
-        borderColor: 'rgba(99, 102, 241, 0.5)',
-        borderWidth: 1,
-        padding: 12,
-        displayColors: true,
-      }
-    },
-    scales: {
-      x: {
-        grid: {
-          color: 'rgba(107, 114, 128, 0.1)',
-          drawBorder: false,
-        },
-        ticks: {
-          color: 'rgba(156, 163, 175, 1)',
-        }
-      },
-      y: {
-        grid: {
-          color: 'rgba(107, 114, 128, 0.1)',
-          drawBorder: false,
-        },
-        ticks: {
-          color: 'rgba(156, 163, 175, 1)',
-        }
-      }
-    }
-  };
-
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          color: 'rgba(156, 163, 175, 1)',
-          font: { size: 12 },
-          padding: 15,
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(17, 24, 39, 0.9)',
-        titleColor: 'rgba(34, 211, 238, 1)',
-        bodyColor: 'rgba(229, 231, 235, 1)',
-        borderColor: 'rgba(99, 102, 241, 0.5)',
-        borderWidth: 1,
-        padding: 12,
-      }
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-800 flex">
@@ -650,7 +319,7 @@ const AdminDashboard = () => {
                 </span>
               </div>
               <div className="h-64">
-                <Line data={transactionTrendData} options={chartOptions} />
+                <TransactionTrendChart weeklyTrend={weeklyTrend} />
               </div>
             </div>
 
@@ -667,7 +336,11 @@ const AdminDashboard = () => {
                 </span>
               </div>
               <div className="h-64">
-                <Doughnut data={userStatusData} options={doughnutOptions} />
+                <UserStatusChart
+                  activeUsers={activeUsers}
+                  inactiveUsers={inactiveUsers}
+                  lockedUsers={stats?.lockedUsers || 0}
+                />
               </div>
             </div>
           </div>
@@ -687,7 +360,7 @@ const AdminDashboard = () => {
                 </span>
               </div>
               <div className="h-64">
-                <Bar data={hourlyTransactionData} options={chartOptions} />
+                <HourlyTransactionChart hourlyTransactions={hourlyTransactions} />
               </div>
             </div>
 

@@ -20,33 +20,24 @@ const Login = () => {
 
     try {
       const res = await login(form);
-      console.log("res : ", res);
-      const token = res.data.token;
 
-      if (!token || token.split('.').length !== 3) {
-        throw new Error("Invalid token format");
-      }
+      // JWT는 이제 httpOnly 쿠키로 전달되므로 localStorage 저장 불필요
+      // 로그인 성공 시 사용자 정보만 저장
+      if (res.data && res.data.userId) {
+        const userData = {
+          userId: res.data.userId,
+          email: res.data.email,
+          name: res.data.name
+        };
 
-      // 받은 토큰 바로 디코딩
-      const decoded = jwtDecode(token);
+        if (keepLogin) {
+          localStorage.setItem("user", JSON.stringify(userData));
+        } else {
+          sessionStorage.setItem("user", JSON.stringify(userData));
+        }
 
-      // 로그인 성공 시 이동
-      if (decoded.userId !== undefined && decoded.userId !== null) {
-
-        // storage 먼저 저장
-      if (keepLogin) {
-        localStorage.setItem("userToken", token);
-      } else {
-        sessionStorage.setItem("userToken", token);
-      }
-      localStorage.setItem("user", JSON.stringify(decoded));
-
-        // 저장이 끝난 뒤 navigate 호출
-        setTimeout(() => {
         navigate("/dashboard");
-        }, 0); // 바로 다음 tick에 이동
       }
-      
 
     } catch (err) {
       console.error("로그인 실패:", err);

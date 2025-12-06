@@ -6,8 +6,8 @@ const Home = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("userToken");
-    if (token) {
+    const user = localStorage.getItem("user") || sessionStorage.getItem("user");
+    if (user) {
       navigate("/dashboard");
     }
   }, [navigate]);

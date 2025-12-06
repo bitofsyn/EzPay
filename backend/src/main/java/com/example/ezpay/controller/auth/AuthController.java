@@ -3,7 +3,9 @@ package com.example.ezpay.controller.auth;
 import com.example.ezpay.modules.auth.api.dto.*;
 import com.example.ezpay.modules.auth.api.facade.AuthFacade;
 import com.example.ezpay.shared.common.dto.CommonResponse;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,14 +34,42 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<CommonResponse<LoginResponse>> login(
             @RequestBody LoginRequest request,
-            HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
 
         String ip = extractClientIp(httpRequest);
         String device = parseDeviceInfo(httpRequest);
 
         LoginResponse response = authFacade.login(request, ip, device);
 
+        // JWT를 httpOnly 쿠키로 설정
+        Cookie jwtCookie = new Cookie("jwt", response.getToken());
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setSecure(false); // 개발 환경에서는 false, 프로덕션에서는 true
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(7 * 24 * 60 * 60); // 7일
+        httpResponse.addCookie(jwtCookie);
+
+        // 응답에서 토큰 제거 (쿠키로만 전달)
+        response.setToken(null);
+
         return ResponseEntity.ok(new CommonResponse<>("success", response, "로그인 성공"));
+    }
+
+    /**
+     * 로그아웃
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<CommonResponse<Void>> logout(HttpServletResponse httpResponse) {
+        // JWT 쿠키 삭제
+        Cookie jwtCookie = new Cookie("jwt", null);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setSecure(false);
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(0); // 즉시 만료
+        httpResponse.addCookie(jwtCookie);
+
+        return ResponseEntity.ok(new CommonResponse<>("success", null, "로그아웃 성공"));
     }
 
     /**
