@@ -4,7 +4,28 @@ import api from "./api";
 // Admin 대시보드 통계 조회
 export const getAdminDashboardStats = async () => {
     const res = await api.get("/admin/dashboard");
-    console.log(`==== api res : ` , res);
+    // res.data = CommonResponse { status, data, message }
+    // res.data.data = AdminDashboardInfo
+    return res.data;
+};
+
+// 최근 활동 로그 조회
+export const getRecentActivities = async (limit = 50) => {
+    const res = await api.get("/admin/dashboard/recent-activities", {
+        params: { limit }
+    });
+    return res.data;
+};
+
+// 시간대별 거래량 조회 (오늘)
+export const getTodayHourlyTransactions = async () => {
+    const res = await api.get("/admin/dashboard/hourly-transactions");
+    return res.data;
+};
+
+// 주간 거래 추이 조회 (최근 7일)
+export const getWeeklyTransactionTrend = async () => {
+    const res = await api.get("/admin/dashboard/weekly-trend");
     return res.data;
 };
 

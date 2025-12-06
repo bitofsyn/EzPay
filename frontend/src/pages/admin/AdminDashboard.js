@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiUsers, FiActivity, FiDollarSign, FiAlertCircle, FiCreditCard, FiMenu, FiSearch, FiBell, FiSettings, FiMail, FiTrendingUp } from "react-icons/fi";
-import { getAdminDashboardStats } from "../../api/AdminAPI";
+import { getAdminDashboardStats, getRecentActivities, getTodayHourlyTransactions, getWeeklyTransactionTrend } from "../../api/AdminAPI";
 import toast from "react-hot-toast";
 import { Line, Doughnut, Bar } from "react-chartjs-2";
 import {
@@ -86,21 +86,21 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [realtimeActivities, setRealtimeActivities] = useState([
-    { type: 'user', text: '새로운 사용자 가입', time: '1분 전', color: 'cyan' },
-    { type: 'transaction', text: '₩50,000 송금 완료', time: '3분 전', color: 'green' },
-    { type: 'error', text: '로그인 실패 감지', time: '5분 전', color: 'red' },
-    { type: 'user', text: '계좌 개설 완료', time: '7분 전', color: 'blue' },
-    { type: 'transaction', text: '₩120,000 송금 완료', time: '10분 전', color: 'green' },
-  ]);
+  const [realtimeActivities, setRealtimeActivities] = useState([]);
+  const [hourlyTransactions, setHourlyTransactions] = useState([]);
+  const [weeklyTrend, setWeeklyTrend] = useState([]);
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
-        const res = await getAdminDashboardStats();
-        console.log("==== res : ", res);
+        const response = await getAdminDashboardStats();
 
-        setStats(res.data);
+        // CommonResponse 구조: { status, data, message }
+        if (response.status === "success" && response.data) {
+          setStats(response.data);
+        } else {
+          throw new Error(response.message || "데이터 조회 실패");
+        }
       } catch (error) {
         console.error("대시보드 통계 조회 실패:", error);
         toast.error("대시보드 데이터를 불러오는데 실패했습니다.");
@@ -110,30 +110,130 @@ const AdminDashboard = () => {
     };
 
     fetchDashboardStats();
+
+    // 30초마다 자동 갱신
+    const interval = setInterval(() => {
+      fetchDashboardStats();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  // 실시간 활동 로그 시뮬레이션
+  // 시간 차이를 상대 시간으로 변환하는 함수
+  const getRelativeTime = (timestamp) => {
+    const now = new Date();
+    const past = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - past) / 1000);
+
+    if (diffInSeconds < 60) return '방금 전';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+    return `${Math.floor(diffInSeconds / 86400)}일 전`;
+  };
+
+  // 타입과 상태에 따라 색상 결정
+  const getActivityColor = (type, status) => {
+    if (status === 'failed') return 'red';
+    if (status === 'warning') return 'yellow';
+
+    switch (type) {
+      case 'user': return 'cyan';
+      case 'transaction': return 'green';
+      case 'error': return 'red';
+      case 'system': return 'blue';
+      default: return 'gray';
+    }
+  };
+
+  // 금액을 3자리 콤마로 포맷팅
+  const formatActivityDescription = (description) => {
+    if (!description) return '';
+
+    // 숫자 패턴 찾기 (콤마가 있거나 없는 숫자, 소수점 포함)
+    return description.replace(/(\d+),?(\d+),?(\d+)(\.\d+)?|(\d{4,})(\.\d+)?/g, (match) => {
+      // 콤마와 소수점 제거 후 숫자로 변환 (소수점 버림)
+      const number = match.replace(/[,\.]\d*/g, '').replace(/,/g, '');
+      // 3자리 콤마 포맷팅 후 "원" 붙이기
+      return parseInt(number).toLocaleString() + '원';
+    });
+  };
+
+  // 실시간 활동 로그 조회
   useEffect(() => {
-    const activities = [
-      { type: 'user', text: '새로운 사용자 가입', color: 'cyan' },
-      { type: 'transaction', text: '₩35,000 송금 완료', color: 'green' },
-      { type: 'user', text: '계좌 개설 완료', color: 'blue' },
-      { type: 'transaction', text: '₩80,000 송금 완료', color: 'green' },
-      { type: 'error', text: '인증 실패 감지', color: 'red' },
-      { type: 'user', text: '사용자 정보 수정', color: 'yellow' },
-      { type: 'transaction', text: '₩150,000 송금 완료', color: 'green' },
-      { type: 'user', text: '비밀번호 변경 완료', color: 'blue' },
-    ];
+    const fetchRecentActivities = async () => {
+      try {
+        const response = await getRecentActivities(10);
 
+        if (response.status === "success" && response.data) {
+          const formattedActivities = response.data.map(activity => ({
+            type: activity.type,
+            text: formatActivityDescription(activity.description),
+            time: getRelativeTime(activity.timestamp),
+            color: getActivityColor(activity.type, activity.status),
+            userName: activity.userName
+          }));
+
+          setRealtimeActivities(formattedActivities);
+        }
+      } catch (error) {
+        console.error("활동 로그 조회 실패:", error);
+      }
+    };
+
+    fetchRecentActivities();
+
+    // 10초마다 자동 갱신
     const interval = setInterval(() => {
-      const randomActivity = activities[Math.floor(Math.random() * activities.length)];
-      const newActivity = { ...randomActivity, time: '방금 전' };
+      fetchRecentActivities();
+    }, 10000);
 
-      setRealtimeActivities(prev => {
-        const updated = [newActivity, ...prev];
-        return updated.slice(0, 10); // 최대 10개만 유지
-      });
-    }, 5000); // 5초마다 새 활동 추가
+    return () => clearInterval(interval);
+  }, []);
+
+  // 시간대별 거래량 조회
+  useEffect(() => {
+    const fetchHourlyTransactions = async () => {
+      try {
+        const response = await getTodayHourlyTransactions();
+
+        if (response.status === "success" && response.data) {
+          setHourlyTransactions(response.data);
+        }
+      } catch (error) {
+        console.error("시간대별 거래량 조회 실패:", error);
+      }
+    };
+
+    fetchHourlyTransactions();
+
+    // 30초마다 자동 갱신
+    const interval = setInterval(() => {
+      fetchHourlyTransactions();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 주간 거래 추이 조회
+  useEffect(() => {
+    const fetchWeeklyTrend = async () => {
+      try {
+        const response = await getWeeklyTransactionTrend();
+
+        if (response.status === "success" && response.data) {
+          setWeeklyTrend(response.data);
+        }
+      } catch (error) {
+        console.error("주간 거래 추이 조회 실패:", error);
+      }
+    };
+
+    fetchWeeklyTrend();
+
+    // 30초마다 자동 갱신
+    const interval = setInterval(() => {
+      fetchWeeklyTrend();
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -154,13 +254,21 @@ const AdminDashboard = () => {
   const activeUsers = stats?.activeUsers || 0;
   const inactiveUsers = stats?.inactiveUsers || 0;
 
-  // 최근 7일 거래 추이 데이터 (시뮬레이션)
+  // 금액 포맷팅 함수
+  const formatAmount = (amount) => {
+    if (!amount) return 0;
+    // BigDecimal이 문자열로 올 경우를 대비
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return Math.floor(numAmount).toLocaleString();
+  };
+
+  // 최근 7일 거래 추이 데이터
   const transactionTrendData = {
-    labels: ['월', '화', '수', '목', '금', '토', '일'],
+    labels: weeklyTrend.map(d => d.dayOfWeek) || [],
     datasets: [
       {
         label: '거래 건수',
-        data: [120, 190, 150, 220, 180, 240, stats?.todayTransactions || 200],
+        data: weeklyTrend.map(d => d.transactionCount) || [],
         borderColor: 'rgba(34, 211, 238, 1)',
         backgroundColor: 'rgba(34, 211, 238, 0.1)',
         borderWidth: 3,
@@ -196,13 +304,13 @@ const AdminDashboard = () => {
     ]
   };
 
-  // 시간대별 거래량 데이터 (시뮬레이션)
+  // 시간대별 거래량 데이터
   const hourlyTransactionData = {
-    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+    labels: hourlyTransactions.map(h => h.hour) || [],
     datasets: [
       {
-        label: '거래량',
-        data: [20, 35, 80, 150, 120, 95, 60],
+        label: '거래 건수',
+        data: hourlyTransactions.map(h => h.transactionCount) || [],
         backgroundColor: (context) => {
           const ctx = context.chart.ctx;
           const gradient = ctx.createLinearGradient(0, 0, 0, 300);
@@ -458,11 +566,11 @@ const AdminDashboard = () => {
                 </div>
                 <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-500/10 to-transparent rounded-lg border-l-4 border-blue-500">
                   <span className="text-gray-300">오늘 거래 총액</span>
-                  <span className="text-xl font-bold text-blue-400">{stats?.todayTransactionVolume?.toLocaleString() || 0}원</span>
+                  <span className="text-xl font-bold text-blue-400">{formatAmount(stats?.todayTransactionVolume)}원</span>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-500/10 to-transparent rounded-lg border-l-4 border-purple-500">
                   <span className="text-gray-300">전체 거래 총액</span>
-                  <span className="text-xl font-bold text-purple-400">{stats?.totalTransactionVolume?.toLocaleString() || 0}원</span>
+                  <span className="text-xl font-bold text-purple-400">{formatAmount(stats?.totalTransactionVolume)}원</span>
                 </div>
               </div>
             </div>

@@ -22,12 +22,18 @@ const AdminUsers = () => {
 
   const fetchAllUsers = async () => {
     try {
-      const res = await getAllUsers();
-      setUsers(res.data);
-      setFilteredUsers(res.data);
+      const response = await getAllUsers();
+
+      // CommonResponse 구조: { status, data, message }
+      if (response.status === "success" && response.data) {
+        setUsers(response.data);
+        setFilteredUsers(response.data);
+      } else {
+        throw new Error(response.message || "사용자 목록 조회 실패");
+      }
     } catch (error) {
       console.error("사용자 목록 조회 실패:", error);
-      toast.error("사용자 목록을 불러오는데 실패했습니다.");
+      toast.error(error.response?.data?.message || "사용자 목록을 불러오는데 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -60,12 +66,16 @@ const AdminUsers = () => {
     }
 
     try {
-      await updateUserStatus(userId, newStatus);
-      toast.success("사용자 상태가 변경되었습니다.");
-      fetchAllUsers();
+      const response = await updateUserStatus(userId, newStatus);
+      if (response.status === "success") {
+        toast.success(response.message || "사용자 상태가 변경되었습니다.");
+        fetchAllUsers();
+      } else {
+        throw new Error(response.message || "상태 변경 실패");
+      }
     } catch (error) {
       console.error("사용자 상태 변경 실패:", error);
-      toast.error("사용자 상태 변경에 실패했습니다.");
+      toast.error(error.response?.data?.message || "사용자 상태 변경에 실패했습니다.");
     }
   };
 
@@ -75,12 +85,16 @@ const AdminUsers = () => {
     }
 
     try {
-      await deleteUserByAdmin(userId);
-      toast.success("사용자가 삭제되었습니다.");
-      fetchAllUsers();
+      const response = await deleteUserByAdmin(userId);
+      if (response.status === "success") {
+        toast.success(response.message || "사용자가 삭제되었습니다.");
+        fetchAllUsers();
+      } else {
+        throw new Error(response.message || "삭제 실패");
+      }
     } catch (error) {
       console.error("사용자 삭제 실패:", error);
-      toast.error("사용자 삭제에 실패했습니다.");
+      toast.error(error.response?.data?.message || "사용자 삭제에 실패했습니다.");
     }
   };
 
