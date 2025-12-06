@@ -20,7 +20,8 @@ const Login = () => {
 
     try {
       const res = await login(form);
-      const token = res.data;
+      console.log("res : ", res);
+      const token = res.data.token;
 
       if (!token || token.split('.').length !== 3) {
         throw new Error("Invalid token format");
