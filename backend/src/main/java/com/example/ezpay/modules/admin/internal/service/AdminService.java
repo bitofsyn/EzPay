@@ -19,6 +19,15 @@ public interface AdminService {
     // Admin 대시보드 통계 조회
     AdminDashboardInfo getDashboardStats();
 
+    // 주간 거래 추이 (최근 7일)
+    List<com.example.ezpay.modules.admin.api.dto.DailyTransactionStats> getWeeklyTransactionTrend();
+
+    // 시간대별 거래량 (오늘)
+    List<com.example.ezpay.modules.admin.api.dto.HourlyTransactionStats> getTodayHourlyTransactions();
+
+    // 최근 활동 로그 (최근 50개)
+    List<com.example.ezpay.modules.admin.api.dto.RecentActivityLog> getRecentActivities(int limit);
+
     // ========== 사용자 관리 ==========
     // 모든 사용자 조회
     List<UserInfo> getAllUsers();
