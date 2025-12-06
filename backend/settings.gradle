@@ -1,5 +1,0 @@
-rootProject.name = 'EzPay'  // 🔥 프로젝트 이름 확인
-
-// 멀티 모듈이 있다면 아래와 같이 설정해야 함
-include 'backend'
-include 'frontend'

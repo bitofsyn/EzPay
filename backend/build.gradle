@@ -130,3 +130,6 @@ tasks.named('bootJar') {
 //        sentryVersion.set("8.11.1")
 //    }
 //}
+jar {
+    enabled = false
+}
