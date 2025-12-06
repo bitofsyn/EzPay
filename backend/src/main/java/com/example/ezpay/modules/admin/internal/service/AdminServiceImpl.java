@@ -6,8 +6,8 @@ import com.example.ezpay.model.user.TransferLimit;
 import com.example.ezpay.model.user.User;
 import com.example.ezpay.modules.account.api.dto.AccountInfo;
 import com.example.ezpay.modules.account.api.facade.AccountFacade;
-import com.example.ezpay.modules.admin.api.dto.AdminDashboardInfo;
-import com.example.ezpay.modules.admin.api.dto.ErrorLogInfo;
+import com.example.ezpay.modules.admin.api.dto.*;
+import com.example.ezpay.shared.common.enums.TransactionStatus;
 import com.example.ezpay.modules.payment.api.dto.TransactionInfo;
 import com.example.ezpay.modules.payment.api.dto.TransferLimitInfo;
 import com.example.ezpay.modules.payment.internal.service.TransferLimitService;
@@ -28,8 +28,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.List;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 // Admin 모듈 내부 서비스 구현 : 관리자 기능 제공
@@ -53,6 +56,7 @@ public class AdminServiceImpl implements AdminService {
     public AdminDashboardInfo getDashboardStats() {
         // 사용자 통계
         List<User> allUsers = userRepository.findAll();
+        System.out.println("allUsers = " + allUsers);
         long totalUsers = allUsers.size();
         long activeUsers = allUsers.stream().filter(u -> u.getStatus() == Status.ACTIVE).count();
         long inactiveUsers = allUsers.stream().filter(u -> u.getStatus() == Status.INACTIVE).count();
@@ -94,6 +98,124 @@ public class AdminServiceImpl implements AdminService {
                 .totalAccounts(totalAccounts)
                 .recentErrors(recentErrors)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DailyTransactionStats> getWeeklyTransactionTrend() {
+        List<DailyTransactionStats> weeklyStats = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd");
+
+        // 최근 7일 데이터 생성
+        for (int i = 6; i >= 0; i--) {
+            LocalDate targetDate = today.minusDays(i);
+            LocalDateTime startOfDay = targetDate.atStartOfDay();
+            LocalDateTime endOfDay = targetDate.atTime(LocalTime.MAX);
+
+            List<Transaction> dayTransactions = transactionRepository.findAll().stream()
+                    .filter(t -> {
+                        LocalDateTime transactionTime = t.getTransactionDate().toLocalDateTime();
+                        return !transactionTime.isBefore(startOfDay) && !transactionTime.isAfter(endOfDay);
+                    })
+                    .filter(t -> t.getStatus() == TransactionStatus.SUCCESS)
+                    .collect(Collectors.toList());
+
+            long count = dayTransactions.size();
+            BigDecimal volume = dayTransactions.stream()
+                    .map(Transaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            String[] days = {"일", "월", "화", "수", "목", "금", "토"};
+            String dayOfWeek = days[targetDate.getDayOfWeek().getValue() % 7];
+
+            weeklyStats.add(DailyTransactionStats.builder()
+                    .date(targetDate.format(dateFormatter))
+                    .dayOfWeek(dayOfWeek)
+                    .transactionCount(count)
+                    .totalVolume(volume)
+                    .build());
+        }
+
+        return weeklyStats;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<HourlyTransactionStats> getTodayHourlyTransactions() {
+        List<HourlyTransactionStats> hourlyStats = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+
+        // 0시부터 23시까지 각 시간대별로 데이터 생성
+        for (int hour = 0; hour < 24; hour++) {
+            LocalDateTime startHour = today.atTime(hour, 0);
+            LocalDateTime endHour = today.atTime(hour, 59, 59);
+
+            final int currentHour = hour;
+            List<Transaction> hourTransactions = transactionRepository.findAll().stream()
+                    .filter(t -> {
+                        LocalDateTime transactionTime = t.getTransactionDate().toLocalDateTime();
+                        return !transactionTime.isBefore(startHour) && !transactionTime.isAfter(endHour);
+                    })
+                    .filter(t -> t.getStatus() == TransactionStatus.SUCCESS)
+                    .toList();
+
+            long count = hourTransactions.size();
+            BigDecimal volume = hourTransactions.stream()
+                    .map(Transaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            hourlyStats.add(HourlyTransactionStats.builder()
+                    .hour(String.format("%02d:00", currentHour))
+                    .transactionCount(count)
+                    .totalVolume(volume)
+                    .build());
+        }
+
+        return hourlyStats;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RecentActivityLog> getRecentActivities(int limit) {
+        List<RecentActivityLog> activities = new ArrayList<>();
+
+        // 최근 거래 활동
+        List<Transaction> recentTransactions = transactionRepository.findAll().stream()
+                .sorted((a, b) -> b.getTransactionDate().compareTo(a.getTransactionDate()))
+                .limit(limit / 2)
+                .collect(Collectors.toList());
+
+        for (Transaction tx : recentTransactions) {
+            activities.add(RecentActivityLog.builder()
+                    .type("transaction")
+                    .description(String.format("₩%s 송금 완료", tx.getAmount().toPlainString()))
+                    .timestamp(tx.getTransactionDate().toLocalDateTime())
+                    .userName(tx.getSenderAccount().getUser().getName())
+                    .status(tx.getStatus().toString().toLowerCase())
+                    .build());
+        }
+
+        // 최근 에러 로그
+        List<ErrorLog> recentErrors = errorLogRepository.findAll().stream()
+                .sorted((a, b) -> b.getOccurredAt().compareTo(a.getOccurredAt()))
+                .limit(limit / 4)
+                .collect(Collectors.toList());
+
+        for (ErrorLog error : recentErrors) {
+            activities.add(RecentActivityLog.builder()
+                    .type("error")
+                    .description(error.getServiceName() + " - " + error.getErrorMessage())
+                    .timestamp(error.getOccurredAt().toLocalDateTime())
+                    .status(error.getStatus() == ErrorLogStatus.UNRESOLVED ? "failed" : "resolved")
+                    .build());
+        }
+
+        // 시간순으로 정렬하여 최신순으로 반환
+        return activities.stream()
+                .sorted((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()))
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 
     // ========== 사용자 관리 ==========
