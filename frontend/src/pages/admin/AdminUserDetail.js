@@ -25,12 +25,19 @@ const AdminUserDetail = () => {
         getUserTransactions(userId),
       ]);
 
-      setUserInfo(userRes.data);
-      setAccounts(accountsRes.data);
-      setTransactions(transactionsRes.data);
+      // CommonResponse 구조 처리
+      if (userRes.status === "success" && userRes.data) {
+        setUserInfo(userRes.data);
+      }
+      if (accountsRes.status === "success" && accountsRes.data) {
+        setAccounts(accountsRes.data);
+      }
+      if (transactionsRes.status === "success" && transactionsRes.data) {
+        setTransactions(transactionsRes.data);
+      }
     } catch (error) {
       console.error("사용자 상세 정보 조회 실패:", error);
-      toast.error("사용자 정보를 불러오는데 실패했습니다.");
+      toast.error(error.response?.data?.message || "사용자 정보를 불러오는데 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
