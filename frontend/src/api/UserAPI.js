@@ -15,14 +15,10 @@ export const login = async (userData) => {
 
 // 비밀번호 변경 (Settings)
 export const updatePassword = async (newPassword) => {
-    const token = localStorage.getItem("userToken");
     const res = await api.put(
         "/password-reset/reset-password",
         {}, // 요청 body는 없음
         {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
             params: {
                 newPassword, // 쿼리 파라미터로 전달
             },
@@ -40,17 +36,11 @@ export const getNotificationSettings = async (userId) => {
 
 // 알림 설정 변경(Settings)
 export const updateNotificationSetting = async (userId, type, isEnabled) => {
-    const token = localStorage.getItem("userToken");
     const res = await api.put(
         `/notifications/${userId}`,
         {
             notificationType: type,
             isEnabled,
-        },
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
         }
     );
     return res.data;
@@ -64,17 +54,11 @@ export const getTransferLimit = async (userId) => {
 
 // 송금 한도 변경(Settings)
 export const updateTransferLimit = async (userId, perLimit, dailyLimit) => {
-    const token = localStorage.getItem("userToken");
     const res = await api.put(
         `/transfer-limits/${userId}`,
         {
             perTransactionLimit: perLimit,
             dailyLimit: dailyLimit,
-        },
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
         }
     );
     return res.data;
@@ -108,12 +92,8 @@ export const getDashboardInfo = async () => {
 
 // 대시보드-최근 거래 내역(Dashboard)
 export const getRecentTransactions = async (accountId, sort = "desc", limit = 10) => {
-    const token = localStorage.getItem("userToken");
     const res = await api.get(`/dashboard/accounts/${accountId}/transactions`, {
         params: { sort, limit },
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
     });
     return res.data;
 }

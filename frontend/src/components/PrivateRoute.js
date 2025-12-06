@@ -1,42 +1,43 @@
 import { Navigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import { useState, useEffect } from "react";
+import api from "../api/api";
 
 const PrivateRoute = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isValid, setIsValid] = useState(false);
 
   useEffect(() => {
-    const localToken = localStorage.getItem("userToken");
-    const sessionToken = sessionStorage.getItem("userToken");
-    const token = localToken || sessionToken;
+    // 사용자 정보가 있는지 확인 (localStorage 또는 sessionStorage)
+    const localUser = localStorage.getItem("user");
+    const sessionUser = sessionStorage.getItem("user");
+    const user = localUser || sessionUser;
 
-    if (!token) {
+    if (!user) {
       setIsValid(false);
       setLoading(false);
       return;
     }
 
-    try {
-      const decoded = jwtDecode(token);
-
-      if (decoded.exp * 1000 < Date.now()) {
-        console.log("토큰 만료됨");
-        localStorage.removeItem("userToken");
-        sessionStorage.removeItem("userToken");
-        setIsValid(false);
-      } else {
-        console.log("토큰 유효함");
+    // 쿠키의 JWT 유효성은 API 요청으로 확인
+    // 첫 번째 인증된 API 요청이 실패하면 로그인 페이지로 리다이렉트
+    api.get("/")
+      .then(() => {
         setIsValid(true);
-      }
-    } catch (err) {
-      console.error("토큰 디코딩 실패", err);
-      localStorage.removeItem("userToken");
-      sessionStorage.removeItem("userToken");
-      setIsValid(false);
-    } finally {
-      setLoading(false);  // 항상 로딩 끝내기
-    }
+      })
+      .catch((err) => {
+        // 401 에러면 인증 실패
+        if (err.response?.status === 401) {
+          localStorage.removeItem("user");
+          sessionStorage.removeItem("user");
+          setIsValid(false);
+        } else {
+          // 다른 에러는 일단 허용 (네트워크 에러 등)
+          setIsValid(true);
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
