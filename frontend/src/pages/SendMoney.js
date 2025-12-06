@@ -44,7 +44,7 @@ const SendMoney = () => {
         const predictCategory = async () => {
             if (memo.trim().length > 1) {
                 try {
-                    const res = await fetch("http://localhost:5001/predict-prob", {
+                    const res = await fetch(`${import.meta.env.VITE_AI_SERVICE_URL}/predict-prob`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ text: memo }),
