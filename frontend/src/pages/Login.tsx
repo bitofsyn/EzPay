@@ -1,33 +1,39 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { login } from "../api/UserAPI";
-import { jwtDecode } from "jwt-decode";
+import { loginSchema } from "../validations/authSchemas";
+import { LoginFormData } from "../types";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [keepLogin, setKeepLogin] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [keepLogin, setKeepLogin] = useState<boolean>(false);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: yupResolver(loginSchema),
+  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
+    setError("");
 
     try {
-      const res = await login(form);
+      const res = await login(data);
 
       // JWT는 이제 httpOnly 쿠키로 전달되므로 localStorage 저장 불필요
       // 로그인 성공 시 사용자 정보만 저장
-      if (res.data && res.data.userId) {
+      if (res.data && res.data.user) {
         const userData = {
-          userId: res.data.userId,
-          email: res.data.email,
-          name: res.data.name
+          userId: res.data.user.userId,
+          email: res.data.user.email,
+          name: res.data.user.name,
         };
 
         if (keepLogin) {
@@ -38,8 +44,7 @@ const Login = () => {
 
         navigate("/dashboard");
       }
-
-    } catch (err) {
+    } catch (err: any) {
       console.error("로그인 실패:", err);
 
       if (err.response) {
@@ -67,19 +72,19 @@ const Login = () => {
         <h2 className="text-2xl font-semibold text-center">로그인</h2>
 
         {/* 로그인 폼 */}
-        <form onSubmit={handleSubmit} className="mt-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
           {/* 이메일 입력 */}
           <div>
             <label className="block text-gray-700">이메일</label>
             <input
               type="email"
-              name="email"
+              {...register("email")}
               className="w-full px-4 py-2 mt-2 border rounded-lg focus:ring focus:ring-blue-200"
               placeholder="이메일을 입력하세요"
-              value={form.email}
-              onChange={handleChange}
-              required
             />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+            )}
           </div>
 
           {/* 비밀번호 입력 */}
@@ -87,13 +92,13 @@ const Login = () => {
             <label className="block text-gray-700">비밀번호</label>
             <input
               type="password"
-              name="password"
+              {...register("password")}
               className="w-full px-4 py-2 mt-2 border rounded-lg focus:ring focus:ring-blue-200"
               placeholder="비밀번호를 입력하세요"
-              value={form.password}
-              onChange={handleChange}
-              required
             />
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+            )}
           </div>
 
           {/* 로그인 유지 체크박스 */}
