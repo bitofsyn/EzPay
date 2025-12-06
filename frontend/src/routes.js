@@ -14,6 +14,10 @@ import MainAccountSettings from "./pages/settings/MainAccountSettings";
 import FindEmail from "./pages/FindEmail";
 import FindPassword from "./pages/FindPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserDetail from "./pages/admin/AdminUserDetail";
+import AdminErrorLogs from "./pages/admin/AdminErrorLogs";
 
 const AppRoutes = () => {
   return (
@@ -47,6 +51,12 @@ const AppRoutes = () => {
         <Route path="login-history" element={<LoginHistory />} />
         <Route path="main-account" element={<MainAccountSettings />} />
       </Route>
+
+      {/* 관리자 페이지 */}
+      <Route path="/admin/dashboard" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+      <Route path="/admin/users" element={<PrivateRoute><AdminUsers /></PrivateRoute>} />
+      <Route path="/admin/users/:userId" element={<PrivateRoute><AdminUserDetail /></PrivateRoute>} />
+      <Route path="/admin/error-logs" element={<PrivateRoute><AdminErrorLogs /></PrivateRoute>} />
 
       {/* 404 */}
       <Route path="*" element={<NotFound />} />
