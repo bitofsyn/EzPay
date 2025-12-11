@@ -4,6 +4,7 @@ WORKDIR /app
 # 1. 의존성 설치를 위한 파일 먼저 복사
 COPY package.json .
 COPY package-lock.json .
+COPY .npmrc .
 
 RUN npm install
 

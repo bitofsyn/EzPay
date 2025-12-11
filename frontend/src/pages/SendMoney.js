@@ -3,6 +3,8 @@ import Input from "../components/Input";
 import { getAccountOwner, transferMoney, getMyAccounts } from "../api/UserAPI";
 import { useNavigate } from "react-router-dom";
 import * as Sentry from "@sentry/react";
+import { handleTransferError } from "../utils/errorHandler";
+import { TRANSACTION_CATEGORIES } from "../utils/constants";
 
 const SendMoney = () => {
     const navigate = useNavigate();
@@ -44,7 +46,7 @@ const SendMoney = () => {
         const predictCategory = async () => {
             if (memo.trim().length > 1) {
                 try {
-                    const res = await fetch(`${import.meta.env.VITE_AI_SERVICE_URL}/predict-prob`, {
+                    const res = await fetch(`${process.env.REACT_APP_AI_SERVICE_URL}/predict-prob`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ text: memo }),
@@ -123,12 +125,7 @@ const SendMoney = () => {
             setError("");
             setConfidence(0);
         } catch (err) {
-            const knownMessages = {
-                "송금 한도 정보를 찾을 수 없습니다.": "송금 한도 설정이 되어 있지 않습니다. 관리자에게 문의해주세요.",
-                "잔액이 부족합니다.": "출금 계좌에 잔액이 부족합니다.",
-                "계좌가 존재하지 않습니다.": "존재하지 않는 계좌입니다.",
-            };
-            const errorMessage = knownMessages[err.response?.data?.message] || err.response?.data?.message || "송금에 실패했습니다. 다시 시도해주세요.";
+            const errorMessage = handleTransferError(err);
             setError(errorMessage);
             console.error("송금 실패:", errorMessage);
             Sentry.captureException(err);
@@ -198,11 +195,9 @@ const SendMoney = () => {
                         onChange={(e) => setCategory(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
                     >
-                        <option value="식비">식비</option>
-                        <option value="교통">교통</option>
-                        <option value="주거">주거</option>
-                        <option value="가족">가족</option>
-                        <option value="기타">기타</option>
+                        {TRANSACTION_CATEGORIES.map(cat => (
+                            <option key={cat.value} value={cat.value}>{cat.label}</option>
+                        ))}
                     </select>
                     {confidence > 0 && (
                         <p className="text-xs text-gray-500">

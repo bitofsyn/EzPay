@@ -12,6 +12,7 @@ const AdminErrorLogs = () => {
 
   useEffect(() => {
     fetchErrorLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
   const fetchErrorLogs = async () => {

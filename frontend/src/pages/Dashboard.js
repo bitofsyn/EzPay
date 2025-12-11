@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { FiX } from "react-icons/fi";
 import { getDashboardInfo, getRecentTransactions } from "../api/UserAPI";
 import DashboardHeader from "../components/DashboardHeader";
+import { formatAccountNumber, formatCurrency, formatDate } from "../utils/formatters";
+import { clearUserData } from "../utils/storage";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -32,7 +34,7 @@ const Dashboard = () => {
         }
       } catch (error) {
         console.error("데이터 가져오기 오류:", error);
-        localStorage.removeItem("userToken");
+        clearUserData();
         navigate("/login");
       } finally {
         setIsLoading(false);
@@ -41,10 +43,6 @@ const Dashboard = () => {
 
     fetchUserData();
   }, [navigate]);
-
-  const formatAccountNumber = (number) => {
-    return `${number.slice(0, 2)}-${number.slice(2, 6)}-${number.slice(6)}`;
-  };
 
   // 대표 계좌를 맨 앞에 정렬
   const mainAccount = accounts.find(acc => acc.main);
@@ -58,7 +56,7 @@ const Dashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("userToken");
+    clearUserData();
     navigate("/login");
   };
 
@@ -96,7 +94,7 @@ const Dashboard = () => {
               <p className="text-sm text-gray-500">{acc.bankName}</p>
               <div className="mt-4 flex justify-between items-center">
                 <p className="text-2xl font-bold text-gray-800">
-                  {acc.balance.toLocaleString()} 원
+                  {formatCurrency(acc.balance)}
                 </p>
                 <button
                   className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-xl shadow-md font-semibold transition-all"
@@ -145,12 +143,12 @@ const Dashboard = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-800">{isSent ? "출금" : "입금"}</p>
                       <p className="text-xs text-gray-500">
-                        {new Date(tx.transactionDate).toLocaleString()}
+                        {formatDate(tx.transactionDate)}
                       </p>
                     </div>
                     <div className={`text-sm font-semibold ${isSent ? "text-rose-500" : "text-sky-600"}`}>
                       {isSent ? "-" : "+"}
-                      {tx.amount.toLocaleString()} 원
+                      {formatCurrency(tx.amount)}
                     </div>
                   </li>
                 );
