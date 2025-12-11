@@ -5,5 +5,5 @@ export const fetchMonthlyStatistics = async (userId: string, year: number, month
     const response = await api.get("/transactionsStat/monthly", {
         params : {userId, year, month},
     });
-    return response.data;
+    return response.data.data ?? response.data;
 }

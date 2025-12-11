@@ -1,9 +1,11 @@
-/// <reference types="react-scripts" />
+/// <reference types="vite/client" />
 
-declare namespace NodeJS {
-  interface ProcessEnv {
-    readonly REACT_APP_API_URL: string;
-    readonly REACT_APP_AI_SERVICE_URL: string;
-    readonly REACT_APP_SENTRY_DSN?: string;
-  }
+interface ImportMetaEnv {
+  readonly VITE_API_URL: string
+  readonly VITE_AI_SERVICE_URL: string
+  readonly VITE_SENTRY_DSN?: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
 }

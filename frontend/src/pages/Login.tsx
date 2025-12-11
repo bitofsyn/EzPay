@@ -29,17 +29,16 @@ const Login = () => {
     try {
       const res = await login(data);
 
-      // JWT는 이제 httpOnly 쿠키로 전달되므로 localStorage 저장 불필요
-      // 로그인 성공 시 사용자 정보만 저장
-      if (res.data && res.data.user) {
-        const userData = {
-          userId: res.data.user.userId,
-          email: res.data.user.email,
-          name: res.data.user.name,
-        };
-
-        saveUserData(userData, keepLogin);
+      // 응답 구조: { status: "success", data: { userId, email, name, token } }
+      if (res.status === "success" && res.data?.userId) {
+        saveUserData({
+          userId: res.data.userId,
+          email: res.data.email,
+          name: res.data.name,
+        }, keepLogin);
         navigate("/dashboard");
+      } else {
+        setError("로그인에 실패했습니다.");
       }
     } catch (err: unknown) {
       console.error("로그인 실패:", err);
