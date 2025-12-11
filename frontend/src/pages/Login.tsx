@@ -5,6 +5,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { login } from "../api/UserAPI";
 import { loginSchema } from "../validations/authSchemas";
 import { LoginFormData } from "../types";
+import { handleApiError } from "../utils/errorHandler";
+import { saveUserData } from "../utils/storage";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -36,31 +38,12 @@ const Login = () => {
           name: res.data.user.name,
         };
 
-        if (keepLogin) {
-          localStorage.setItem("user", JSON.stringify(userData));
-        } else {
-          sessionStorage.setItem("user", JSON.stringify(userData));
-        }
-
+        saveUserData(userData, keepLogin);
         navigate("/dashboard");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("로그인 실패:", err);
-
-      if (err.response) {
-        const status = err.response.status;
-        if (status === 401) {
-          setError("이메일 또는 비밀번호가 올바르지 않습니다.");
-        } else if (status >= 500) {
-          setError("서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.");
-        } else {
-          setError("알 수 없는 오류가 발생했습니다.");
-        }
-      } else if (err.request) {
-        setError("서버에 연결할 수 없습니다. 인터넷 연결을 확인하세요.");
-      } else {
-        setError("요청 중 오류가 발생했습니다.");
-      }
+      setError(handleApiError(err));
     } finally {
       setLoading(false);
     }
@@ -75,29 +58,41 @@ const Login = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
           {/* 이메일 입력 */}
           <div>
-            <label className="block text-gray-700">이메일</label>
+            <label htmlFor="email" className="block text-gray-700">이메일</label>
             <input
+              id="email"
               type="email"
               {...register("email")}
-              className="w-full px-4 py-2 mt-2 border rounded-lg focus:ring focus:ring-blue-200"
+              className="w-full px-4 py-2 mt-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none"
               placeholder="이메일을 입력하세요"
+              aria-required="true"
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? "email-error" : undefined}
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              <p id="email-error" className="text-red-500 text-sm mt-1" role="alert">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
           {/* 비밀번호 입력 */}
           <div className="mt-4">
-            <label className="block text-gray-700">비밀번호</label>
+            <label htmlFor="password" className="block text-gray-700">비밀번호</label>
             <input
+              id="password"
               type="password"
               {...register("password")}
-              className="w-full px-4 py-2 mt-2 border rounded-lg focus:ring focus:ring-blue-200"
+              className="w-full px-4 py-2 mt-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none"
               placeholder="비밀번호를 입력하세요"
+              aria-required="true"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? "password-error" : undefined}
             />
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              <p id="password-error" className="text-red-500 text-sm mt-1" role="alert">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
@@ -116,13 +111,18 @@ const Login = () => {
           </div>
 
           {/* 오류 메시지 */}
-          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+          {error && (
+            <p className="text-red-500 text-sm mt-2" role="alert" aria-live="polite">
+              {error}
+            </p>
+          )}
 
           {/* 로그인 버튼 */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-6 bg-gray-700 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition disabled:bg-gray-400"
+            className="w-full mt-6 bg-gray-700 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition disabled:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            aria-label={loading ? "로그인 진행 중" : "로그인"}
           >
             {loading ? "로그인 중..." : "로그인"}
           </button>

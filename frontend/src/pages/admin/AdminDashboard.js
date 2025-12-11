@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiUsers, FiActivity, FiDollarSign, FiAlertCircle, FiCreditCard, FiMenu, FiSearch, FiBell, FiSettings, FiMail, FiTrendingUp } from "react-icons/fi";
+import { FiUsers, FiActivity, FiAlertCircle, FiCreditCard, FiMenu, FiSearch, FiBell, FiSettings, FiMail, FiTrendingUp } from "react-icons/fi";
 import CircularProgress from "../../components/admin/CircularProgress";
 import TransactionTrendChart from "../../components/admin/TransactionTrendChart";
 import UserStatusChart from "../../components/admin/UserStatusChart";
 import HourlyTransactionChart from "../../components/admin/HourlyTransactionChart";
-import { formatAmount } from "../../utils/adminUtils";
+import { formatAmount } from "../../utils/formatters";
 import { useAdminStats, useRealtimeActivities, useHourlyTransactions, useWeeklyTrend } from "../../hooks/useAdminDashboard";
 import {
   Chart as ChartJS,

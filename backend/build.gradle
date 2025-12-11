@@ -2,7 +2,14 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.2'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.23'
 //    id "io.sentry.jvm.gradle" version "5.5.0"
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.jetbrains.kotlin:kotlin-bom:1.9.23"
+    }
 }
 
 group = 'com.example'

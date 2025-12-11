@@ -1,6 +1,10 @@
 import { useNavigate } from "react-router-dom";
 
-const Header = ({ title }) => {
+interface HeaderProps {
+    title: string;
+}
+
+const Header = ({ title }: HeaderProps) => {
     const navigate = useNavigate();
 
     const handleLogout = () => {

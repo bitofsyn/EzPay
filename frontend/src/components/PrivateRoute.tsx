@@ -2,7 +2,11 @@ import { Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "../api/api";
 
-const PrivateRoute = ({ children }) => {
+interface PrivateRouteProps {
+    children: React.ReactNode;
+}
+
+const PrivateRoute = ({ children }: PrivateRouteProps) => {
   const [loading, setLoading] = useState(true);
   const [isValid, setIsValid] = useState(false);
 
