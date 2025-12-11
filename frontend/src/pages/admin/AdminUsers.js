@@ -18,6 +18,7 @@ const AdminUsers = () => {
 
   useEffect(() => {
     filterUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, statusFilter, users]);
 
   const fetchAllUsers = async () => {
@@ -108,19 +109,6 @@ const AdminUsers = () => {
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case "ACTIVE":
-        return "활성";
-      case "INACTIVE":
-        return "비활성";
-      case "LOCKED":
-        return "잠금";
-      default:
-        return status;
     }
   };
 

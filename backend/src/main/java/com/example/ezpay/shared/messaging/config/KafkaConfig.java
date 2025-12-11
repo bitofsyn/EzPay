@@ -67,6 +67,26 @@ public class KafkaConfig {
     }
 
     /*
+        ProducerFactory for Object type (DLT용)
+     */
+    @Bean
+    public ProducerFactory<String, Object> objectProducerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    /*
+        KafkaTemplate for Object type (DLT 및 에러 핸들링용)
+     */
+    @Bean
+    public KafkaTemplate<String, Object> objectKafkaTemplate(ProducerFactory<String, Object> objectProducerFactory) {
+        return new KafkaTemplate<>(objectProducerFactory);
+    }
+
+    /*
         ConsumerFactory 설정 (Kafka Listener를 위해 필요)
      */
     @Bean

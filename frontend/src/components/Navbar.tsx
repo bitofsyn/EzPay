@@ -1,6 +1,10 @@
 import { FiMenu } from "react-icons/fi";
 
-const Navbar = ({ onMenuClick }) => {
+interface NavbarProps {
+    onMenuClick: () => void;
+}
+
+const Navbar = ({ onMenuClick }: NavbarProps) => {
   return (
     <header className="flex justify-between items-center w-full max-w-lg bg-white shadow-md p-4 rounded-lg">
       <h2 className="text-xl font-semibold">EzPay</h2>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signup } from "../api/UserAPI";
+import { handleApiError } from "../utils/errorHandler";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -27,11 +28,8 @@ const Signup = () => {
       navigate("/login");
     } catch (error) {
       console.log("회원가입 오류 : ", error);
-      if (error.response && error.response.data && error.response.data.message) {
-        alert(`회원가입 실패: ${error.response.data.message}`);
-      } else {
-        alert("회원가입 실패했습니다. 다시 시도해주세요.");
-      }
+      const errorMessage = handleApiError(error);
+      alert(`회원가입 실패: ${errorMessage}`);
     }
   };
 

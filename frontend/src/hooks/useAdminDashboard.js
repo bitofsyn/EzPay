@@ -6,7 +6,7 @@ import {
   getWeeklyTransactionTrend
 } from "../api/AdminAPI";
 import toast from "react-hot-toast";
-import { getRelativeTime, getActivityColor, formatActivityDescription } from "../utils/adminUtils";
+import { getRelativeTime, getActivityColor, formatActivityDescription } from "../utils/formatters";
 
 // 대시보드 통계 데이터 훅
 export const useAdminStats = () => {
