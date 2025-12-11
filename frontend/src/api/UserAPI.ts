@@ -21,8 +21,8 @@ export const signup = async (formData: SignupFormData): Promise<ApiResponse<User
     return res.data;
 };
 
-// 로그인(Login)
-export const login = async (userData: LoginFormData): Promise<ApiResponse<{ token: string; user: User }>> => {
+// 로그인(Login) - 응답: { status, data: { userId, email, name, token } }
+export const login = async (userData: LoginFormData): Promise<ApiResponse<{ userId: number; email: string; name: string; token: string | null }>> => {
     const res = await api.post("/users/login", userData);
     return res.data;
 };
@@ -44,7 +44,7 @@ export const updatePassword = async (newPassword: string): Promise<ApiResponse> 
 // 알림 설정 조회(Settings)
 export const getNotificationSettings = async (userId: number): Promise<NotificationSettings[]> => {
     const res = await api.get(`/notifications/${userId}`);
-    return res.data;
+    return res.data.data ?? res.data;
 };
 
 // 알림 설정 변경(Settings)
@@ -63,7 +63,7 @@ export const updateNotificationSetting = async (
 // 송금 한도 조회(Settings)
 export const getTransferLimit = async (userId: number): Promise<TransferLimit> => {
     const res = await api.get(`/transfer-limits/${userId}`);
-    return res.data;
+    return res.data.data ?? res.data;
 };
 
 // 송금 한도 변경(Settings)
@@ -88,13 +88,13 @@ export const deleteUser = async (userId: number): Promise<ApiResponse> => {
 // 사용자 정보 조회(Settings)
 export const getUserInfo = async (): Promise<User> => {
     const res = await api.get("/users/me");
-    return res.data;
+    return res.data.data ?? res.data;
 };
 
 // 최근 로그인 기록 조회(Settings)
 export const getLoginHistory = async (userId: number): Promise<LoginHistoryItem[]> => {
     const res = await api.get(`/users/${userId}/login-history`);
-    return res.data;
+    return res.data.data ?? res.data;
 };
 
 // 대시보드(Dashboard)
@@ -112,7 +112,7 @@ export const getRecentTransactions = async (
     const res = await api.get(`/dashboard/accounts/${accountId}/transactions`, {
         params: { sort, limit },
     });
-    return res.data;
+    return res.data.data ?? res.data;
 };
 
 // 계좌 개설(createAccount)
@@ -124,7 +124,7 @@ export const createAccount = async (accountData: CreateAccountData): Promise<Api
 // 전체 계좌 조회(ViewAccount)
 export const getMyAccounts = async (): Promise<Account[]> => {
     const res = await api.get("/account/me");
-    return res.data;
+    return res.data.data ?? res.data;
 };
 
 // 송금(SendMoney)
@@ -136,13 +136,13 @@ export const transferMoney = async (transferData: TransferData): Promise<ApiResp
 // 계좌번호로 사용자 조회(SendMoney)
 export const getAccountOwner = async (accountNumber: string): Promise<AccountOwner> => {
     const res = await api.get(`/account/${accountNumber}`);
-    return res.data;
+    return res.data.data ?? res.data;
 };
 
 // 거래 내역 조회 (TransactionHistory)
 export const getTransactionHistory = async (accountId: number): Promise<Transaction[]> => {
     const res = await api.get(`/transaction/account/${accountId}`);
-    return res.data;
+    return res.data.data ?? res.data;
 };
 
 // 대표 계좌 설정(Settings)

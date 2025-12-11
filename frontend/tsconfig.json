@@ -25,11 +25,15 @@
     }
   },
   "include": [
-    "src"
+    "src",
+    "src/vite-env.d.ts"
   ],
   "exclude": [
     "node_modules",
     "build",
-    "dist"
+    "dist",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx"
   ]
 }
