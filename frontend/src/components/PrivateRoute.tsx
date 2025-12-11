@@ -24,7 +24,7 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
 
     // 쿠키의 JWT 유효성은 API 요청으로 확인
     // 첫 번째 인증된 API 요청이 실패하면 로그인 페이지로 리다이렉트
-    api.get("/")
+    api.get("/users/me")
       .then(() => {
         setIsValid(true);
       })
