@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getTransferLimit, updateTransferLimit } from "../../api/UserAPI";
+import { getTransferLimit, updateTransferLimit, getUserInfo } from "../../api/UserAPI";
 import toast from "react-hot-toast";
 
 const TransferLimit: React.FC = () => {
@@ -10,17 +10,14 @@ const TransferLimit: React.FC = () => {
     useEffect(() => {
         const fetchLimit = async (): Promise<void> => {
             try {
-                const userData = JSON.parse(localStorage.getItem("user") || "{}");
-                if (!userData || !userData.userId) {
+                const userInfo = await getUserInfo();
+                if (!userInfo || !userInfo.userId) {
                     toast.error("로그인 정보가 없습니다. 다시 로그인 해주세요.");
                     return;
                 }
-                console.log(`userData : ` ,  userData);
-                setUserId(userData.userId);
+                setUserId(userInfo.userId);
 
-
-                const res = await getTransferLimit(userData.userId);
-                console.log(`res : `, res);
+                const res = await getTransferLimit(userInfo.userId);
                 setPerLimit(res.perTransactionLimit);
                 setDailyLimit(res.dailyLimit);
             } catch (err) {

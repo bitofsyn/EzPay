@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserInfo, deleteUser } from "../../api/UserAPI";
+import toast from "react-hot-toast";
 
 const Withdraw: React.FC = () => {
     const navigate = useNavigate();
@@ -25,11 +26,10 @@ const Withdraw: React.FC = () => {
             await deleteUser(userId!);
             sessionStorage.clear();
             localStorage.clear();
-            alert("회원 탈퇴가 완료되었습니다.");
-            localStorage.removeItem("userToken");
+            toast.success("회원 탈퇴가 완료되었습니다.");
             navigate("/login");
-        } catch (err) {
-            alert("회원 탈퇴 실패");
+        } catch {
+            toast.error("회원 탈퇴에 실패했습니다.");
         }
     };
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyAccounts, setMainAccount } from "../../api/UserAPI";
 import { Account } from "../../types";
+import toast from "react-hot-toast";
 
 const MainAccountSettings: React.FC = () => {
   const navigate = useNavigate();
@@ -47,10 +48,9 @@ const MainAccountSettings: React.FC = () => {
         setCurrentMainId(main.accountId);
       }
 
-      alert("대표 계좌가 변경되었습니다!");
-    } catch (err) {
-      console.error("대표 계좌 변경 실패", err);
-      alert("대표 계좌 변경에 실패했습니다.");
+      toast.success("대표 계좌가 변경되었습니다!");
+    } catch {
+      toast.error("대표 계좌 변경에 실패했습니다.");
     }
   };
 

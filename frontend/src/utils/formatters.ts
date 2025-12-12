@@ -23,18 +23,68 @@ export const formatCurrency = (amount: number | string): string => {
 };
 
 /**
+ * 날짜 문자열을 안전하게 파싱
+ * 백엔드에서 배열 형태 [2024,1,15,10,30,0] 또는 ISO 문자열로 올 수 있음
+ */
+export const parseDate = (date: string | Date | number[]): Date => {
+  if (date instanceof Date) return date;
+
+  // 배열 형태인 경우 (Java LocalDateTime 직렬화)
+  if (Array.isArray(date)) {
+    const [year, month, day, hour = 0, minute = 0, second = 0] = date;
+    return new Date(year, month - 1, day, hour, minute, second);
+  }
+
+  // 문자열인 경우
+  if (typeof date === 'string') {
+    // ISO 형식이거나 일반 날짜 문자열
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) return parsed;
+
+    // T 없이 공백으로 구분된 경우 (예: "2024-01-15 10:30:00")
+    const withT = date.replace(' ', 'T');
+    const parsedWithT = new Date(withT);
+    if (!isNaN(parsedWithT.getTime())) return parsedWithT;
+  }
+
+  // 파싱 실패 시 현재 날짜 반환
+  return new Date();
+};
+
+/**
  * 날짜를 로케일 문자열로 포맷팅
  */
-export const formatDate = (date: string | Date): string => {
-  return new Date(date).toLocaleString();
+export const formatDate = (date: string | Date | number[]): string => {
+  const parsed = parseDate(date);
+  return parsed.toLocaleString('ko-KR');
+};
+
+/**
+ * 날짜를 간단한 형식으로 포맷팅 (YYYY. MM. DD)
+ */
+export const formatDateShort = (date: string | Date | number[]): string => {
+  const parsed = parseDate(date);
+  return parsed.toLocaleDateString('ko-KR');
+};
+
+/**
+ * 날짜를 상세 형식으로 포맷팅 (YYYY. MM. DD)
+ */
+export const formatDateFull = (date: string | Date | number[]): string => {
+  const parsed = parseDate(date);
+  return parsed.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
 };
 
 /**
  * 상대 시간으로 변환 (예: "방금 전", "5분 전")
  */
-export const getRelativeTime = (timestamp: string | Date): string => {
+export const getRelativeTime = (timestamp: string | Date | number[]): string => {
   const now = new Date();
-  const past = new Date(timestamp);
+  const past = parseDate(timestamp);
   const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
 
   if (diffInSeconds < 60) return '방금 전';

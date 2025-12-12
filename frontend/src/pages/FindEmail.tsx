@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { findEmail } from "../api/UserAPI";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 interface FindEmailFormData {
   name: string;
@@ -104,7 +105,7 @@ const FindEmail: React.FC = () => {
             <button
               onClick={() => {
                 navigator.clipboard.writeText(result);
-                alert("이메일이 복사되었습니다!");
+                toast.success("이메일이 복사되었습니다!");
               }}
               className="px-2 py-1 text-xs bg-blue-700 hover:bg-blue-600 text-white rounded-md transition"
             >

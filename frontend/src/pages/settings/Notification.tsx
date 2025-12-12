@@ -5,6 +5,7 @@ import {
     updateNotificationSetting,
 } from "../../api/UserAPI";
 import { NotificationSettings } from "../../types";
+import toast from "react-hot-toast";
 
 const Notification: React.FC = () => {
     const [userId, setUserId] = useState<number | null>(null);
@@ -41,8 +42,9 @@ const Notification: React.FC = () => {
             await updateNotificationSetting(userId!, type, !currentValue);
             if (type === "EMAIL") setEmailEnabled(!currentValue);
             if (type === "PUSH") setPushEnabled(!currentValue);
-        } catch (err) {
-            alert("알림 설정 변경 실패");
+            toast.success("알림 설정이 변경되었습니다.");
+        } catch {
+            toast.error("알림 설정 변경에 실패했습니다.");
         }
     };
 
