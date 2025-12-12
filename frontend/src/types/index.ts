@@ -44,18 +44,30 @@ export interface AccountOwner {
 }
 
 // Transaction Types
+export interface TransactionAccount {
+  accountId: number;
+  accountNumber: string;
+  bankName: string;
+  balance: number;
+  createdAt?: string;
+  main?: boolean;
+}
+
 export interface Transaction {
   transactionId: number;
-  accountId: number;
-  transactionType: 'DEPOSIT' | 'WITHDRAW' | 'TRANSFER_IN' | 'TRANSFER_OUT';
   amount: number;
-  balance: number;
   description?: string;
   memo?: string;
   category?: string;
-  createdAt: string;
-  recipientAccountNumber?: string;
-  senderAccountNumber?: string;
+  status: 'SUCCESS' | 'PENDING' | 'FAILED';
+  transactionDate: string;
+  senderAccount: TransactionAccount;
+  receiverAccount: TransactionAccount;
+  // 레거시 필드 (호환성)
+  accountId?: number;
+  transactionType?: 'DEPOSIT' | 'WITHDRAW' | 'TRANSFER_IN' | 'TRANSFER_OUT';
+  balance?: number;
+  createdAt?: string;
 }
 
 export interface TransferData {
@@ -93,12 +105,11 @@ export interface TransferLimit {
 }
 
 export interface LoginHistoryItem {
-  loginHistoryId: number;
+  historyId: number;
   userId: number;
-  loginTime: string;
   ipAddress: string;
-  userAgent?: string;
-  timestamp: string;
+  deviceInfo: string;
+  loginTime: string;
 }
 
 // API Response Types

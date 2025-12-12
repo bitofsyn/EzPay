@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { updatePassword } from "../../api/UserAPI";
+import toast from "react-hot-toast";
 
 const PasswordChange: React.FC = () => {
     const [newPassword, setNewPassword] = useState<string>("");
@@ -7,23 +8,22 @@ const PasswordChange: React.FC = () => {
 
     const handlePasswordChange = async (): Promise<void> => {
         if (!newPassword || !confirmPassword) {
-            alert("비밀번호를 모두 입력해주세요.");
+            toast.error("비밀번호를 모두 입력해주세요.");
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            alert("비밀번호가 일치하지 않습니다.");
+            toast.error("비밀번호가 일치하지 않습니다.");
             return;
         }
 
         try {
             const res = await updatePassword(newPassword);
-            alert(res.message || "비밀번호 변경 성공");
+            toast.success(res.message || "비밀번호가 변경되었습니다.");
             setNewPassword("");
             setConfirmPassword("");
-        } catch (err) {
-            alert("비밀번호 변경 실패");
-            console.error(err);
+        } catch {
+            toast.error("비밀번호 변경에 실패했습니다.");
         }
     };
 

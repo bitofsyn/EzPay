@@ -6,23 +6,14 @@ import DashboardHeader from "../components/DashboardHeader";
 import { formatAccountNumber, formatCurrency, formatDate } from "../utils/formatters";
 import { clearUserData } from "../utils/storage";
 import { User, Account, Transaction } from "../types";
+import { Skeleton, TransactionListSkeleton } from "../components/Skeleton";
 
 interface DashboardAccount extends Account {
   main?: boolean;
   bankName?: string;
 }
 
-interface DashboardTransaction extends Transaction {
-  senderAccount: {
-    accountId: number;
-    accountNumber: string;
-  };
-  receiverAccount: {
-    accountId: number;
-    accountNumber: string;
-  };
-  transactionDate: string;
-}
+type DashboardTransaction = Transaction;
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -90,10 +81,34 @@ const Dashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
-        <div className="w-full max-w-lg bg-white rounded-xl p-6 animate-pulse">
-          <div className="h-6 bg-gray-300 rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
-          <div className="h-10 bg-gray-300 rounded w-full"></div>
+        {/* 헤더 스켈레톤 */}
+        <div className="w-full max-w-lg flex justify-between items-center mb-6">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-8 w-8 rounded-full" />
+        </div>
+
+        {/* 계좌 카드 스켈레톤 */}
+        <div className="w-full max-w-lg bg-white rounded-xl p-6 border">
+          <Skeleton className="h-4 w-16 mb-2" />
+          <Skeleton className="h-6 w-40 mb-1" />
+          <Skeleton className="h-4 w-24 mb-4" />
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-10 w-16 rounded-xl" />
+          </div>
+        </div>
+
+        {/* 인디케이터 스켈레톤 */}
+        <div className="flex justify-center mt-4 space-x-2">
+          <Skeleton className="h-3 w-3 rounded-full" />
+          <Skeleton className="h-3 w-3 rounded-full" />
+          <Skeleton className="h-3 w-3 rounded-full" />
+        </div>
+
+        {/* 거래 내역 스켈레톤 */}
+        <div className="w-full max-w-lg bg-white rounded-xl border p-6 mt-6">
+          <Skeleton className="h-6 w-32 mb-4" />
+          <TransactionListSkeleton count={4} />
         </div>
       </div>
     );
