@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { getUserInfo, deleteUser, getLoginHistory } from "../../api/UserAPI";
+import { LoginHistoryItem } from "../../types";
 
 interface UserData {
     userId: number;
@@ -9,16 +10,10 @@ interface UserData {
     email: string;
 }
 
-interface LoginLog {
-    device?: string;
-    ip?: string;
-    timestamp: string;
-}
-
 const UserInfo: React.FC = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState<UserData>({ userId: 0, name: "", email: "" });
-    const [logs, setLogs] = useState<LoginLog[]>([]);
+    const [logs, setLogs] = useState<LoginHistoryItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
 
@@ -32,6 +27,7 @@ const UserInfo: React.FC = () => {
                     email: userRes.email,
                 };
                 const logsRes = await getLoginHistory(userData.userId);
+                console.log("logsRes :", logsRes);
                 setUser(userData);
                 setLogs(logsRes);
             } catch (err) {
@@ -53,11 +49,11 @@ const UserInfo: React.FC = () => {
     const handleDeleteAccount = async (): Promise<void> => {
         try {
             await deleteUser(user.userId);
-            alert("계정이 삭제되었습니다.");
+            toast.success("계정이 삭제되었습니다.");
             localStorage.removeItem("userToken");
             navigate("/login");
-        } catch (err) {
-            alert("계정 삭제 실패");
+        } catch {
+            toast.error("계정 삭제에 실패했습니다.");
         }
     };
 
@@ -86,17 +82,17 @@ const UserInfo: React.FC = () => {
                 ) : (
                     <>
                         <ul className="space-y-2">
-                            {logs.slice(0, 5).map((log, idx) => (
+                            {logs.slice(0, 5).map((log) => (
                                 <li
-                                    key={idx}
+                                    key={log.historyId}
                                     className="flex justify-between items-center text-sm text-gray-700 border rounded px-3 py-2"
                                 >
                                     <div>
-                                        <p className="font-medium">{log.device || "알 수 없는 기기"}</p>
-                                        <p className="text-xs text-gray-500">{log.ip || "IP 미상"}</p>
+                                        <p className="font-medium">{log.deviceInfo || "알 수 없는 기기"}</p>
+                                        <p className="text-xs text-gray-500">{log.ipAddress || "IP 미상"}</p>
                                     </div>
                                     <span className="text-xs text-gray-400">
-                                        {new Date(log.timestamp).toLocaleString()}
+                                        {new Date(log.loginTime).toLocaleString("ko-KR")}
                                     </span>
                                 </li>
                             ))}

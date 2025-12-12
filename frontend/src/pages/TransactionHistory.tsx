@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getTransactionHistory, getMyAccounts } from "../api/UserAPI";
 import { ArrowDownCircle, ArrowUpCircle, Copy, ChevronDown } from "lucide-react";
 import { Account, Transaction } from "../types";
+import toast from "react-hot-toast";
 
 const TransactionHistory: React.FC = () => {
   const navigate = useNavigate();
@@ -108,7 +109,7 @@ const TransactionHistory: React.FC = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert("계좌번호가 복사되었습니다.");
+    toast.success("계좌번호가 복사되었습니다.");
   };
 
   const formatAccountNumberShort = (num: string) => {
