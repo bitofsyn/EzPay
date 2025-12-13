@@ -73,14 +73,10 @@ logging:
         security: DEBUG  # Spring Security 디버그 레벨
 
 
-# SMTP
-    implementation 'org.springframework.boot:spring-boot-starter-mail'
-}
+sentry:
+  dsn: https://9f7f38650127a9230745a97cfc007353@o4509325284802560.ingest.us.sentry.io/4509325286244352
+  send-default-pii: true
 
 ezpay:
   internal-api:
     secret-key: "a7b7b1b1-1c1c-4d4d-8e8e-1f1f1f1f1f1f"
-
-tasks.named('bootBuildImage') {
-    builder = 'paketobuildpacks/builder-jammy-base:latest'
-}
