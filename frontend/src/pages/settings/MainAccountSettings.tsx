@@ -4,6 +4,15 @@ import { getMyAccounts, setMainAccount } from "../../api/UserAPI";
 import { Account } from "../../types";
 import toast from "react-hot-toast";
 
+// 계좌번호 포맷팅 (XX-XXXX-XXXX)
+const formatAccountNumber = (accountNumber: string): string => {
+  const cleaned = accountNumber.replace(/\D/g, "");
+  if (cleaned.length === 10) {
+    return `${cleaned.slice(0, 2)}-${cleaned.slice(2, 6)}-${cleaned.slice(6, 10)}`;
+  }
+  return accountNumber;
+};
+
 const MainAccountSettings: React.FC = () => {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -14,13 +23,23 @@ const MainAccountSettings: React.FC = () => {
     const fetchAccounts = async (): Promise<void> => {
       try {
         const res = await getMyAccounts();
+        console.log("res : ", res);
         const accountList: Account[] = res;
         setAccounts(accountList);
 
         // 현재 대표계좌 찾기
         const main = accountList.find(acc => acc.isMain);
+
         if (main) {
           setCurrentMainId(main.accountId);
+        } else if (accountList.length > 0) {
+          // 대표계좌가 없으면 첫 번째 계좌를 대표계좌로 자동 설정
+          const firstAccount = accountList[0];
+          await setMainAccount(firstAccount.accountId);
+          setCurrentMainId(firstAccount.accountId);
+          // 계좌 목록 다시 불러오기
+          const updatedRes = await getMyAccounts();
+          setAccounts(updatedRes);
         }
       } catch (err) {
         console.error("계좌 목록 불러오기 실패", err);
@@ -70,17 +89,33 @@ const MainAccountSettings: React.FC = () => {
           {accounts.map((account) => (
             <div
               key={account.accountId}
-              className={`p-4 border rounded-lg flex justify-between items-center cursor-pointer
-                ${account.isMain ? "bg-blue-100 border-blue-400" : "bg-white hover:bg-gray-100"}`}
+              className={`p-4 border-2 rounded-lg cursor-pointer transition-all
+                ${account.isMain
+                  ? "bg-blue-50 border-blue-500 shadow-md"
+                  : "bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300"}`}
               onClick={() => handleSelectMain(account.accountId)}
             >
-              <div>
-                <p className="font-semibold">{account.accountName} - {account.accountNumber}</p>
-                <p className="text-gray-500 text-sm">{account.balance.toLocaleString()} 원</p>
-              </div>
               {account.isMain && (
-                <span className="text-blue-600 font-bold text-sm">대표</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    대표 계좌
+                  </span>
+                </div>
               )}
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className={`font-semibold ${account.isMain ? "text-blue-800" : "text-gray-800"}`}>
+                    {account.accountName}
+                  </p>
+                  <p className={`text-sm font-mono ${account.isMain ? "text-blue-600" : "text-gray-600"}`}>
+                    {formatAccountNumber(account.accountNumber)}
+                  </p>
+                  <p className="text-gray-500 text-sm mt-1">{account.balance.toLocaleString()} 원</p>
+                </div>
+                {!account.isMain && (
+                  <span className="text-gray-400 text-sm">클릭하여 대표 설정</span>
+                )}
+              </div>
             </div>
           ))}
         </div>

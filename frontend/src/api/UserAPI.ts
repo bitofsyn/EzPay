@@ -21,8 +21,8 @@ export const signup = async (formData: SignupFormData): Promise<ApiResponse<User
     return res.data;
 };
 
-// 로그인(Login) - 응답: { status, data: { userId, email, name, token } }
-export const login = async (userData: LoginFormData): Promise<ApiResponse<{ userId: number; email: string; name: string; token: string | null }>> => {
+// 로그인(Login) - 응답: { status, data: { userId, email, name, role, token } }
+export const login = async (userData: LoginFormData): Promise<ApiResponse<{ userId: number; email: string; name: string; role: 'USER' | 'ADMIN'; token: string | null }>> => {
     const res = await api.post("/users/login", userData);
     return res.data;
 };
@@ -124,7 +124,12 @@ export const createAccount = async (accountData: CreateAccountData): Promise<Api
 // 전체 계좌 조회(ViewAccount)
 export const getMyAccounts = async (): Promise<Account[]> => {
     const res = await api.get("/account/me");
-    return res.data.data ?? res.data;
+    const accounts = res.data.data ?? res.data;
+    // 백엔드에서 boolean isMain 필드가 Jackson에 의해 "main"으로 직렬화됨
+    return accounts.map((acc: Account & { main?: boolean }) => ({
+        ...acc,
+        isMain: acc.main ?? acc.isMain ?? false,
+    }));
 };
 
 // 송금(SendMoney)
