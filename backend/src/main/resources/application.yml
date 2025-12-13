@@ -1,13 +1,18 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
   application:
     name: EzPay  # 애플리케이션 이름
 #  config:
 #    import: optional:file:.env  # 환경변수 파일(.env) 불러오기
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+#    url: ${SPRING_DATASOURCE_URL}
+#    username: ${SPRING_DATASOURCE_USERNAME}
+#    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: jdbc:postgresql://host.docker.internal:5432/postgres
+    username: postgres
+    password: syj30408!!
     driver-class-name: org.postgresql.Driver  # PostgreSQL 드라이버 설정
     hikari:
       maximum-pool-size: 10  # 커넥션 풀 최대 크기
@@ -21,6 +26,8 @@ spring:
         queue-capacity: 500  # 대기 큐 사이즈
   jackson:
     time-zone: Asia/Seoul
+    serialization:
+      write-dates-as-timestamps: false
 
   mail:
     host: smtp.gmail.com
@@ -44,29 +51,14 @@ spring:
         format_sql: true  # SQL 이쁘게 포맷팅
         jdbc:
           time_zone: Asia/Seoul  # DB 타임존 한국 시간으로 설정
+    defer-datasource-initialization: true  # JPA 초기화 후 data.sql 실행
+
+  sql:
+    init:
+      mode: always  # data.sql 항상 실행
 
   kafka:
     bootstrap-servers: kafka:9092  # Kafka 서버 연결 주소
-    producer:
-      acks: 1  # 프로듀서가 서버로부터 응답 받을 때까지 기다림
-      retries: 3  # 전송 실패 시 재시도 횟수
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer  # 키 직렬화
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer  # 값 직렬화(JSON)
-      transaction-id-prefix: tx-  # Kafka 트랜잭션 아이디 접두어
-    consumer:
-      group-id: ezpay-group  # 컨슈머 그룹 아이디
-      auto-offset-reset: earliest  # 가장 처음부터 메시지 읽기
-      enable-auto-commit: false  # 수동 커밋 설정
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # 키 역직렬화
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # 값 역직렬화
-      properties:
-        spring:
-          json:
-            trusted:
-              packages: "*"  # 모든 패키지에서 오는 JSON 수락
-    listener:
-      type: batch  # Kafka 리스너를 배치 모드로 설정
-      ack-mode: manual  # 메시지 수동 커밋
 
 logging:
   level:
@@ -81,8 +73,14 @@ logging:
         security: DEBUG  # Spring Security 디버그 레벨
 
 
-sentry:
-  dsn: https://9f7f38650127a9230745a97cfc007353@o4509325284802560.ingest.us.sentry.io/4509325286244352
-  # Add data like request headers and IP for users,
-  # see https://docs.sentry.io/platforms/java/guides/spring-boot/data-management/data-collected/ for more info
-  send-default-pii: true
+# SMTP
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+}
+
+ezpay:
+  internal-api:
+    secret-key: "a7b7b1b1-1c1c-4d4d-8e8e-1f1f1f1f1f1f"
+
+tasks.named('bootBuildImage') {
+    builder = 'paketobuildpacks/builder-jammy-base:latest'
+}
