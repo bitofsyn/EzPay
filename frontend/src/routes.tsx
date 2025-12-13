@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PrivateRoute from "./components/PrivateRoute";
+import AdminRoute from "./components/AdminRoute";
 
 // Lazy load pages
 const Home = lazy(() => import("./pages/Home"));
@@ -80,11 +81,11 @@ const AppRoutes = () => {
             <Route path="main-account" element={<MainAccountSettings />} />
           </Route>
 
-          {/* 관리자 페이지 */}
-          <Route path="/admin/dashboard" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
-          <Route path="/admin/users" element={<PrivateRoute><AdminUsers /></PrivateRoute>} />
-          <Route path="/admin/users/:userId" element={<PrivateRoute><AdminUserDetail /></PrivateRoute>} />
-          <Route path="/admin/error-logs" element={<PrivateRoute><AdminErrorLogs /></PrivateRoute>} />
+          {/* 관리자 페이지 - AdminRoute로 보호 (관리자만 접근 가능) */}
+          <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+          <Route path="/admin/users/:userId" element={<AdminRoute><AdminUserDetail /></AdminRoute>} />
+          <Route path="/admin/error-logs" element={<AdminRoute><AdminErrorLogs /></AdminRoute>} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
