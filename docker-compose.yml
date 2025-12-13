@@ -71,6 +71,20 @@ services:
     networks:
       - my_network
 
+  ai-assistant:
+    image: ezpay-ai-assistant:latest
+    build:
+      context: ./ai-assistant-server
+      dockerfile: Dockerfile
+    restart: always
+    container_name: ai-assistant
+    ports:
+      - "8001:8001"
+    env_file:
+      - ai-assistant-server/.env
+    networks:
+      - my_network
+
   kafka:
     image: confluentinc/cp-kafka:7.5.1
     container_name: kafka
