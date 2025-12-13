@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -21,5 +22,14 @@ public class StatisticsServiceImpl implements StatisticsService {
             throw new IllegalArgumentException("User ID cannot be null.");
         }
         return transactionRepository.getSpendingSummaryByCategory(userId, year, month);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Transaction> searchTransactions(Long userId, String keyword, LocalDate startDate, LocalDate endDate) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null.");
+        }
+        return transactionRepository.searchTransactions(userId, keyword, startDate, endDate);
     }
 }

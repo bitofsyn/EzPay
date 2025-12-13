@@ -10,6 +10,8 @@ python-dotenv~=0.20.0
 matplotlib~=3.10.1
 seaborn~=0.13.2
 scikit-learn~=1.6.1
+pandera~=0.20.0
+mlflow[extras]~=2.14.3
 fastapi==0.110.0
 pydantic~=2.4.0
 uvicorn[standard]
