@@ -19,6 +19,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const FindEmail = lazy(() => import("./pages/FindEmail"));
 const FindPassword = lazy(() => import("./pages/FindPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const AIAssistant = lazy(() => import("./pages/AIAssistant"));
 
 // Settings pages
 const LayoutSettings = lazy(() => import("./pages/settings/LayoutSettings"));
@@ -35,6 +36,8 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 const AdminErrorLogs = lazy(() => import("./pages/admin/AdminErrorLogs"));
+const AdminTransactions = lazy(() => import("./pages/admin/AdminTransactions"));
+const AdminTransferLimits = lazy(() => import("./pages/admin/AdminTransferLimits"));
 
 // Loading component
 const LoadingFallback = () => (
@@ -66,6 +69,7 @@ const AppRoutes = () => {
           <Route path="/transactions" element={<PrivateRoute><TransactionHistory /></PrivateRoute>} />
           <Route path="/accounts" element={<PrivateRoute><ViewAccounts /></PrivateRoute>} />
           <Route path="/account/:id" element={<PrivateRoute><AccountDetail /></PrivateRoute>} />
+          <Route path="/ai-assistant" element={<PrivateRoute><AIAssistant /></PrivateRoute>} />
 
           {/* 달력 관련 */}
           <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
@@ -85,6 +89,8 @@ const AppRoutes = () => {
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
           <Route path="/admin/users/:userId" element={<AdminRoute><AdminUserDetail /></AdminRoute>} />
+          <Route path="/admin/transactions" element={<AdminRoute><AdminTransactions /></AdminRoute>} />
+          <Route path="/admin/transfer-limits" element={<AdminRoute><AdminTransferLimits /></AdminRoute>} />
           <Route path="/admin/error-logs" element={<AdminRoute><AdminErrorLogs /></AdminRoute>} />
 
           {/* 404 */}
