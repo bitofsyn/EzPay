@@ -1,5 +1,6 @@
 package com.example.ezpay.modules.statistics.internal.service;
 
+import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.repository.user.TransactionRepository;
 import com.example.ezpay.response.SpendingSummaryDto;
 import lombok.RequiredArgsConstructor;
