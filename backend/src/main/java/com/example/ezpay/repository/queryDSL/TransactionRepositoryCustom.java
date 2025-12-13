@@ -14,4 +14,6 @@ public interface TransactionRepositoryCustom {
     List<Transaction> findReceivedTransactions(Long receiverAccountId);
 
     BigDecimal sumTodayTransactionBySender(Long senderAccountId, LocalDate today);
+
+    List<Transaction> searchTransactions(Long userId, String keyword, LocalDate startDate, LocalDate endDate);
 }

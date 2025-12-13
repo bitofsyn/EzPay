@@ -85,6 +85,23 @@ services:
     networks:
       - my_network
 
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.14.3
+    container_name: mlflow
+    restart: always
+    ports:
+      - "5001:5000" # 겹치지 않게 5001 포트 사용
+    volumes:
+      - mlflow-data:/mlflow
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri /mlflow
+      --default-artifact-root /mlflow
+    networks:
+      - my_network
+
   kafka:
     image: confluentinc/cp-kafka:7.5.1
     container_name: kafka
@@ -134,6 +151,7 @@ volumes:
   postgres-data:
   kafka-data:
   jenkins-data:
+  mlflow-data:
 
 networks:
   my_network:
