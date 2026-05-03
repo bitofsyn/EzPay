@@ -11,5 +11,6 @@ public class TransactionSyncRequest {
     Long userId;
     String connectionReference;
     String accessToken;
+    String fintechUseNum;
     String cursor;
 }

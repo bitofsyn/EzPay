@@ -42,6 +42,49 @@ public class FinancialConnection {
     @JsonIgnore
     private String accessToken;
 
+    @Column(columnDefinition = "TEXT")
+    @JsonIgnore
+    private String refreshToken;
+
+    @Column(length = 100)
+    private String userSeqNo;
+
+    @Column(length = 100)
+    private String fintechUseNum;
+
+    @Column(length = 3)
+    private String selectedBankCodeStd;
+
+    @Column(length = 20)
+    private String selectedAccountNum;
+
+    @Column(length = 3)
+    private String selectedAccountSeq;
+
+    @Column(length = 100)
+    private String selectedAccountName;
+
+    @Column(length = 7)
+    private String selectedAccountLocalCode;
+
+    @Column(length = 100)
+    private String tokenType;
+
+    @Column(length = 100)
+    private String tokenScope;
+
+    private Long accessTokenExpiresIn;
+
+    @Column(columnDefinition = "TEXT")
+    @JsonIgnore
+    private String authorizationCode;
+
+    @Column(length = 255)
+    private String authorizationState;
+
+    private Timestamp authorizationReceivedAt;
+    private Timestamp tokenExchangedAt;
+
     @Column(nullable = false, length = 30)
     private String status;
 
