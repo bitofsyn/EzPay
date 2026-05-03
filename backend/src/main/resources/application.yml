@@ -1,18 +1,18 @@
+server:
+  port: ${SERVER_PORT:8081}
+
 spring:
   main:
     allow-bean-definition-overriding: true
   application:
     name: EzPay  # 애플리케이션 이름
-#  config:
-#    import: optional:file:.env  # 환경변수 파일(.env) 불러오기
+  config:
+    import: optional:file:.env[.properties]
 
   datasource:
-#    url: ${SPRING_DATASOURCE_URL}
-#    username: ${SPRING_DATASOURCE_USERNAME}
-#    password: ${SPRING_DATASOURCE_PASSWORD}
-    url: jdbc:postgresql://host.docker.internal:5432/postgres
-    username: postgres
-    password: syj30408!!
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver  # PostgreSQL 드라이버 설정
     hikari:
       maximum-pool-size: 10  # 커넥션 풀 최대 크기
@@ -58,7 +58,9 @@ spring:
       mode: always  # data.sql 항상 실행
 
   kafka:
-    bootstrap-servers: kafka:9092  # Kafka 서버 연결 주소
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    listener:
+      auto-startup: ${SPRING_KAFKA_LISTENER_AUTO_STARTUP:false}
 
 logging:
   level:
@@ -78,6 +80,8 @@ sentry:
   send-default-pii: true
 
 ezpay:
+  kafka:
+    enabled: ${EZPAY_KAFKA_ENABLED:false}
   internal-api:
     secret-key: "a7b7b1b1-1c1c-4d4d-8e8e-1f1f1f1f1f1f"
   plaid:
@@ -89,3 +93,19 @@ ezpay:
     country-code: ${PLAID_COUNTRY_CODE:US}
     days-requested: ${PLAID_DAYS_REQUESTED:90}
     webhook-url: ${PLAID_WEBHOOK_URL:}
+  kftc:
+    enabled: ${EZPAY_KFTC_ENABLED:false}
+    client-id: ${KFTC_CLIENT_ID:}
+    client-secret: ${KFTC_CLIENT_SECRET:}
+    base-url: ${KFTC_BASE_URL:https://openapi.openbanking.or.kr}
+    authorize-url: ${KFTC_AUTHORIZE_URL:https://testapi.openbanking.or.kr/oauth/2.0/authorize}
+    token-url: ${KFTC_TOKEN_URL:https://testapi.openbanking.or.kr/oauth/2.0/token}
+    redirect-uri: ${KFTC_REDIRECT_URI:}
+    client-use-code: ${KFTC_CLIENT_USE_CODE:}
+    webhook-url: ${KFTC_WEBHOOK_URL:}
+    scope: ${KFTC_SCOPE:inquiry}
+    fintech-use-num: ${KFTC_FINTECH_USE_NUM:}
+    inquiry-start-date: ${KFTC_INQUIRY_START_DATE:20240101}
+    inquiry-end-date: ${KFTC_INQUIRY_END_DATE:20241231}
+    inquiry-bank-type: ${KFTC_INQUIRY_BANK_TYPE:1}
+    auth-type: ${KFTC_AUTH_TYPE:0}

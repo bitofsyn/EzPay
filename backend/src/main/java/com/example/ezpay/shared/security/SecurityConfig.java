@@ -39,7 +39,13 @@ public class SecurityConfig {
                                         "/password-reset/validate",
                                         "/password-reset/request",
                                 "/password-reset/reset-password",
-                                "/api/statistics/**"
+                                "/api/statistics/**",
+                                "/api/connections/kftc/callback",
+                                "/api/connections/kftc/account-registration/callback",
+                                "/api/connections/kftc/token-exchange",
+                                "/api/connections/kftc/fintech-use-num",
+                                "/api/connections/kftc/account-info",
+                                "/api/connections/kftc/selected-account"
                         ).permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

@@ -24,4 +24,5 @@ public class NormalizedTransactionRecord {
     boolean pending;
     String direction;
     String rawPayload;
+    String providerBranchName;
 }

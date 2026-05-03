@@ -49,4 +49,11 @@ public class FinancialConnectionController {
         TransactionSyncResult result = financialConnectionService.syncTransactions(request);
         return ResponseEntity.ok(new CommonResponse<>("success", result, "TRANSACTIONS_SYNCED"));
     }
+
+    @PostMapping("/connections/sample-import")
+    public ResponseEntity<CommonResponse<TransactionSyncResult>> importSampleTransactions(@RequestBody SampleImportRequest request) {
+        TransactionSyncResult result = financialConnectionService.importSampleTransactions(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new CommonResponse<>("success", result, "SAMPLE_TRANSACTIONS_IMPORTED"));
+    }
 }
