@@ -39,6 +39,68 @@ export interface CreateAccountData {
   balance: number;
 }
 
+export type FinancialDataProvider = 'PLAID_SANDBOX' | 'KFTC_OPEN_BANKING';
+
+export interface FinancialConnection {
+  connectionId: number;
+  provider: FinancialDataProvider;
+  connectionReference: string;
+  providerAccountReference?: string;
+  status: string;
+  lastErrorMessage?: string;
+  syncCursor?: string;
+  lastSyncedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ConnectionLinkToken {
+  provider: FinancialDataProvider;
+  linkToken: string;
+  expiresAt?: string;
+}
+
+export interface ConnectionExchangeResult {
+  provider: FinancialDataProvider;
+  connectionReference: string;
+  providerAccountReference?: string;
+}
+
+export interface NormalizedTransactionRecord {
+  normalizedTransactionId?: number;
+  connectionId?: number;
+  provider: FinancialDataProvider;
+  providerTransactionId: string;
+  providerAccountId?: string;
+  postedAt?: string;
+  authorizedAt?: string;
+  amount: number;
+  currencyCode?: string;
+  merchantName?: string;
+  description?: string;
+  primaryCategory?: string;
+  detailedCategory?: string;
+  pending: boolean;
+  direction: string;
+  rawPayload?: string;
+}
+
+export interface TransactionSyncResult {
+  provider: FinancialDataProvider;
+  nextCursor?: string;
+  hasMore: boolean;
+  records: NormalizedTransactionRecord[];
+}
+
+export interface Insight {
+  type: string;
+  title: string;
+  summary: string;
+  severity: string;
+  evidenceLabel: string;
+  evidenceValue: string;
+}
+
 export interface AccountOwner {
   accountNumber: string;
   accountName: string;
