@@ -20,6 +20,8 @@ import {
     TransactionSyncResult,
     NormalizedTransactionRecord,
     Insight,
+    KftcAccountInfoResponse,
+    KftcSelectedAccountResult,
 } from "../types";
 
 // 회원가입(Signup)
@@ -152,9 +154,43 @@ export const getFinancialConnections = async (userId: number): Promise<Financial
 
 export const syncFinancialConnection = async (
     userId: number,
-    connectionId: number
+    connectionId?: number
 ): Promise<TransactionSyncResult> => {
     const res = await api.post("/api/transactions/sync", { userId, connectionId });
+    return res.data.data ?? res.data;
+};
+
+export const importSampleTransactions = async (userId: number): Promise<TransactionSyncResult> => {
+    const res = await api.post("/api/connections/sample-import", { userId });
+    return res.data.data ?? res.data;
+};
+
+export const getKftcAccountInfo = async (
+    userId: number,
+    connectionId?: number
+): Promise<KftcAccountInfoResponse> => {
+    const res = await api.post("/api/connections/kftc/account-info", {
+        userId,
+        connectionId,
+        inquiryBankType: "1",
+    });
+    return res.data.data ?? res.data;
+};
+
+export const saveKftcSelectedAccount = async (
+    userId: number,
+    account: {
+        bankCodeStd?: string;
+        accountNum?: string;
+        accountSeq?: string;
+        accountName?: string;
+        accountLocalCode?: string;
+    }
+): Promise<KftcSelectedAccountResult> => {
+    const res = await api.post("/api/connections/kftc/selected-account", {
+        userId,
+        ...account,
+    });
     return res.data.data ?? res.data;
 };
 

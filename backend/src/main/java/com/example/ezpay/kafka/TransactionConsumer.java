@@ -7,6 +7,7 @@ import com.example.ezpay.shared.messaging.events.TransferEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "ezpay.kafka.enabled", havingValue = "true", matchIfMissing = true)
 public class TransactionConsumer {
 
     private final TransactionService transactionService;
@@ -24,7 +26,8 @@ public class TransactionConsumer {
     @KafkaListener(
             topics = KafkaConfig.TRANSFER_EVENTS_TOPIC,
             groupId = "ezpay-group",
-            containerFactory = "kafkaListenerContainerFactory"
+            containerFactory = "kafkaListenerContainerFactory",
+            autoStartup = "${spring.kafka.listener.auto-startup:false}"
     )
     public void consumerTransferEvent(TransferEvent event, Acknowledgment ack) {
         log.info("이벤트 수신: {}", event);
@@ -35,7 +38,8 @@ public class TransactionConsumer {
 
     @KafkaListener(
             topics = KafkaConfig.TRANSFER_EVENTS_DLT,
-            groupId = "ezpay-dlt-group"
+            groupId = "ezpay-dlt-group",
+            autoStartup = "${spring.kafka.listener.auto-startup:false}"
     )
     public void dltListener(ConsumerRecord<String, Object> record,
                             Acknowledgment ack,
