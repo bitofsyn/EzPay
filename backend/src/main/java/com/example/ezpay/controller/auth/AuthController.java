@@ -50,9 +50,6 @@ public class AuthController {
         jwtCookie.setMaxAge(7 * 24 * 60 * 60); // 7일
         httpResponse.addCookie(jwtCookie);
 
-        // 응답에서 토큰 제거 (쿠키로만 전달)
-        response.setToken(null);
-
         return ResponseEntity.ok(new CommonResponse<>("success", response, "로그인 성공"));
     }
 

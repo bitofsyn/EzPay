@@ -1,10 +1,13 @@
 // User Types
+export type UserRole = 'USER' | 'ADMIN';
+
 export interface User {
   userId: number;
   email: string;
   name: string;
   phoneNumber?: string;
   createdAt?: string;
+  role?: UserRole;
 }
 
 export interface SignupFormData {
@@ -159,15 +162,16 @@ export interface FormattedActivity {
 }
 
 export interface HourlyTransaction {
-  hour: number;
-  count: number;
-  volume: number;
+  hour: string;
+  transactionCount: number;
+  totalVolume: number;
 }
 
 export interface WeeklyTrendData {
   date: string;
-  count: number;
-  volume: number;
+  dayOfWeek?: string;
+  transactionCount: number;
+  totalVolume: number;
 }
 
 export interface AdminUser {
@@ -189,4 +193,15 @@ export interface ErrorLog {
   errorMessage: string;
   stackTrace?: string;
   failedAt: string;
+}
+
+// Admin Transfer Limit Types
+export interface AdminTransferLimitInfo {
+  limitId: number;
+  userId: number;
+  userName?: string;
+  dailyLimit: number;
+  perTransactionLimit: number;
+  usedAmount: number;
+  remainingAmount: number;
 }

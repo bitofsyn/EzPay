@@ -2,10 +2,13 @@
  * 로컬 스토리지와 세션 스토리지를 위한 유틸리티 함수들
  */
 
+import { UserRole } from '../types';
+
 export interface UserData {
   userId: number;
   email: string;
   name: string;
+  role?: UserRole;
 }
 
 /**
@@ -50,4 +53,19 @@ export const saveToken = (token: string, keepLogin: boolean = false): void => {
  */
 export const getToken = (): string | null => {
   return localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+};
+
+/**
+ * 사용자 역할 조회
+ */
+export const getUserRole = (): UserRole | null => {
+  const userData = getUserData();
+  return userData?.role || null;
+};
+
+/**
+ * 관리자 여부 확인
+ */
+export const isAdmin = (): boolean => {
+  return getUserRole() === 'ADMIN';
 };

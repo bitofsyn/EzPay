@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiUsers, FiActivity, FiAlertCircle, FiCreditCard, FiMenu, FiSearch, FiBell, FiSettings, FiMail, FiTrendingUp } from "react-icons/fi";
+import { FiUsers, FiActivity, FiAlertCircle, FiCreditCard, FiMenu, FiSearch, FiBell, FiSettings, FiMail, FiTrendingUp, FiDollarSign, FiRepeat, FiLogOut, FiUser, FiCheck, FiX, FiMessageSquare } from "react-icons/fi";
 import CircularProgress from "../../components/admin/CircularProgress";
 import TransactionTrendChart from "../../components/admin/TransactionTrendChart";
 import UserStatusChart from "../../components/admin/UserStatusChart";
 import HourlyTransactionChart from "../../components/admin/HourlyTransactionChart";
 import { formatAmount } from "../../utils/formatters";
-import { useAdminStats, useRealtimeActivities, useHourlyTransactions, useWeeklyTrend } from "../../hooks/useAdminDashboard";
+import { useAdminStats, useRealtimeActivities, useHourlyTransactions, useWeeklyTrend, useAdminAlerts, useAdminMessages } from "../../hooks/useAdminDashboard";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -38,6 +38,62 @@ ChartJS.register(
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+
+  // 드롭다운 상태 관리
+  const [showNotifications, setShowNotifications] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [showMessages, setShowMessages] = useState<boolean>(false);
+  const [showProfile, setShowProfile] = useState<boolean>(false);
+
+  // 알림/메시지 훅 사용
+  const {
+    alerts,
+    unreadCount: unreadAlertCount,
+    handleMarkAsRead: handleAlertMarkAsRead,
+    handleMarkAllAsRead: handleAllAlertsMarkAsRead
+  } = useAdminAlerts();
+
+  const {
+    messages,
+    unreadCount: unreadMessageCount,
+    handleMarkAsRead: handleMessageMarkAsRead,
+    handleMarkAllAsRead: handleAllMessagesMarkAsRead
+  } = useAdminMessages();
+
+  // 드롭다운 외부 클릭 감지를 위한 ref
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setShowSettings(false);
+      }
+      if (messagesRef.current && !messagesRef.current.contains(event.target as Node)) {
+        setShowMessages(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfile(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 로그아웃
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userRole');
+    navigate('/login');
+  };
 
   // 커스텀 훅으로 데이터 관리
   const { stats, isLoading } = useAdminStats();
@@ -93,17 +149,25 @@ const AdminDashboard: React.FC = () => {
               {isSidebarOpen && <span className="font-medium">사용자 관리</span>}
             </button>
             <button
+              onClick={() => navigate("/admin/transactions")}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+            >
+              <FiRepeat size={20} />
+              {isSidebarOpen && <span className="font-medium">거래 관리</span>}
+            </button>
+            <button
+              onClick={() => navigate("/admin/transfer-limits")}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+            >
+              <FiDollarSign size={20} />
+              {isSidebarOpen && <span className="font-medium">송금 한도</span>}
+            </button>
+            <button
               onClick={() => navigate("/admin/error-logs")}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all"
             >
               <FiAlertCircle size={20} />
               {isSidebarOpen && <span className="font-medium">에러 로그</span>}
-            </button>
-            <button
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all"
-            >
-              <FiSettings size={20} />
-              {isSidebarOpen && <span className="font-medium">설정</span>}
             </button>
           </nav>
         </div>
@@ -112,7 +176,7 @@ const AdminDashboard: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         {/* Top Header */}
-        <div className="bg-black/20 backdrop-blur-sm border-b border-purple-500/30 px-8 py-4">
+        <div className="sticky top-0 bg-black/90 backdrop-blur-sm border-b border-purple-500/30 px-8 py-4 z-40">
           <div className="flex items-center justify-between">
             <div className="flex-1 max-w-2xl">
               <div className="relative">
@@ -125,18 +189,263 @@ const AdminDashboard: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-4 ml-8">
-              <button className="relative p-2 text-white hover:text-cyan-400 transition-colors">
-                <FiBell size={22} />
-                <span className="absolute top-0 right-0 w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
-              </button>
-              <button className="p-2 text-white hover:text-cyan-400 transition-colors">
-                <FiSettings size={22} />
-              </button>
-              <button className="p-2 text-white hover:text-cyan-400 transition-colors">
-                <FiMail size={22} />
-              </button>
-              <div className="ml-2 w-10 h-10 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center">
-                <span className="text-white font-bold">A</span>
+              {/* 알림 드롭다운 */}
+              <div ref={notificationRef} className="relative">
+                <button
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    setShowSettings(false);
+                    setShowMessages(false);
+                    setShowProfile(false);
+                  }}
+                  className="relative p-2 text-white hover:text-cyan-400 transition-colors"
+                >
+                  <FiBell size={22} />
+                  {unreadAlertCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 rounded-full text-xs flex items-center justify-center animate-pulse">
+                      {unreadAlertCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-80 bg-gray-900 backdrop-blur-sm border border-purple-500/30 rounded-xl shadow-2xl z-[100] overflow-hidden"
+                       style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)' }}>
+                    <div className="p-4 border-b border-purple-500/30 flex items-center justify-between">
+                      <h3 className="text-white font-bold flex items-center gap-2">
+                        <FiBell className="text-cyan-400" />
+                        알림
+                      </h3>
+                      {unreadAlertCount > 0 && (
+                        <button
+                          onClick={handleAllAlertsMarkAsRead}
+                          className="text-xs text-cyan-400 hover:text-cyan-300"
+                        >
+                          모두 읽음
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {alerts.length === 0 ? (
+                        <div className="p-8 text-center text-gray-500">
+                          <FiBell size={32} className="mx-auto mb-2 opacity-50" />
+                          <p>알림이 없습니다</p>
+                        </div>
+                      ) : (
+                        alerts.map((alert) => (
+                          <div
+                            key={alert.alertId}
+                            onClick={() => handleAlertMarkAsRead(alert.alertId)}
+                            className={`p-4 border-b border-purple-500/20 hover:bg-white/5 cursor-pointer transition-all ${!alert.isRead ? 'bg-cyan-500/5' : ''}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`mt-1 p-1.5 rounded-lg ${
+                                alert.alertType === 'warning' ? 'bg-yellow-500/20 text-yellow-400' :
+                                alert.alertType === 'error' ? 'bg-red-500/20 text-red-400' :
+                                alert.alertType === 'success' ? 'bg-green-500/20 text-green-400' :
+                                'bg-blue-500/20 text-blue-400'
+                              }`}>
+                                {alert.alertType === 'warning' ? <FiAlertCircle size={14} /> :
+                                 alert.alertType === 'error' ? <FiX size={14} /> :
+                                 alert.alertType === 'success' ? <FiCheck size={14} /> :
+                                 <FiBell size={14} />}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-white text-sm font-medium">{alert.title}</p>
+                                  {!alert.isRead && (
+                                    <span className="w-2 h-2 bg-cyan-400 rounded-full"></span>
+                                  )}
+                                </div>
+                                <p className="text-gray-400 text-xs mt-1">{alert.message}</p>
+                                <p className="text-gray-500 text-xs mt-2">{alert.timeAgo}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="p-3 border-t border-purple-500/30">
+                      <button className="w-full text-center text-cyan-400 text-sm hover:text-cyan-300 transition-colors">
+                        모든 알림 보기
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 설정 드롭다운 */}
+              <div ref={settingsRef} className="relative">
+                <button
+                  onClick={() => {
+                    setShowSettings(!showSettings);
+                    setShowNotifications(false);
+                    setShowMessages(false);
+                    setShowProfile(false);
+                  }}
+                  className="p-2 text-white hover:text-cyan-400 transition-colors"
+                >
+                  <FiSettings size={22} />
+                </button>
+
+                {showSettings && (
+                  <div className="absolute right-0 mt-2 w-56 bg-gray-900 backdrop-blur-sm border border-purple-500/30 rounded-xl shadow-2xl z-[100] overflow-hidden"
+                       style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)' }}>
+                    <div className="p-4 border-b border-purple-500/30">
+                      <h3 className="text-white font-bold flex items-center gap-2">
+                        <FiSettings className="text-cyan-400" />
+                        설정
+                      </h3>
+                    </div>
+                    <div className="py-2">
+                      <button className="w-full px-4 py-3 flex items-center gap-3 text-gray-300 hover:bg-white/5 hover:text-white transition-all">
+                        <FiUser size={18} />
+                        <span>계정 설정</span>
+                      </button>
+                      <button className="w-full px-4 py-3 flex items-center gap-3 text-gray-300 hover:bg-white/5 hover:text-white transition-all">
+                        <FiBell size={18} />
+                        <span>알림 설정</span>
+                      </button>
+                      <button className="w-full px-4 py-3 flex items-center gap-3 text-gray-300 hover:bg-white/5 hover:text-white transition-all">
+                        <FiActivity size={18} />
+                        <span>시스템 설정</span>
+                      </button>
+                      <button className="w-full px-4 py-3 flex items-center gap-3 text-gray-300 hover:bg-white/5 hover:text-white transition-all">
+                        <FiAlertCircle size={18} />
+                        <span>보안 설정</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 메시지 드롭다운 */}
+              <div ref={messagesRef} className="relative">
+                <button
+                  onClick={() => {
+                    setShowMessages(!showMessages);
+                    setShowNotifications(false);
+                    setShowSettings(false);
+                    setShowProfile(false);
+                  }}
+                  className="relative p-2 text-white hover:text-cyan-400 transition-colors"
+                >
+                  <FiMail size={22} />
+                  {unreadMessageCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full text-xs flex items-center justify-center">
+                      {unreadMessageCount}
+                    </span>
+                  )}
+                </button>
+
+                {showMessages && (
+                  <div className="absolute right-0 mt-2 w-80 bg-gray-900 backdrop-blur-sm border border-purple-500/30 rounded-xl shadow-2xl z-[100] overflow-hidden"
+                       style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)' }}>
+                    <div className="p-4 border-b border-purple-500/30 flex items-center justify-between">
+                      <h3 className="text-white font-bold flex items-center gap-2">
+                        <FiMessageSquare className="text-green-400" />
+                        메시지
+                      </h3>
+                      {unreadMessageCount > 0 && (
+                        <button
+                          onClick={handleAllMessagesMarkAsRead}
+                          className="text-xs text-green-400 hover:text-green-300"
+                        >
+                          모두 읽음
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {messages.length === 0 ? (
+                        <div className="p-8 text-center text-gray-500">
+                          <FiMail size={32} className="mx-auto mb-2 opacity-50" />
+                          <p>메시지가 없습니다</p>
+                        </div>
+                      ) : (
+                        messages.map((message) => (
+                          <div
+                            key={message.messageId}
+                            onClick={() => handleMessageMarkAsRead(message.messageId)}
+                            className={`p-4 border-b border-purple-500/20 hover:bg-white/5 cursor-pointer transition-all ${!message.isRead ? 'bg-green-500/5' : ''}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                                {message.senderAvatar}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-white text-sm font-medium">{message.senderName}</p>
+                                  {!message.isRead && (
+                                    <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                                  )}
+                                </div>
+                                <p className="text-gray-300 text-xs font-medium">{message.subject}</p>
+                                <p className="text-gray-400 text-xs mt-1 line-clamp-2">{message.content}</p>
+                                <p className="text-gray-500 text-xs mt-2">{message.timeAgo}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="p-3 border-t border-purple-500/30">
+                      <button className="w-full text-center text-green-400 text-sm hover:text-green-300 transition-colors">
+                        모든 메시지 보기
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 프로필 드롭다운 */}
+              <div ref={profileRef} className="relative ml-2">
+                <button
+                  onClick={() => {
+                    setShowProfile(!showProfile);
+                    setShowNotifications(false);
+                    setShowSettings(false);
+                    setShowMessages(false);
+                  }}
+                  className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center hover:ring-2 hover:ring-cyan-400/50 transition-all"
+                >
+                  <span className="text-white font-bold">A</span>
+                </button>
+
+                {showProfile && (
+                  <div className="absolute right-0 mt-2 w-56 bg-gray-900 backdrop-blur-sm border border-purple-500/30 rounded-xl shadow-2xl z-[100] overflow-hidden"
+                       style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)' }}>
+                    <div className="p-4 border-b border-purple-500/30">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center">
+                          <span className="text-white font-bold text-lg">A</span>
+                        </div>
+                        <div>
+                          <p className="text-white font-bold">관리자</p>
+                          <p className="text-gray-400 text-xs">admin@ezpay.com</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="py-2">
+                      <button className="w-full px-4 py-3 flex items-center gap-3 text-gray-300 hover:bg-white/5 hover:text-white transition-all">
+                        <FiUser size={18} />
+                        <span>내 프로필</span>
+                      </button>
+                      <button className="w-full px-4 py-3 flex items-center gap-3 text-gray-300 hover:bg-white/5 hover:text-white transition-all">
+                        <FiSettings size={18} />
+                        <span>환경설정</span>
+                      </button>
+                    </div>
+                    <div className="py-2 border-t border-purple-500/30">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-3 flex items-center gap-3 text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all"
+                      >
+                        <FiLogOut size={18} />
+                        <span>로그아웃</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

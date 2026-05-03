@@ -53,7 +53,7 @@ public class TransactionStatisticsServiceImpl implements TransactionStatisticsSe
 
             List<DailyDetailResponse> details = dailyTransactions.stream()
                     .map(x -> new DailyDetailResponse(
-                            (long) x.getTransactionId(),
+                            x.getTransactionId(),
                             x.getStatus().name(),
                             x.getSenderAccount().getBankName(),
                             x.getAmount().longValue(),

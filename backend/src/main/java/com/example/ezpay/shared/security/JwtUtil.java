@@ -26,10 +26,18 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("userId", user.getUserId())
+                .claim("role", user.getRole().name())
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(key)
                 .compact();
+    }
+
+    // 토큰에서 role 추출
+    public String getRoleFromToken(String token) {
+        return parser.parseSignedClaims(token)
+                .getPayload()
+                .get("role", String.class);
     }
 
     // 2. 토큰에서 email 추출

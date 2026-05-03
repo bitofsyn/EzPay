@@ -11,7 +11,7 @@ const HourlyTransactionChart = ({ hourlyTransactions }: HourlyTransactionChartPr
     datasets: [
       {
         label: '거래 건수',
-        data: hourlyTransactions.map(h => h.count) || [],
+        data: hourlyTransactions.map(h => h.transactionCount) || [],
         backgroundColor: (context: any) => {
           const ctx = context.chart.ctx;
           const gradient = ctx.createLinearGradient(0, 0, 0, 300);

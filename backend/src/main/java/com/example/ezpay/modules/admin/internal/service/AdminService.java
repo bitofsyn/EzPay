@@ -76,4 +76,30 @@ public interface AdminService {
 
     // 에러 로그 삭제
     void deleteErrorLog(Long logId);
+
+    // ========== 관리자 알림 ==========
+    // 모든 알림 조회
+    List<com.example.ezpay.modules.admin.api.dto.AdminAlertInfo> getAllAlerts();
+
+    // 읽지 않은 알림 개수
+    long getUnreadAlertCount();
+
+    // 알림 읽음 처리
+    void markAlertAsRead(Long alertId);
+
+    // 모든 알림 읽음 처리
+    void markAllAlertsAsRead();
+
+    // ========== 관리자 메시지 ==========
+    // 모든 메시지 조회
+    List<com.example.ezpay.modules.admin.api.dto.AdminMessageInfo> getAllMessages();
+
+    // 읽지 않은 메시지 개수
+    long getUnreadMessageCount();
+
+    // 메시지 읽음 처리
+    void markMessageAsRead(Long messageId);
+
+    // 모든 메시지 읽음 처리
+    void markAllMessagesAsRead();
 }

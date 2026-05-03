@@ -3,7 +3,13 @@ import {
   getAdminDashboardStats,
   getRecentActivities,
   getTodayHourlyTransactions,
-  getWeeklyTransactionTrend
+  getWeeklyTransactionTrend,
+  getAdminAlerts,
+  getAdminMessages,
+  markAlertAsRead,
+  markAllAlertsAsRead,
+  markMessageAsRead,
+  markAllMessagesAsRead
 } from "../api/AdminAPI";
 import toast from "react-hot-toast";
 import { getRelativeTime, getActivityColor, formatActivityDescription } from "../utils/formatters";
@@ -152,4 +158,169 @@ export const useWeeklyTrend = (): WeeklyTrendData[] => {
   }, []);
 
   return weeklyTrend;
+};
+
+// 관리자 알림 타입
+export interface AdminAlert {
+  alertId: number;
+  alertType: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  timeAgo: string;
+}
+
+// 관리자 메시지 타입
+export interface AdminMessage {
+  messageId: number;
+  senderName: string;
+  senderAvatar: string;
+  senderId: number;
+  subject: string;
+  content: string;
+  category: string;
+  isRead: boolean;
+  createdAt: string;
+  timeAgo: string;
+}
+
+// 관리자 알림 훅 반환 타입
+interface UseAdminAlertsReturn {
+  alerts: AdminAlert[];
+  unreadCount: number;
+  isLoading: boolean;
+  handleMarkAsRead: (alertId: number) => Promise<void>;
+  handleMarkAllAsRead: () => Promise<void>;
+  refetch: () => Promise<void>;
+}
+
+// 관리자 알림 훅
+export const useAdminAlerts = (): UseAdminAlertsReturn => {
+  const [alerts, setAlerts] = useState<AdminAlert[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const fetchAlerts = async () => {
+    try {
+      const response = await getAdminAlerts();
+      if (response.status === "success" && response.data) {
+        setAlerts(response.data);
+      }
+    } catch (error) {
+      console.error("알림 조회 실패:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAlerts();
+
+    // 30초마다 자동 갱신
+    const interval = setInterval(fetchAlerts, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const unreadCount = alerts.filter(a => !a.isRead).length;
+
+  const handleMarkAsRead = async (alertId: number) => {
+    try {
+      await markAlertAsRead(alertId);
+      setAlerts(prev => prev.map(a =>
+        a.alertId === alertId ? { ...a, isRead: true } : a
+      ));
+    } catch (error) {
+      console.error("알림 읽음 처리 실패:", error);
+      toast.error("알림 읽음 처리에 실패했습니다.");
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAlertsAsRead();
+      setAlerts(prev => prev.map(a => ({ ...a, isRead: true })));
+    } catch (error) {
+      console.error("모든 알림 읽음 처리 실패:", error);
+      toast.error("알림 읽음 처리에 실패했습니다.");
+    }
+  };
+
+  return {
+    alerts,
+    unreadCount,
+    isLoading,
+    handleMarkAsRead,
+    handleMarkAllAsRead,
+    refetch: fetchAlerts
+  };
+};
+
+// 관리자 메시지 훅 반환 타입
+interface UseAdminMessagesReturn {
+  messages: AdminMessage[];
+  unreadCount: number;
+  isLoading: boolean;
+  handleMarkAsRead: (messageId: number) => Promise<void>;
+  handleMarkAllAsRead: () => Promise<void>;
+  refetch: () => Promise<void>;
+}
+
+// 관리자 메시지 훅
+export const useAdminMessages = (): UseAdminMessagesReturn => {
+  const [messages, setMessages] = useState<AdminMessage[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const fetchMessages = async () => {
+    try {
+      const response = await getAdminMessages();
+      if (response.status === "success" && response.data) {
+        setMessages(response.data);
+      }
+    } catch (error) {
+      console.error("메시지 조회 실패:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMessages();
+
+    // 30초마다 자동 갱신
+    const interval = setInterval(fetchMessages, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const unreadCount = messages.filter(m => !m.isRead).length;
+
+  const handleMarkAsRead = async (messageId: number) => {
+    try {
+      await markMessageAsRead(messageId);
+      setMessages(prev => prev.map(m =>
+        m.messageId === messageId ? { ...m, isRead: true } : m
+      ));
+    } catch (error) {
+      console.error("메시지 읽음 처리 실패:", error);
+      toast.error("메시지 읽음 처리에 실패했습니다.");
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllMessagesAsRead();
+      setMessages(prev => prev.map(m => ({ ...m, isRead: true })));
+    } catch (error) {
+      console.error("모든 메시지 읽음 처리 실패:", error);
+      toast.error("메시지 읽음 처리에 실패했습니다.");
+    }
+  };
+
+  return {
+    messages,
+    unreadCount,
+    isLoading,
+    handleMarkAsRead,
+    handleMarkAllAsRead,
+    refetch: fetchMessages
+  };
 };

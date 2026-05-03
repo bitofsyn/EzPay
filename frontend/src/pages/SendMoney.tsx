@@ -53,6 +53,7 @@ const SendMoney: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isCheckingAccount, setIsCheckingAccount] = useState<boolean>(false);
     const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+    const [isCategoryManuallyEdited, setIsCategoryManuallyEdited] = useState<boolean>(false);
 
     // 선택한 출금 계좌 정보
     const selectedAccount = useMemo(() => {
@@ -84,6 +85,8 @@ const SendMoney: React.FC = () => {
     // 메모 변경 시 자동 카테고리 예측 (디바운싱 적용)
     useEffect(() => {
         if (memo.trim().length <= 1) {
+            setCategory("기타");
+            setIsCategoryManuallyEdited(false);
             return;
         }
 
@@ -101,7 +104,7 @@ const SendMoney: React.FC = () => {
                 } else {
                     setCategory(result.category);
                 }
-
+                setIsCategoryManuallyEdited(false); // AI가 추천했으므로 수동 편집 아님
                 setConfidence(result.confidence);
             } catch (error) {
                 console.error("카테고리 예측 실패", error);
@@ -207,6 +210,7 @@ const SendMoney: React.FC = () => {
                 amount: parseAmount(amount),
                 memo,
                 category,
+                isCategoryManuallyEdited,
             };
             await transferMoney(transferData);
             toast.success("송금이 완료되었습니다!");
@@ -217,6 +221,7 @@ const SendMoney: React.FC = () => {
             setAmount("");
             setMemo("");
             setCategory("기타");
+            setIsCategoryManuallyEdited(false);
             setReceiverName("");
             setReceiverAccountId(null);
             setError("");
@@ -333,7 +338,10 @@ const SendMoney: React.FC = () => {
                         <label className="block text-gray-700 mb-2">카테고리 선택</label>
                         <select
                             value={category}
-                            onChange={(e) => setCategory(e.target.value)}
+                            onChange={(e) => {
+                                setCategory(e.target.value);
+                                setIsCategoryManuallyEdited(true); // 사용자가 직접 변경
+                            }}
                             className="w-full px-4 py-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none"
                         >
                             {TRANSACTION_CATEGORIES.map(cat => (
