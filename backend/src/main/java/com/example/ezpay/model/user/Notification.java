@@ -28,8 +28,12 @@ public class Notification {
     private User user;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private NotificationType notificationType;
-    private Boolean isEnabled;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isEnabled = true;
 
     @CreationTimestamp
     private Timestamp createdAt;

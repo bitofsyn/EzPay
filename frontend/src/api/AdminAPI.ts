@@ -5,7 +5,7 @@ import { User, Account, Transaction, ApiResponse } from "../types";
 // Admin 대시보드 통계 조회
 export const getAdminDashboardStats = async (): Promise<any> => {
     const res = await api.get("/admin/dashboard");
-    return res.data.data ?? res.data;
+    return res.data;
 };
 
 // 최근 활동 로그 조회
@@ -13,19 +13,19 @@ export const getRecentActivities = async (limit: number = 50): Promise<any> => {
     const res = await api.get("/admin/dashboard/recent-activities", {
         params: { limit }
     });
-    return res.data.data ?? res.data;
+    return res.data;
 };
 
 // 시간대별 거래량 조회 (오늘)
 export const getTodayHourlyTransactions = async (): Promise<any> => {
     const res = await api.get("/admin/dashboard/hourly-transactions");
-    return res.data.data ?? res.data;
+    return res.data;
 };
 
 // 주간 거래 추이 조회 (최근 7일)
 export const getWeeklyTransactionTrend = async (): Promise<any> => {
     const res = await api.get("/admin/dashboard/weekly-trend");
-    return res.data.data ?? res.data;
+    return res.data;
 };
 
 // ========== User Management API ==========
@@ -102,5 +102,77 @@ export const resolveErrorLog = async (logId: number): Promise<ApiResponse> => {
 // 에러 로그 삭제
 export const deleteErrorLog = async (logId: number): Promise<ApiResponse> => {
     const res = await api.delete(`/admin/error-logs/${logId}`);
+    return res.data;
+};
+
+// ========== Transfer Limit Management API ==========
+// 모든 사용자 송금 한도 조회
+export const getAllTransferLimits = async (): Promise<any[]> => {
+    const res = await api.get("/admin/transfer-limits/all");
+    return res.data.data ?? res.data;
+};
+
+// 특정 사용자 송금 한도 수정
+export const updateUserTransferLimit = async (
+    userId: number,
+    data: { dailyLimit: number; perTransactionLimit: number }
+): Promise<ApiResponse> => {
+    const res = await api.put(`/admin/transfer-limits/${userId}`, data);
+    return res.data;
+};
+
+// 특정 사용자 송금 한도 초기화
+export const resetUserTransferLimit = async (userId: number): Promise<ApiResponse> => {
+    const res = await api.put(`/admin/transfer-limits/reset/${userId}`);
+    return res.data;
+};
+
+// ========== Admin Alerts API ==========
+// 모든 알림 조회
+export const getAdminAlerts = async (): Promise<any> => {
+    const res = await api.get("/admin/dashboard/alerts");
+    return res.data;
+};
+
+// 읽지 않은 알림 개수 조회
+export const getUnreadAlertCount = async (): Promise<any> => {
+    const res = await api.get("/admin/dashboard/alerts/unread-count");
+    return res.data;
+};
+
+// 특정 알림 읽음 처리
+export const markAlertAsRead = async (alertId: number): Promise<ApiResponse> => {
+    const res = await api.put(`/admin/dashboard/alerts/${alertId}/read`);
+    return res.data;
+};
+
+// 모든 알림 읽음 처리
+export const markAllAlertsAsRead = async (): Promise<ApiResponse> => {
+    const res = await api.put("/admin/dashboard/alerts/read-all");
+    return res.data;
+};
+
+// ========== Admin Messages API ==========
+// 모든 메시지 조회
+export const getAdminMessages = async (): Promise<any> => {
+    const res = await api.get("/admin/dashboard/messages");
+    return res.data;
+};
+
+// 읽지 않은 메시지 개수 조회
+export const getUnreadMessageCount = async (): Promise<any> => {
+    const res = await api.get("/admin/dashboard/messages/unread-count");
+    return res.data;
+};
+
+// 특정 메시지 읽음 처리
+export const markMessageAsRead = async (messageId: number): Promise<ApiResponse> => {
+    const res = await api.put(`/admin/dashboard/messages/${messageId}/read`);
+    return res.data;
+};
+
+// 모든 메시지 읽음 처리
+export const markAllMessagesAsRead = async (): Promise<ApiResponse> => {
+    const res = await api.put("/admin/dashboard/messages/read-all");
     return res.data;
 };

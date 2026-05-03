@@ -114,7 +114,7 @@ public class PaymentFacadeImpl implements PaymentFacade {
     // Transaction -> TransactionInfo 변환 헬퍼 메서드
     private TransactionInfo convertToTransactionInfo(Transaction transaction) {
         return TransactionInfo.builder()
-                .transactionId((long) transaction.getTransactionId())
+                .transactionId(transaction.getTransactionId())
                 .senderAccountId(transaction.getSenderAccount().getAccountId())
                 .receiverAccountId(transaction.getReceiverAccount().getAccountId())
                 .amount(transaction.getAmount())

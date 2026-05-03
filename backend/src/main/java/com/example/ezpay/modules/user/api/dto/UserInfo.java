@@ -1,5 +1,6 @@
 package com.example.ezpay.modules.user.api.dto;
 
+import com.example.ezpay.shared.common.enums.Role;
 import com.example.ezpay.shared.common.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,5 +23,6 @@ public class UserInfo {
     private String name;
     private String phone;
     private Status status;
+    private Role role;
     private LocalDateTime createdAt;
 }

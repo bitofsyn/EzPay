@@ -10,9 +10,11 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransferEvent {
+    private String requestId;
     private Long fromAccountId;
     private Long toAccountId;
     private BigDecimal amount;
     private String memo;
     private String category;
+    private boolean isCategoryManuallyEdited;
 }

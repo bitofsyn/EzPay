@@ -1,5 +1,7 @@
 package com.example.ezpay.modules.admin.internal.service;
 
+import com.example.ezpay.model.admin.AdminAlert;
+import com.example.ezpay.model.admin.AdminMessage;
 import com.example.ezpay.model.user.ErrorLog;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.model.user.TransferLimit;
@@ -7,6 +9,8 @@ import com.example.ezpay.model.user.User;
 import com.example.ezpay.modules.account.api.dto.AccountInfo;
 import com.example.ezpay.modules.account.api.facade.AccountFacade;
 import com.example.ezpay.modules.admin.api.dto.*;
+import com.example.ezpay.repository.admin.AdminAlertRepository;
+import com.example.ezpay.repository.admin.AdminMessageRepository;
 import com.example.ezpay.shared.common.enums.TransactionStatus;
 import com.example.ezpay.modules.payment.api.dto.TransactionInfo;
 import com.example.ezpay.modules.payment.api.dto.TransferLimitInfo;
@@ -48,6 +52,8 @@ public class AdminServiceImpl implements AdminService {
     private final UserManagementService userManagementService;
     private final AccountFacade accountFacade;
     private final ErrorLogService errorLogService;
+    private final AdminAlertRepository adminAlertRepository;
+    private final AdminMessageRepository adminMessageRepository;
 
     // ========== 대시보드 ==========
 
@@ -364,7 +370,7 @@ public class AdminServiceImpl implements AdminService {
      */
     private TransactionInfo convertToTransactionInfo(Transaction transaction) {
         return TransactionInfo.builder()
-                .transactionId((long) transaction.getTransactionId())
+                .transactionId(transaction.getTransactionId())
                 .senderAccountId(transaction.getSenderAccount().getAccountId())
                 .receiverAccountId(transaction.getReceiverAccount().getAccountId())
                 .amount(transaction.getAmount())
@@ -385,9 +391,15 @@ public class AdminServiceImpl implements AdminService {
         BigDecimal remainingLimit = transferLimitService.getRemainingDailyLimit(userId);
         BigDecimal usedAmount = transferLimit.getDailyLimit().subtract(remainingLimit);
 
+        // 사용자 이름 조회
+        String userName = userRepository.findById(userId)
+                .map(User::getName)
+                .orElse(null);
+
         return TransferLimitInfo.builder()
                 .limitId(transferLimit.getUserId())
                 .userId(userId)
+                .userName(userName)
                 .dailyLimit(transferLimit.getDailyLimit())
                 .perTransactionLimit(transferLimit.getPerTransactionLimit())
                 .usedAmount(usedAmount)
@@ -404,5 +416,67 @@ public class AdminServiceImpl implements AdminService {
                 .occurredAt(errorLog.getOccurredAt() != null ? errorLog.getOccurredAt().toLocalDateTime() : null)
                 .status(errorLog.getStatus())
                 .build();
+    }
+
+    // ========== 관리자 알림 ==========
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AdminAlertInfo> getAllAlerts() {
+        return adminAlertRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(AdminAlertInfo::from)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long getUnreadAlertCount() {
+        return adminAlertRepository.countByIsReadFalse();
+    }
+
+    @Override
+    @Transactional
+    public void markAlertAsRead(Long alertId) {
+        AdminAlert alert = adminAlertRepository.findById(alertId)
+                .orElseThrow(() -> new CustomNotFoundException("알림을 찾을 수 없습니다: " + alertId));
+        alert.setIsRead(true);
+        adminAlertRepository.save(alert);
+    }
+
+    @Override
+    @Transactional
+    public void markAllAlertsAsRead() {
+        adminAlertRepository.markAllAsRead();
+    }
+
+    // ========== 관리자 메시지 ==========
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AdminMessageInfo> getAllMessages() {
+        return adminMessageRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(AdminMessageInfo::from)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long getUnreadMessageCount() {
+        return adminMessageRepository.countByIsReadFalse();
+    }
+
+    @Override
+    @Transactional
+    public void markMessageAsRead(Long messageId) {
+        AdminMessage message = adminMessageRepository.findById(messageId)
+                .orElseThrow(() -> new CustomNotFoundException("메시지를 찾을 수 없습니다: " + messageId));
+        message.setIsRead(true);
+        adminMessageRepository.save(message);
+    }
+
+    @Override
+    @Transactional
+    public void markAllMessagesAsRead() {
+        adminMessageRepository.markAllAsRead();
     }
 }

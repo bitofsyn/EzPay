@@ -38,8 +38,10 @@ public class SecurityConfig {
                                         "/password-reset/**",
                                         "/password-reset/validate",
                                         "/password-reset/request",
-                                "/password-reset/reset-password"
+                                "/password-reset/reset-password",
+                                "/api/statistics/**"
                         ).permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, userDetailsService), UsernamePasswordAuthenticationFilter.class)

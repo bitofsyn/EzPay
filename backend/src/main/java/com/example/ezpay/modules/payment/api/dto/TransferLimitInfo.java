@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 public class TransferLimitInfo {
     private Long limitId;
     private Long userId;
+    private String userName;
     private BigDecimal dailyLimit;
     private BigDecimal perTransactionLimit;
     private BigDecimal usedAmount;

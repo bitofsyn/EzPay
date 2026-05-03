@@ -6,7 +6,7 @@ import { login } from "../api/UserAPI";
 import { loginSchema } from "../validations/authSchemas";
 import { LoginFormData } from "../types";
 import { handleApiError } from "../utils/errorHandler";
-import { saveUserData } from "../utils/storage";
+import { saveUserData, saveToken } from "../utils/storage";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -29,19 +29,32 @@ const Login = () => {
     try {
       const res = await login(data);
 
-      // 응답 구조: { status: "success", data: { userId, email, name, token } }
+      // 응답 구조: { status: "success", data: { userId, email, name, role, token } }
       if (res.status === "success" && res.data?.userId) {
+        const userRole = res.data.role || 'USER';
+
+        // 토큰 저장
+        if (res.data.token) {
+          saveToken(res.data.token, keepLogin);
+        }
+
         saveUserData({
           userId: res.data.userId,
           email: res.data.email,
           name: res.data.name,
+          role: userRole,
         }, keepLogin);
-        navigate("/dashboard");
+
+        // 관리자는 관리자 대시보드로, 일반 사용자는 일반 대시보드로
+        if (userRole === 'ADMIN') {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         setError("로그인에 실패했습니다.");
       }
     } catch (err: unknown) {
-      console.error("로그인 실패:", err);
       setError(handleApiError(err));
     } finally {
       setLoading(false);
