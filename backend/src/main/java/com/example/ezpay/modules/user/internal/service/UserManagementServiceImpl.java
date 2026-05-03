@@ -137,6 +137,7 @@ public class UserManagementServiceImpl implements UserManagementService {
                 .name(user.getName())
                 .phone(user.getPhoneNumber())
                 .status(user.getStatus())
+                .role(user.getRole())
                 .createdAt(user.getCreatedAt() != null ? user.getCreatedAt().toLocalDateTime() : null)
                 .build();
     }

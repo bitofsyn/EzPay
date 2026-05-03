@@ -1,5 +1,6 @@
 package com.example.ezpay.model.user;
 
+import com.example.ezpay.shared.common.enums.Role;
 import com.example.ezpay.shared.common.enums.Status;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
@@ -33,6 +34,11 @@ public class User {
     @Column(nullable = false)
     private Status status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Role role = Role.USER;
+
     @CreationTimestamp
     @Column(updatable = false)
     private Timestamp createdAt;
@@ -52,6 +58,7 @@ public class User {
                 ", password='" + password + '\'' +
                 ", name='" + name + '\'' +
                 ", status=" + status +
+                ", role=" + role +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 ", accounts=" + accounts +

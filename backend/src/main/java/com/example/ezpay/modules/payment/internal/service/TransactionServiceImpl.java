@@ -14,6 +14,7 @@ import com.example.ezpay.response.AccountOwnerResponse;
 import com.example.ezpay.modules.notification.internal.service.NotificationService;
 import com.example.ezpay.service.user.ErrorLogService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -38,96 +40,137 @@ public class TransactionServiceImpl implements TransactionService {
 
     // 송금 요청 (kafka 이벤트 발행)
     @Override
-    public void transferMoney(TransferRequest transferRequest) {
+    public String transferMoney(TransferRequest transferRequest) {
+        String requestId = UUID.randomUUID().toString();
+
         // 1. 송금 이벤트 객체 생성
-        TransferEvent event = new TransferEvent(transferRequest.getFromAccountId(), transferRequest.getToAccountId(), transferRequest.getAmount(),
-                transferRequest.getMemo(), transferRequest.getCategory());
+        TransferEvent event = new TransferEvent(requestId, transferRequest.getFromAccountId(), transferRequest.getToAccountId(), transferRequest.getAmount(),
+                transferRequest.getMemo(), transferRequest.getCategory(), transferRequest.isCategoryManuallyEdited());
 
         // 2. Kafka에 이벤트 발행
         transactionProducer.sendTransferEvent(event);
+
+        return requestId;
     }
 
     // kafka 이벤트 수신 후 송금 처리
     @Override
     @Transactional(transactionManager = "transactionManager")
     public Transaction processTransfer(TransferEvent event) {
-        try{
-            Accounts fromAccount = accountRepository.findById(event.getFromAccountId())
-                    .orElseThrow(() -> new CustomNotFoundException("출금 계좌를 찾을 수 없습니다."));
+        if (event.getRequestId() == null || event.getRequestId().isBlank()) {
+            throw new IllegalArgumentException("requestId가 비어있습니다.");
+        }
 
-            Accounts toAccount = accountRepository.findById(event.getToAccountId())
-                    .orElseThrow(() -> new CustomNotFoundException("입금 계좌를 찾을 수 없습니다."));
+        // idempotency (at-least-once 대응)
+        Transaction existing = transactionRepository.findByRequestId(event.getRequestId()).orElse(null);
+        if (existing != null) {
+            return existing;
+        }
 
+        // 계좌 락은 항상 같은 순서로 잡아 데드락을 줄임
+        Long firstLockId = event.getFromAccountId() <= event.getToAccountId() ? event.getFromAccountId() : event.getToAccountId();
+        Long secondLockId = event.getFromAccountId() <= event.getToAccountId() ? event.getToAccountId() : event.getFromAccountId();
+
+        Accounts firstLocked = accountRepository.findByIdForUpdate(firstLockId)
+                .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다."));
+        Accounts secondLocked = accountRepository.findByIdForUpdate(secondLockId)
+                .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다."));
+
+        Accounts fromAccount = firstLockId.equals(event.getFromAccountId()) ? firstLocked : secondLocked;
+        Accounts toAccount = firstLockId.equals(event.getToAccountId()) ? firstLocked : secondLocked;
+
+        Transaction transaction = Transaction.builder()
+                .requestId(event.getRequestId())
+                .senderAccount(fromAccount)
+                .receiverAccount(toAccount)
+                .amount(event.getAmount())
+                .memo(event.getMemo())
+                .category(event.getCategory())
+                .status(TransactionStatus.PROCESSING)
+                .description("송금 처리중")
+                .build();
+
+        try {
+            transactionRepository.save(transaction);
+        } catch (DataIntegrityViolationException e) {
+            return transactionRepository.findByRequestId(event.getRequestId())
+                    .orElseThrow(() -> e);
+        }
+
+        try {
             TransferLimit transferLimit = transferLimitRepository.findByUserId(fromAccount.getUser().getUserId())
                     .orElseThrow(() -> new CustomNotFoundException("송금 한도 정보를 찾을 수 없습니다."));
+
+            if (event.getAmount() == null || event.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("송금 금액이 올바르지 않습니다.");
+            }
+
+            if (fromAccount.getAccountId().equals(toAccount.getAccountId())) {
+                throw new IllegalArgumentException("동일한 계좌로 송금할 수 없습니다.");
+            }
 
             if (fromAccount.getBalance().compareTo(event.getAmount()) < 0) {
                 throw new IllegalArgumentException("잔액 부족으로 송금할 수 없습니다.");
             }
 
-            // 1회 송금 한도 체크
             if (event.getAmount().compareTo(transferLimit.getPerTransactionLimit()) > 0) {
                 throw new TransferLimitExceededException("1회 송금 한도를 초과했습니다.");
             }
 
-            // 하루 총 송금 한도 체크(QueryDSL)
             BigDecimal todayTotalTransfers = transactionRepository.sumTodayTransactionBySender(fromAccount.getAccountId(), LocalDate.now());
             if (todayTotalTransfers == null) {
                 todayTotalTransfers = BigDecimal.ZERO;
             }
-
             if (todayTotalTransfers.add(event.getAmount()).compareTo(transferLimit.getDailyLimit()) > 0) {
                 throw new TransferLimitExceededException("하루 송금 한도를 초과했습니다.");
             }
 
-            // 잔액 체크
-            if (fromAccount.getBalance().compareTo(event.getAmount()) <= 0) {
-                throw new IllegalArgumentException("잔액 부족으로 송금할 수 없습니다.");
-            }
-
-            // 송금 처리
             fromAccount.setBalance(fromAccount.getBalance().subtract(event.getAmount()));
             toAccount.setBalance(toAccount.getBalance().add(event.getAmount()));
 
             accountRepository.save(fromAccount);
             accountRepository.save(toAccount);
 
-            // 거래 기록 저장
-            Transaction transaction = new Transaction();
-            transaction.setSenderAccount(fromAccount);
-            transaction.setReceiverAccount(toAccount);
-            transaction.setAmount(event.getAmount());
             transaction.setStatus(TransactionStatus.SUCCESS);
             transaction.setDescription("송금 완료");
+            Transaction saved = transactionRepository.save(transaction);
 
-            User sender = fromAccount.getUser();
-            User receiver = toAccount.getUser();
+            // 알림/학습데이터 저장은 송금 성공을 깨지 않도록 분리(실패시 로그만 남김)
+            try {
+                User sender = fromAccount.getUser();
+                User receiver = toAccount.getUser();
 
-            System.out.println("📨 이메일 발송 조건 충족: " + sender.getEmail());
-
-            if(isEmailNotificationEnabled(sender)) {
-                notificationService.sendMail(
-                        sender.getEmail(),
-                        event.getAmount().longValue(),
-                        receiver.getName()
-                );
+                if (isEmailNotificationEnabled(sender)) {
+                    notificationService.sendMail(
+                            sender.getEmail(),
+                            event.getAmount().longValue(),
+                            receiver.getName()
+                    );
+                }
+            } catch (Exception notifyError) {
+                errorLogService.logError("Notification", "이메일 발송 실패: " + notifyError.getMessage(), ErrorLogStatus.UNRESOLVED);
             }
-            System.out.println("=== 완료 ===");
 
-            // training_data에 저장
-            TrainingData trainingData = new TrainingData();
-            trainingData.setMemo(event.getMemo());
-            trainingData.setReceiverName(toAccount.getUser().getName());
-            trainingData.setCategory(event.getCategory());
-            trainingDataRepository.save(trainingData);
+            try {
+                if (event.isCategoryManuallyEdited()) {
+                    TrainingData trainingData = new TrainingData();
+                    trainingData.setMemo(event.getMemo());
+                    trainingData.setReceiverName(toAccount.getUser().getName());
+                    trainingData.setCategory(event.getCategory());
+                    trainingDataRepository.save(trainingData);
+                }
+            } catch (Exception trainingError) {
+                errorLogService.logError("TrainingData", "학습데이터 저장 실패: " + trainingError.getMessage(), ErrorLogStatus.UNRESOLVED);
+            }
 
-            return transactionRepository.save(transaction);
-        }catch (CustomNotFoundException | TransferLimitExceededException | IllegalArgumentException e) {
-            // 장애 발생시 로그 저장
+            return saved;
+        } catch (CustomNotFoundException | TransferLimitExceededException | IllegalArgumentException e) {
+            transaction.setStatus(TransactionStatus.FAILED);
+            transaction.setDescription(e.getMessage());
+            transactionRepository.save(transaction);
             errorLogService.logError("Transaction Service", e.getMessage(), ErrorLogStatus.UNRESOLVED);
-            throw e;
+            return transaction;
         } catch (Exception e) {
-            // 예상치 못한 오류 발생시 로그 저장
             errorLogService.logError("Transaction Service", "알수 없는 오류 발생:" + e.getMessage(), ErrorLogStatus.UNRESOLVED);
             throw e;
         }
@@ -151,6 +194,12 @@ public class TransactionServiceImpl implements TransactionService {
                 .orElseThrow(() -> new CustomNotFoundException("거래 내역을 찾을 수 없습니다. : " + transactionId));
     }
 
+    @Override
+    public Transaction getTransactionByRequestId(String requestId) {
+        return transactionRepository.findByRequestId(requestId)
+                .orElseThrow(() -> new CustomNotFoundException("거래 내역을 찾을 수 없습니다. : " + requestId));
+    }
+
     // 거래 취소
     @Override
     @Transactional
@@ -171,6 +220,18 @@ public class TransactionServiceImpl implements TransactionService {
 
         Accounts sender = transaction.getSenderAccount();
         Accounts receiver = transaction.getReceiverAccount();
+
+        // 동시성 대비 (취소도 잔액 조정이므로 락)
+        Long firstLockId = sender.getAccountId() <= receiver.getAccountId() ? sender.getAccountId() : receiver.getAccountId();
+        Long secondLockId = sender.getAccountId() <= receiver.getAccountId() ? receiver.getAccountId() : sender.getAccountId();
+        accountRepository.findByIdForUpdate(firstLockId)
+                .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다."));
+        accountRepository.findByIdForUpdate(secondLockId)
+                .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다."));
+
+        if (receiver.getBalance().compareTo(transaction.getAmount()) < 0) {
+            throw new IllegalArgumentException("수신 계좌 잔액 부족으로 취소할 수 없습니다.");
+        }
 
         // 💡 취소 시 원래대로 돌려놓음
         sender.setBalance(sender.getBalance().add(transaction.getAmount()));

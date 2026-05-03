@@ -1,5 +1,6 @@
 package com.example.ezpay.modules.auth.api.dto;
 
+import com.example.ezpay.shared.common.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,4 +13,5 @@ public class LoginResponse {
     private Long userId;
     private String email;
     private String name;
+    private Role role;
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -37,6 +38,9 @@ public class Accounts {
     private BigDecimal balance; // 잔액
 
     @CreationTimestamp
+    @Column(updatable = false)
     private Timestamp createdAt;
 
+    @UpdateTimestamp
+    private Timestamp updatedAt;
 }

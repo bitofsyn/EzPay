@@ -11,7 +11,7 @@ const TransactionTrendChart = ({ weeklyTrend }: TransactionTrendChartProps) => {
     datasets: [
       {
         label: '거래 건수',
-        data: weeklyTrend.map(d => d.count) || [],
+        data: weeklyTrend.map(d => d.transactionCount) || [],
         borderColor: 'rgba(34, 211, 238, 1)',
         backgroundColor: 'rgba(34, 211, 238, 0.1)',
         borderWidth: 3,

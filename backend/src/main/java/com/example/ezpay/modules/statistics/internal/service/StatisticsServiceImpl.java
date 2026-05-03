@@ -7,8 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +24,14 @@ public class StatisticsServiceImpl implements StatisticsService {
         if (userId == null) {
             throw new IllegalArgumentException("User ID cannot be null.");
         }
-        return transactionRepository.getSpendingSummaryByCategory(userId, year, month);
+        LocalDateTime startOfMonth = LocalDate.of(year, month, 1).atStartOfDay();
+        LocalDateTime startOfNextMonth = startOfMonth.plusMonths(1);
+
+        return transactionRepository.getSpendingSummaryByCategory(
+                userId,
+                Timestamp.valueOf(startOfMonth),
+                Timestamp.valueOf(startOfNextMonth)
+        );
     }
 
     @Override
