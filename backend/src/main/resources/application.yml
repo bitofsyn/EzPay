@@ -80,3 +80,12 @@ sentry:
 ezpay:
   internal-api:
     secret-key: "[REDACTED_SECRET_KEY]"
+  plaid:
+    client-id: ${PLAID_CLIENT_ID:}
+    secret: ${PLAID_SECRET:}
+    base-url: ${PLAID_BASE_URL:https://sandbox.plaid.com}
+    client-name: ${PLAID_CLIENT_NAME:EzPay}
+    language: ${PLAID_LANGUAGE:en}
+    country-code: ${PLAID_COUNTRY_CODE:US}
+    days-requested: ${PLAID_DAYS_REQUESTED:90}
+    webhook-url: ${PLAID_WEBHOOK_URL:}

@@ -71,8 +71,8 @@ const AIAssistant: React.FC = () => {
     <div className="flex flex-col h-[calc(100vh-120px)] bg-gray-50">
       {/* Header */}
       <div className="p-4 border-b bg-white">
-        <h1 className="text-xl font-semibold text-gray-800">AI 재무 비서</h1>
-        <p className="text-sm text-gray-500">지출 내역, 예산 등에 대해 질문해보세요.</p>
+        <h1 className="text-xl font-semibold text-gray-800">AI 인사이트 설명</h1>
+        <p className="text-sm text-gray-500">거래 변화, 소비 패턴, 이상 지출에 대해 근거 중심으로 확인해보세요.</p>
       </div>
 
       {/* Messages Area */}
