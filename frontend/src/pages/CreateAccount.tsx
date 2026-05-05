@@ -5,7 +5,9 @@ import {
   createLinkToken,
   getFinancialConnections,
   getKftcAccountInfo,
+  getKftcRegisteredAccounts,
   importSampleTransactions,
+  saveKftcRegisteredAccountSelection,
   saveKftcSelectedAccount,
   syncFinancialConnection,
 } from "../api/UserAPI";
@@ -13,6 +15,7 @@ import {
   FinancialConnection,
   FinancialDataProvider,
   KftcAccountInfoItem,
+  KftcRegisteredAccountItem,
   User,
 } from "../types";
 import { getUserData } from "../utils/storage";
@@ -32,10 +35,13 @@ const CreateAccount: React.FC = () => {
   const [provider] = useState<FinancialDataProvider>("KFTC_OPEN_BANKING");
   const [connections, setConnections] = useState<FinancialConnection[]>([]);
   const [kftcAccounts, setKftcAccounts] = useState<KftcAccountInfoItem[]>([]);
+  const [registeredAccounts, setRegisteredAccounts] = useState<KftcRegisteredAccountItem[]>([]);
   const [error, setError] = useState("");
+  const [registeredAccountsMessage, setRegisteredAccountsMessage] = useState("");
   const [isImportingSample, setIsImportingSample] = useState(false);
   const [startingRegistration, setStartingRegistration] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [loadingRegisteredAccounts, setLoadingRegisteredAccounts] = useState(false);
   const [savingAccountKey, setSavingAccountKey] = useState<string>("");
   const [syncingConnectionId, setSyncingConnectionId] = useState<number | null>(null);
 
@@ -167,6 +173,34 @@ const CreateAccount: React.FC = () => {
     }
   };
 
+  const handleLoadRegisteredAccounts = async () => {
+    if (!userId) {
+      setError("로그인 정보가 없습니다.");
+      return;
+    }
+
+    setLoadingRegisteredAccounts(true);
+    setError("");
+    setRegisteredAccountsMessage("");
+
+    try {
+      const connection = connections.find((item) => item.provider === "KFTC_OPEN_BANKING");
+      const result = await getKftcRegisteredAccounts(userId, connection?.connectionId);
+      const items = result.resList ?? [];
+      setRegisteredAccounts(items);
+      setRegisteredAccountsMessage(
+        items.length > 0
+          ? `등록 계좌 ${items.length}건을 불러왔습니다.`
+          : `등록 계좌 조회는 완료됐지만 반환된 계좌가 없습니다. rsp_code=${result.rspCode ?? "-"}, rsp_message=${result.rspMessage ?? "-"}`
+      );
+    } catch (err) {
+      const message = (err as any)?.response?.data?.message || "등록 계좌 목록을 불러오지 못했습니다.";
+      setError(message);
+    } finally {
+      setLoadingRegisteredAccounts(false);
+    }
+  };
+
   const handleSelectAccount = async (account: KftcAccountInfoItem) => {
     if (!userId) {
       setError("로그인 정보가 없습니다.");
@@ -206,6 +240,45 @@ const CreateAccount: React.FC = () => {
     }
   };
 
+  const handleSelectRegisteredAccount = async (account: KftcRegisteredAccountItem) => {
+    if (!userId) {
+      setError("로그인 정보가 없습니다.");
+      return;
+    }
+
+    const key = `${account.fintechUseNum ?? ""}-${account.accountNumMasked ?? ""}`;
+    setSavingAccountKey(key);
+    setError("");
+
+    try {
+      const result = await saveKftcRegisteredAccountSelection(userId, {
+        fintechUseNum: account.fintechUseNum,
+        bankCodeStd: account.bankCodeStd,
+        accountNumMasked: account.accountNumMasked,
+        accountAlias: account.accountAlias,
+        accountHolderName: account.accountHolderName,
+      });
+      await refreshConnections();
+
+      if (result.syncTriggered) {
+        navigate("/transactions", {
+          state: {
+            syncSummary: {
+              connectionId: result.connectionId,
+              syncedCount: result.syncedRecordCount ?? 0,
+              provider: "KFTC_OPEN_BANKING",
+            },
+          },
+        });
+      }
+    } catch (err) {
+      const message = (err as any)?.response?.data?.message || "등록 계좌 선택을 저장하지 못했습니다.";
+      setError(message);
+    } finally {
+      setSavingAccountKey("");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-10">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -236,8 +309,8 @@ const CreateAccount: React.FC = () => {
               <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
                 한국 금융 데이터 기준으로는 Plaid를 메인 경로로 사용할 수 없습니다.
                 <br />
-                현재는 KFTC Open Banking connector 스켈레톤을 기준으로 백엔드 구조를 정리하고,
-                저장된 `fintech_use_num`과 선택 계좌를 기준으로 거래 동기화를 자동으로 이어갑니다.
+                현재는 KFTC Open Banking 경로를 기준으로 인증 콜백에서 인가 코드와 토큰 교환을 자동 저장하고,
+                저장된 `fintech_use_num`과 선택 계좌를 기준으로 거래 동기화를 이어갑니다.
               </div>
               <div className="mt-5">
                 <Button
@@ -257,7 +330,15 @@ const CreateAccount: React.FC = () => {
               </div>
               <div className="mt-3">
                 <Button
-                  text={loadingAccounts ? "계좌 목록 불러오는 중..." : "계좌통합조회 불러오기"}
+                  text={loadingRegisteredAccounts ? "등록 계좌 불러오는 중..." : "등록 계좌 불러오기"}
+                  onClick={handleLoadRegisteredAccounts}
+                  disabled={loadingRegisteredAccounts}
+                  className="w-full bg-emerald-700 hover:bg-emerald-800"
+                />
+              </div>
+              <div className="mt-3">
+                <Button
+                  text={loadingAccounts ? "보조 계좌조회 시도 중..." : "계좌통합조회 시도"}
                   onClick={handleLoadKftcAccounts}
                   disabled={loadingAccounts}
                   className="w-full bg-cyan-600 hover:bg-cyan-700"
@@ -282,11 +363,11 @@ const CreateAccount: React.FC = () => {
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3">
                   <div className="font-medium text-slate-800">현재 구현 상태</div>
-                  <div className="mt-1">Connector 스켈레톤 및 거래 sync/정규화 경로 준비 완료</div>
+                  <div className="mt-1">인가 코드 저장, 토큰 교환, 계좌등록 콜백 저장, 거래 sync/정규화 경로 구현</div>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3">
                   <div className="font-medium text-slate-800">다음 구현 항목</div>
-                  <div className="mt-1">사용자 동의, 토큰 저장, 거래내역조회 요청/응답 매핑</div>
+                  <div className="mt-1">실환경 KFTC 앱 설정 검증, 오류 코드 처리, 재동기화 안정화</div>
                 </div>
               </div>
 
@@ -373,9 +454,64 @@ const CreateAccount: React.FC = () => {
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
+              <h2 className="text-2xl font-semibold text-slate-900">등록 계좌 목록</h2>
+              <p className="mt-2 text-sm text-slate-600">
+                사용자 토큰과 `user_seq_no`로 등록 계좌를 조회해 `fintech_use_num`을 확보합니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-4">
+            {registeredAccountsMessage && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                {registeredAccountsMessage}
+              </div>
+            )}
+            {registeredAccounts.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-sm text-slate-500">
+                아직 등록 계좌 목록이 없습니다.
+              </div>
+            ) : (
+              registeredAccounts.map((account) => {
+                const accountKey = `${account.fintechUseNum ?? ""}-${account.accountNumMasked ?? ""}`;
+                const isSaving = savingAccountKey === accountKey;
+
+                return (
+                  <div key={accountKey} className="rounded-xl border border-slate-200 p-5">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-slate-500">
+                          {account.bankCodeStd} · {account.bankName ?? "은행명 없음"}
+                        </div>
+                        <div className="mt-1 text-lg font-semibold text-slate-900">
+                          {account.accountAlias ?? account.accountHolderName ?? "등록 계좌"}
+                        </div>
+                        <div className="mt-1 text-sm text-slate-600">
+                          핀테크이용번호: {account.fintechUseNum ?? "-"}
+                          <br />
+                          마스킹 계좌번호: {account.accountNumMasked ?? "-"}
+                        </div>
+                      </div>
+                      <Button
+                        text={isSaving ? "선택 저장 중..." : "이 계좌로 동기화"}
+                        onClick={() => handleSelectRegisteredAccount(account)}
+                        disabled={isSaving}
+                        className="bg-emerald-700 hover:bg-emerald-800"
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
               <h2 className="text-2xl font-semibold text-slate-900">계좌통합조회 결과</h2>
               <p className="mt-2 text-sm text-slate-600">
-                동기화할 계좌를 선택하면 이후 KFTC 연동 흐름에서 기준 계좌로 사용할 수 있습니다.
+                현재 앱은 오픈뱅킹 계좌등록 콜백을 메인 흐름으로 사용합니다. 아래 조회는 별도 권한이 있는 경우에만 보조적으로 사용합니다.
               </p>
             </div>
           </div>
