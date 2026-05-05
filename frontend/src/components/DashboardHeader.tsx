@@ -7,10 +7,13 @@ interface DashboardHeaderProps {
 
 const DashboardHeader = ({ userName, onMenuOpen }: DashboardHeaderProps) => {
     return (
-        <header className="flex justify-between items-center w-full max-w-lg bg-white shadow-md p-4 rounded-lg">
-            <h2 className="text-xl font-semibold">{userName || '사용자'} 님</h2>
+        <header className="flex w-full max-w-4xl items-center justify-between rounded-2xl border border-slate-200 bg-white/90 px-5 py-4 shadow-sm backdrop-blur">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-500">EzPay</p>
+              <h2 className="text-lg font-semibold text-slate-900">{userName || '사용자'} 님</h2>
+            </div>
             <button onClick={onMenuOpen}>
-                <FiMenu size={28} className="text-gray-700" />
+                <FiMenu size={24} className="text-slate-700" />
             </button>
         </header>
     );

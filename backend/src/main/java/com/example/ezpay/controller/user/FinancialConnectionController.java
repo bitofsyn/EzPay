@@ -56,4 +56,10 @@ public class FinancialConnectionController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new CommonResponse<>("success", result, "SAMPLE_TRANSACTIONS_IMPORTED"));
     }
+
+    @PostMapping("/connections/kftc/reset")
+    public ResponseEntity<CommonResponse<KftcReconnectResult>> resetKftcConnection(@RequestBody KftcReconnectRequest request) {
+        KftcReconnectResult result = financialConnectionService.resetKftcConnection(request);
+        return ResponseEntity.ok(new CommonResponse<>("success", result, "KFTC_CONNECTION_RESET"));
+    }
 }
