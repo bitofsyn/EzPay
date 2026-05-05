@@ -21,6 +21,7 @@ import {
     NormalizedTransactionRecord,
     Insight,
     KftcAccountInfoResponse,
+    KftcRegisteredAccountResponse,
     KftcSelectedAccountResult,
 } from "../types";
 
@@ -188,6 +189,34 @@ export const saveKftcSelectedAccount = async (
     }
 ): Promise<KftcSelectedAccountResult> => {
     const res = await api.post("/api/connections/kftc/selected-account", {
+        userId,
+        ...account,
+    });
+    return res.data.data ?? res.data;
+};
+
+export const getKftcRegisteredAccounts = async (
+    userId: number,
+    connectionId?: number
+): Promise<KftcRegisteredAccountResponse> => {
+    const res = await api.post("/api/connections/kftc/registered-accounts", {
+        userId,
+        connectionId,
+    });
+    return res.data.data ?? res.data;
+};
+
+export const saveKftcRegisteredAccountSelection = async (
+    userId: number,
+    account: {
+        fintechUseNum?: string;
+        bankCodeStd?: string;
+        accountNumMasked?: string;
+        accountAlias?: string;
+        accountHolderName?: string;
+    }
+): Promise<KftcSelectedAccountResult> => {
+    const res = await api.post("/api/connections/kftc/registered-account/select", {
         userId,
         ...account,
     });

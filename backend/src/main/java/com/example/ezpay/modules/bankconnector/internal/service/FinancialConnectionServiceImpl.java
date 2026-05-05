@@ -34,7 +34,11 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
     @Override
     public ConnectionLinkToken createLinkToken(Long userId, String providerName) {
         User user = getUser(userId);
-        BankConnector connector = getConnector(providerName);
+        FinancialDataProvider provider = parseProvider(providerName);
+        if (provider == FinancialDataProvider.KFTC_OPEN_BANKING) {
+            ensureKftcConnection(user);
+        }
+        BankConnector connector = bankConnectorRegistry.get(provider);
         return connector.createLinkToken(user.getUserId());
     }
 
@@ -74,17 +78,7 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
     @Transactional
     public KftcAuthorizationCallbackResult handleKftcAuthorizationCallback(Long userId, String authorizationCode, String state) {
         User user = getUser(userId);
-        FinancialConnection connection = financialConnectionRepository
-                .findByUserUserIdAndProvider(user.getUserId(), FinancialDataProvider.KFTC_OPEN_BANKING)
-                .stream()
-                .findFirst()
-                .orElseGet(() -> financialConnectionRepository.save(FinancialConnection.builder()
-                        .user(user)
-                        .provider(FinancialDataProvider.KFTC_OPEN_BANKING)
-                        .connectionReference("kftc-auth-" + user.getUserId())
-                        .providerAccountReference("kftc-account-" + user.getUserId())
-                        .status("AUTH_CODE_RECEIVED")
-                        .build()));
+        FinancialConnection connection = ensureKftcConnection(user);
 
         connection.setAuthorizationCode(authorizationCode);
         connection.setAuthorizationState(state);
@@ -93,11 +87,13 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
         connection.setLastErrorMessage(null);
         financialConnectionRepository.save(connection);
 
+        TokenExchangeAttempt tokenExchangeAttempt = attemptKftcTokenExchange(connection);
+
         return KftcAuthorizationCallbackResult.builder()
                 .userId(user.getUserId())
                 .connectionId(connection.getConnectionId())
                 .status(connection.getStatus())
-                .message("인가 코드가 저장되었습니다. 다음 단계에서 토큰 교환을 수행할 수 있습니다.")
+                .message(tokenExchangeAttempt.message())
                 .authorizationState(state)
                 .build();
     }
@@ -106,11 +102,7 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
     @Transactional
     public KftcTokenExchangeCallbackResult handleKftcTokenExchangeCallback(KftcTokenExchangeCallbackRequest request) {
         User user = getUser(request.getUserId());
-        FinancialConnection connection = financialConnectionRepository
-                .findByUserUserIdAndProvider(user.getUserId(), FinancialDataProvider.KFTC_OPEN_BANKING)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new CustomNotFoundException("KFTC 연결 정보를 찾을 수 없습니다."));
+        FinancialConnection connection = ensureKftcConnection(user);
 
         if (request.getAuthorizationCode() != null && !request.getAuthorizationCode().isBlank()) {
             connection.setAuthorizationCode(request.getAuthorizationCode());
@@ -145,11 +137,7 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
     @Transactional
     public KftcTokenExchangeCallbackResult saveKftcFintechUseNum(Long userId, String fintechUseNum) {
         User user = getUser(userId);
-        FinancialConnection connection = financialConnectionRepository
-                .findByUserUserIdAndProvider(user.getUserId(), FinancialDataProvider.KFTC_OPEN_BANKING)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new CustomNotFoundException("KFTC 연결 정보를 찾을 수 없습니다."));
+        FinancialConnection connection = ensureKftcConnection(user);
 
         connection.setFintechUseNum(fintechUseNum);
         connection.setStatus("ACTIVE");
@@ -172,17 +160,7 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
     @Transactional
     public KftcAccountRegistrationCallbackResult handleKftcAccountRegistrationCallback(KftcAccountRegistrationCallbackRequest request) {
         User user = getUser(request.getUserId());
-        FinancialConnection connection = financialConnectionRepository
-                .findByUserUserIdAndProvider(user.getUserId(), FinancialDataProvider.KFTC_OPEN_BANKING)
-                .stream()
-                .findFirst()
-                .orElseGet(() -> financialConnectionRepository.save(FinancialConnection.builder()
-                        .user(user)
-                        .provider(FinancialDataProvider.KFTC_OPEN_BANKING)
-                        .connectionReference("kftc-reg-" + user.getUserId())
-                        .providerAccountReference("kftc-reg-account-" + user.getUserId())
-                        .status("ACCOUNT_REGISTERED")
-                        .build()));
+        FinancialConnection connection = ensureKftcConnection(user);
 
         if (request.getCode() != null && !request.getCode().isBlank()) {
             connection.setAuthorizationCode(request.getCode());
@@ -203,13 +181,14 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
         connection.setLastErrorMessage(null);
         financialConnectionRepository.save(connection);
 
+        TokenExchangeAttempt tokenExchangeAttempt = attemptKftcTokenExchange(connection);
         maybeAutoSyncKftcConnection(connection);
 
         return KftcAccountRegistrationCallbackResult.builder()
                 .userId(user.getUserId())
                 .connectionId(connection.getConnectionId())
                 .status(connection.getStatus())
-                .message("계좌등록 결과가 저장되었습니다.")
+                .message(tokenExchangeAttempt.accountRegistrationMessage())
                 .fintechUseNum(connection.getFintechUseNum())
                 .bankCodeStd(connection.getSelectedBankCodeStd())
                 .accountNum(connection.getSelectedAccountNum())
@@ -367,9 +346,6 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
         if (!(connector instanceof KftcOpenBankingConnector kftcConnector)) {
             throw new IllegalStateException("KFTC connector를 찾을 수 없습니다.");
         }
-        if (resolvedRequest.getAccessToken() == null || resolvedRequest.getAccessToken().isBlank()) {
-            throw new IllegalStateException("KFTC access token이 없습니다. 먼저 인증과 토큰 교환을 완료하세요.");
-        }
         if (resolvedRequest.getAuthCode() == null || resolvedRequest.getAuthCode().isBlank()) {
             throw new IllegalStateException("KFTC authorization code가 없습니다. 먼저 계좌등록을 완료하세요.");
         }
@@ -377,20 +353,68 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
     }
 
     @Override
+    public KftcRegisteredAccountResponse listKftcRegisteredAccounts(KftcRegisteredAccountRequest request) {
+        User user = getUser(request.getUserId());
+        FinancialConnection connection = resolveKftcConnection(user.getUserId(), request.getConnectionId());
+
+        BankConnector connector = bankConnectorRegistry.get(FinancialDataProvider.KFTC_OPEN_BANKING);
+        if (!(connector instanceof KftcOpenBankingConnector kftcConnector)) {
+            throw new IllegalStateException("KFTC connector를 찾을 수 없습니다.");
+        }
+        if (connection.getAccessToken() == null || connection.getAccessToken().isBlank()) {
+            throw new IllegalStateException("KFTC access token이 없습니다. 먼저 인증과 토큰 교환을 완료하세요.");
+        }
+        if (connection.getUserSeqNo() == null || connection.getUserSeqNo().isBlank()) {
+            throw new IllegalStateException("KFTC user_seq_no가 없습니다. 먼저 토큰 교환을 완료하세요.");
+        }
+
+        return kftcConnector.listRegisteredAccounts(connection.getAccessToken(), connection.getUserSeqNo());
+    }
+
+    @Override
     @Transactional
     public KftcSelectedAccountResult saveKftcSelectedAccount(KftcSelectedAccountRequest request) {
         User user = getUser(request.getUserId());
-        FinancialConnection connection = financialConnectionRepository
-                .findByUserUserIdAndProvider(user.getUserId(), FinancialDataProvider.KFTC_OPEN_BANKING)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new CustomNotFoundException("KFTC 연결 정보를 찾을 수 없습니다."));
+        FinancialConnection connection = ensureKftcConnection(user);
 
         connection.setSelectedBankCodeStd(request.getBankCodeStd());
         connection.setSelectedAccountNum(request.getAccountNum());
         connection.setSelectedAccountSeq(request.getAccountSeq());
         connection.setSelectedAccountName(request.getAccountName());
         connection.setSelectedAccountLocalCode(request.getAccountLocalCode());
+        connection.setStatus("ACCOUNT_SELECTED");
+        connection.setLastErrorMessage(null);
+        financialConnectionRepository.save(connection);
+
+        AutoSyncOutcome autoSyncOutcome = maybeAutoSyncKftcConnection(connection);
+
+        return KftcSelectedAccountResult.builder()
+                .userId(user.getUserId())
+                .connectionId(connection.getConnectionId())
+                .status(connection.getStatus())
+                .message(autoSyncOutcome.message())
+                .bankCodeStd(connection.getSelectedBankCodeStd())
+                .accountNum(connection.getSelectedAccountNum())
+                .accountSeq(connection.getSelectedAccountSeq())
+                .accountName(connection.getSelectedAccountName())
+                .accountLocalCode(connection.getSelectedAccountLocalCode())
+                .syncTriggered(autoSyncOutcome.triggered())
+                .syncedRecordCount(autoSyncOutcome.syncedRecordCount())
+                .nextCursor(autoSyncOutcome.nextCursor())
+                .hasMore(autoSyncOutcome.hasMore())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public KftcSelectedAccountResult saveKftcRegisteredAccountSelection(KftcRegisteredAccountSelectionRequest request) {
+        User user = getUser(request.getUserId());
+        FinancialConnection connection = ensureKftcConnection(user);
+
+        connection.setFintechUseNum(request.getFintechUseNum());
+        connection.setSelectedBankCodeStd(request.getBankCodeStd());
+        connection.setSelectedAccountNum(request.getAccountNumMasked());
+        connection.setSelectedAccountName(firstNonBlank(request.getAccountAlias(), request.getAccountHolderName()));
         connection.setStatus("ACCOUNT_SELECTED");
         connection.setLastErrorMessage(null);
         financialConnectionRepository.save(connection);
@@ -463,6 +487,49 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
         }
     }
 
+    private TokenExchangeAttempt attemptKftcTokenExchange(FinancialConnection connection) {
+        if (connection.getProvider() != FinancialDataProvider.KFTC_OPEN_BANKING) {
+            return TokenExchangeAttempt.notAttempted("KFTC 연결이 아니므로 토큰 교환을 건너뜁니다.");
+        }
+        if (connection.getAuthorizationCode() == null || connection.getAuthorizationCode().isBlank()) {
+            return TokenExchangeAttempt.notAttempted("인가 코드를 저장했지만 토큰 교환에 필요한 code가 없습니다.");
+        }
+
+        BankConnector connector = bankConnectorRegistry.get(FinancialDataProvider.KFTC_OPEN_BANKING);
+        if (!(connector instanceof KftcOpenBankingConnector kftcConnector)) {
+            throw new IllegalStateException("KFTC connector를 찾을 수 없습니다.");
+        }
+
+        try {
+            KftcTokenExchangeResult result = kftcConnector.exchangeAuthorizationCode(KftcTokenExchangeRequest.builder()
+                    .userId(connection.getUser().getUserId())
+                    .authorizationCode(connection.getAuthorizationCode())
+                    .redirectUri(null)
+                    .clientId(null)
+                    .clientSecret(null)
+                    .grantType("authorization_code")
+                    .build());
+
+            connection.setAccessToken(result.getAccessToken());
+            connection.setRefreshToken(result.getRefreshToken());
+            connection.setUserSeqNo(result.getUserSeqNo());
+            connection.setTokenScope(result.getScope());
+            connection.setTokenType(result.getTokenType());
+            connection.setAccessTokenExpiresIn(result.getExpiresIn());
+            connection.setTokenExchangedAt(Timestamp.from(Instant.now()));
+            connection.setProviderAccountReference(firstNonBlank(result.getUserSeqNo(), connection.getProviderAccountReference()));
+            connection.setStatus("ACTIVE");
+            connection.setLastErrorMessage(null);
+            financialConnectionRepository.save(connection);
+
+            return TokenExchangeAttempt.success("인가 코드와 토큰 교환까지 완료되었습니다. 계좌통합조회를 진행할 수 있습니다.");
+        } catch (RuntimeException e) {
+            connection.setLastErrorMessage(e.getMessage());
+            financialConnectionRepository.save(connection);
+            return TokenExchangeAttempt.failure("인가 코드는 저장했지만 토큰 교환은 실패했습니다. 설정값과 KFTC 앱 등록 정보를 확인하세요.");
+        }
+    }
+
     private boolean hasSelectedKftcAccount(FinancialConnection connection) {
         return firstNonBlank(
                 connection.getSelectedAccountNum(),
@@ -490,10 +557,21 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
             return connection;
         }
 
-        return financialConnectionRepository.findByUserUserIdAndProvider(userId, FinancialDataProvider.KFTC_OPEN_BANKING)
+        return ensureKftcConnection(getUser(userId));
+    }
+
+    private FinancialConnection ensureKftcConnection(User user) {
+        return financialConnectionRepository
+                .findByUserUserIdAndProvider(user.getUserId(), FinancialDataProvider.KFTC_OPEN_BANKING)
                 .stream()
                 .findFirst()
-                .orElseThrow(() -> new CustomNotFoundException("KFTC 연결 정보를 찾을 수 없습니다."));
+                .orElseGet(() -> financialConnectionRepository.save(FinancialConnection.builder()
+                        .user(user)
+                        .provider(FinancialDataProvider.KFTC_OPEN_BANKING)
+                        .connectionReference("kftc-conn-" + user.getUserId())
+                        .providerAccountReference("kftc-account-" + user.getUserId())
+                        .status("PENDING_AUTHORIZATION")
+                        .build()));
     }
 
     private FinancialConnection resolveSyncConnection(Long userId, Long connectionId) {
@@ -528,6 +606,29 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
 
         private static AutoSyncOutcome notTriggered(String message) {
             return new AutoSyncOutcome(false, message, null, null, null);
+        }
+    }
+
+    private record TokenExchangeAttempt(
+            boolean exchanged,
+            String message
+    ) {
+        private static TokenExchangeAttempt success(String message) {
+            return new TokenExchangeAttempt(true, message);
+        }
+
+        private static TokenExchangeAttempt failure(String message) {
+            return new TokenExchangeAttempt(false, message);
+        }
+
+        private static TokenExchangeAttempt notAttempted(String message) {
+            return new TokenExchangeAttempt(false, message);
+        }
+
+        private String accountRegistrationMessage() {
+            return exchanged
+                    ? "계좌등록 결과와 토큰 교환을 저장했습니다. 계좌통합조회 또는 거래 동기화를 진행할 수 있습니다."
+                    : message;
         }
     }
 }

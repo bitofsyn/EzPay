@@ -150,6 +150,29 @@ export interface KftcSelectedAccountResult {
   hasMore?: boolean;
 }
 
+export interface KftcRegisteredAccountItem {
+  fintechUseNum?: string;
+  accountAlias?: string;
+  bankCodeStd?: string;
+  bankName?: string;
+  accountNumMasked?: string;
+  accountHolderName?: string;
+  accountType?: string;
+  inquiryAgreeYn?: string;
+  transferAgreeYn?: string;
+}
+
+export interface KftcRegisteredAccountResponse {
+  apiTranId?: string;
+  apiTranDtm?: string;
+  rspCode?: string;
+  rspMessage?: string;
+  userSeqNo?: string;
+  userName?: string;
+  resCnt?: string;
+  resList: KftcRegisteredAccountItem[];
+}
+
 export interface AccountOwner {
   accountNumber: string;
   accountName: string;

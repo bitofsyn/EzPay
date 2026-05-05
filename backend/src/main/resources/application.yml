@@ -98,12 +98,12 @@ ezpay:
     client-id: ${KFTC_CLIENT_ID:}
     client-secret: ${KFTC_CLIENT_SECRET:}
     base-url: ${KFTC_BASE_URL:https://openapi.openbanking.or.kr}
-    authorize-url: ${KFTC_AUTHORIZE_URL:https://testapi.openbanking.or.kr/oauth/2.0/authorize}
+    authorize-url: ${KFTC_AUTHORIZE_URL:https://testapi.openbanking.or.kr/oauth/2.0/authorize_account}
     token-url: ${KFTC_TOKEN_URL:https://testapi.openbanking.or.kr/oauth/2.0/token}
     redirect-uri: ${KFTC_REDIRECT_URI:}
     client-use-code: ${KFTC_CLIENT_USE_CODE:}
     webhook-url: ${KFTC_WEBHOOK_URL:}
-    scope: ${KFTC_SCOPE:inquiry}
+    scope: ${KFTC_SCOPE:login inquiry}
     fintech-use-num: ${KFTC_FINTECH_USE_NUM:}
     inquiry-start-date: ${KFTC_INQUIRY_START_DATE:20240101}
     inquiry-end-date: ${KFTC_INQUIRY_END_DATE:20241231}

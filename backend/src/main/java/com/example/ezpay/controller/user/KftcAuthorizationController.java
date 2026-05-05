@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/connections/kftc")
 @RequiredArgsConstructor
 public class KftcAuthorizationController {
+    private static final String AUTH_STATE_PREFIX = "kftc";
+    private static final int AUTH_STATE_USER_ID_START = 4;
+    private static final int AUTH_STATE_USER_ID_END = 14;
     private final FinancialConnectionService financialConnectionService;
 
     @GetMapping("/callback")
@@ -37,12 +40,11 @@ public class KftcAuthorizationController {
         if (state == null || state.isBlank()) {
             throw new IllegalArgumentException("KFTC callback에 userId 또는 state가 필요합니다.");
         }
-        String prefix = "kftc-user-";
-        if (!state.startsWith(prefix)) {
+        if (state.length() < AUTH_STATE_USER_ID_END || !state.startsWith(AUTH_STATE_PREFIX)) {
             throw new IllegalArgumentException("KFTC state 형식이 올바르지 않습니다.");
         }
         try {
-            return Long.parseLong(state.substring(prefix.length()));
+            return Long.parseLong(state.substring(AUTH_STATE_USER_ID_START, AUTH_STATE_USER_ID_END));
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("KFTC state에서 userId를 해석할 수 없습니다.");
         }

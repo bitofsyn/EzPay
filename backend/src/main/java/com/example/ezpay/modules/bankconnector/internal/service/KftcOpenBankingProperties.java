@@ -19,7 +19,7 @@ public class KftcOpenBankingProperties {
     private String redirectUri;
     private String clientUseCode;
     private String webhookUrl;
-    private String scope = "sa inquiry";
+    private String scope = "login inquiry";
     private String fintechUseNum;
     private String inquiryStartDate;
     private String inquiryEndDate;

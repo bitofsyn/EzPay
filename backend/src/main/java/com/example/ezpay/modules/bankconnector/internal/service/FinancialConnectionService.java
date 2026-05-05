@@ -6,6 +6,9 @@ import com.example.ezpay.modules.bankconnector.api.dto.KftcAccountInfoResponse;
 import com.example.ezpay.modules.bankconnector.api.dto.KftcAccountInfoRequest;
 import com.example.ezpay.modules.bankconnector.api.dto.KftcAccountRegistrationCallbackRequest;
 import com.example.ezpay.modules.bankconnector.api.dto.KftcAccountRegistrationCallbackResult;
+import com.example.ezpay.modules.bankconnector.api.dto.KftcRegisteredAccountRequest;
+import com.example.ezpay.modules.bankconnector.api.dto.KftcRegisteredAccountResponse;
+import com.example.ezpay.modules.bankconnector.api.dto.KftcRegisteredAccountSelectionRequest;
 import com.example.ezpay.modules.bankconnector.api.dto.KftcSelectedAccountRequest;
 import com.example.ezpay.modules.bankconnector.api.dto.KftcSelectedAccountResult;
 import com.example.ezpay.modules.bankconnector.api.dto.KftcTokenExchangeCallbackRequest;
@@ -33,9 +36,13 @@ public interface FinancialConnectionService {
 
     KftcAccountInfoResponse listKftcAccounts(KftcAccountInfoRequest request);
 
+    KftcRegisteredAccountResponse listKftcRegisteredAccounts(KftcRegisteredAccountRequest request);
+
     KftcAccountRegistrationCallbackResult handleKftcAccountRegistrationCallback(KftcAccountRegistrationCallbackRequest request);
 
     KftcSelectedAccountResult saveKftcSelectedAccount(KftcSelectedAccountRequest request);
+
+    KftcSelectedAccountResult saveKftcRegisteredAccountSelection(KftcRegisteredAccountSelectionRequest request);
 
     TransactionSyncResult importSampleTransactions(SampleImportRequest request);
 
