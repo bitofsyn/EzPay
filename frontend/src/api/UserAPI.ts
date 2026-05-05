@@ -22,6 +22,7 @@ import {
     Insight,
     KftcAccountInfoResponse,
     KftcRegisteredAccountResponse,
+    KftcReconnectResult,
     KftcSelectedAccountResult,
 } from "../types";
 
@@ -219,6 +220,17 @@ export const saveKftcRegisteredAccountSelection = async (
     const res = await api.post("/api/connections/kftc/registered-account/select", {
         userId,
         ...account,
+    });
+    return res.data.data ?? res.data;
+};
+
+export const resetKftcConnection = async (
+    userId: number,
+    connectionId?: number
+): Promise<KftcReconnectResult> => {
+    const res = await api.post("/api/connections/kftc/reset", {
+        userId,
+        connectionId,
     });
     return res.data.data ?? res.data;
 };

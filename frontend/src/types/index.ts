@@ -150,6 +150,14 @@ export interface KftcSelectedAccountResult {
   hasMore?: boolean;
 }
 
+export interface KftcReconnectResult {
+  userId: number;
+  connectionId: number;
+  status: string;
+  message?: string;
+  deletedTransactionCount?: number;
+}
+
 export interface KftcRegisteredAccountItem {
   fintechUseNum?: string;
   accountAlias?: string;

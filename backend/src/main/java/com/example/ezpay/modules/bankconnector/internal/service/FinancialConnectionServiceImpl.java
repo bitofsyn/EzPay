@@ -438,29 +438,68 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
                 .build();
     }
 
+    @Override
+    @Transactional
+    public KftcReconnectResult resetKftcConnection(KftcReconnectRequest request) {
+        User user = getUser(request.getUserId());
+        FinancialConnection connection = resolveKftcConnection(user.getUserId(), request.getConnectionId());
+
+        if (connection.getProvider() != FinancialDataProvider.KFTC_OPEN_BANKING) {
+            throw new IllegalArgumentException("KFTC 연결만 재연결할 수 있습니다.");
+        }
+
+        Long connectionId = connection.getConnectionId();
+        Integer deletedTransactionCount = normalizedTransactionRepository
+                .findByConnectionConnectionIdOrderByPostedAtDesc(connectionId)
+                .size();
+        normalizedTransactionRepository.deleteByConnectionConnectionId(connectionId);
+        financialConnectionRepository.delete(connection);
+
+        return KftcReconnectResult.builder()
+                .userId(user.getUserId())
+                .connectionId(connectionId)
+                .status("RESET")
+                .message("KFTC 연결을 해제했습니다. 다시 계좌등록을 시작할 수 있습니다.")
+                .deletedTransactionCount(deletedTransactionCount)
+                .build();
+    }
+
     private TransactionSyncResult syncConnectionTransactions(FinancialConnection connection, Long userId) {
         if (!connection.getUser().getUserId().equals(userId)) {
             throw new IllegalArgumentException("본인의 연결만 동기화할 수 있습니다.");
         }
 
         BankConnector connector = bankConnectorRegistry.get(connection.getProvider());
-        TransactionSyncResult result = connector.syncTransactions(TransactionSyncRequest.builder()
-                .provider(connection.getProvider())
-                .userId(userId)
-                .connectionReference(connection.getConnectionReference())
-                .accessToken(connection.getAccessToken())
-                .fintechUseNum(connection.getFintechUseNum())
-                .cursor(connection.getSyncCursor())
-                .build());
+        try {
+            TransactionSyncResult result = connector.syncTransactions(TransactionSyncRequest.builder()
+                    .provider(connection.getProvider())
+                    .userId(userId)
+                    .connectionReference(connection.getConnectionReference())
+                    .accessToken(connection.getAccessToken())
+                    .fintechUseNum(connection.getFintechUseNum())
+                    .cursor(connection.getSyncCursor())
+                    .build());
 
-        saveNormalizedTransactions(connection, result);
+            saveNormalizedTransactions(connection, result);
 
-        connection.setSyncCursor(result.getNextCursor());
-        connection.setLastSyncedAt(Timestamp.from(Instant.now()));
-        connection.setStatus("ACTIVE");
-        connection.setLastErrorMessage(null);
-        financialConnectionRepository.save(connection);
-        return result;
+            connection.setSyncCursor(result.getNextCursor());
+            connection.setLastSyncedAt(Timestamp.from(Instant.now()));
+            connection.setStatus("ACTIVE");
+            connection.setLastErrorMessage(null);
+            financialConnectionRepository.save(connection);
+            return result;
+        } catch (RuntimeException e) {
+            if (isKftcConsentExpired(e)) {
+                connection.setStatus("CONSENT_EXPIRED");
+                connection.setLastErrorMessage("KFTC 제3자제공동의가 만료되었습니다. 오픈뱅킹 계좌등록을 다시 진행해야 합니다.");
+                financialConnectionRepository.save(connection);
+                throw new IllegalArgumentException("KFTC 제3자제공동의가 만료되었습니다. 오픈뱅킹 계좌등록을 다시 진행해주세요.");
+            } else {
+                connection.setLastErrorMessage(e.getMessage());
+                financialConnectionRepository.save(connection);
+                throw e;
+            }
+        }
     }
 
     private AutoSyncOutcome maybeAutoSyncKftcConnection(FinancialConnection connection) {
@@ -481,7 +520,18 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
             TransactionSyncResult result = syncConnectionTransactions(connection, connection.getUser().getUserId());
             return AutoSyncOutcome.triggered(result);
         } catch (RuntimeException e) {
-            connection.setLastErrorMessage(e.getMessage());
+            if (isKftcConsentExpired(e)) {
+                connection.setStatus("CONSENT_EXPIRED");
+                connection.setLastErrorMessage("KFTC 제3자제공동의가 만료되었습니다. 오픈뱅킹 계좌등록을 다시 진행해야 합니다.");
+                connection.setFintechUseNum(null);
+                connection.setSelectedBankCodeStd(null);
+                connection.setSelectedAccountNum(null);
+                connection.setSelectedAccountSeq(null);
+                connection.setSelectedAccountName(null);
+                connection.setSelectedAccountLocalCode(null);
+            } else {
+                connection.setLastErrorMessage(e.getMessage());
+            }
             financialConnectionRepository.save(connection);
             return AutoSyncOutcome.notTriggered("자동 거래 동기화에 실패했습니다. 저장된 계좌로 다시 시도할 수 있습니다.");
         }
@@ -536,6 +586,20 @@ public class FinancialConnectionServiceImpl implements FinancialConnectionServic
                 connection.getSelectedAccountSeq(),
                 connection.getSelectedAccountName()
         ) != null;
+    }
+
+    private boolean isKftcConsentExpired(Throwable throwable) {
+        String message = throwable == null ? null : throwable.getMessage();
+        if (message == null) {
+            return false;
+        }
+
+        String normalized = message.toLowerCase();
+        return normalized.contains("제3자제공동의 만료")
+                || normalized.contains("정보제공 재동의대상")
+                || normalized.contains("재동의대상")
+                || normalized.contains("consent expired")
+                || normalized.contains("re-consent");
     }
 
     private String firstNonBlank(String... values) {
