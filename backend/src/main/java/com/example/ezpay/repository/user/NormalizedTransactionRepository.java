@@ -19,6 +19,8 @@ public interface NormalizedTransactionRepository extends JpaRepository<Normalize
 
     List<NormalizedTransaction> findByConnectionConnectionIdAndUserUserIdOrderByPostedAtDesc(Long connectionId, Long userId);
 
+    void deleteByConnectionConnectionId(Long connectionId);
+
     List<NormalizedTransaction> findTop20ByUserUserIdOrderByPostedAtDesc(Long userId);
 
     List<NormalizedTransaction> findByUserUserIdAndPostedAtBetweenOrderByPostedAtDesc(Long userId, OffsetDateTime start, OffsetDateTime end);
