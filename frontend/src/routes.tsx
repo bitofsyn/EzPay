@@ -6,6 +6,7 @@ import AdminRoute from "./components/AdminRoute";
 
 // Lazy load pages
 const Home = lazy(() => import("./pages/Home"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -56,6 +57,7 @@ const AppRoutes = () => {
         <Routes>
           {/* 비로그인 접근 가능 */}
           <Route path="/" element={<Home />} />
+          <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/find-email" element={<FindEmail />} />
