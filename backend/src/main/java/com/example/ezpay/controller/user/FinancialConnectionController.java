@@ -1,6 +1,12 @@
 package com.example.ezpay.controller.user;
 
-import com.example.ezpay.modules.bankconnector.api.dto.*;
+import com.example.ezpay.modules.bankconnector.api.dto.ConnectionExchangeResult;
+import com.example.ezpay.modules.bankconnector.api.dto.ConnectionLinkToken;
+import com.example.ezpay.modules.bankconnector.api.dto.ExchangeConnectionRequest;
+import com.example.ezpay.modules.bankconnector.api.dto.LinkTokenRequest;
+import com.example.ezpay.modules.bankconnector.api.dto.SampleImportRequest;
+import com.example.ezpay.modules.bankconnector.api.dto.SyncTransactionsRequest;
+import com.example.ezpay.modules.bankconnector.api.dto.TransactionSyncResult;
 import com.example.ezpay.modules.bankconnector.internal.service.FinancialConnectionService;
 import com.example.ezpay.model.user.FinancialConnection;
 import com.example.ezpay.shared.common.dto.CommonResponse;
@@ -55,11 +61,5 @@ public class FinancialConnectionController {
         TransactionSyncResult result = financialConnectionService.importSampleTransactions(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new CommonResponse<>("success", result, "SAMPLE_TRANSACTIONS_IMPORTED"));
-    }
-
-    @PostMapping("/connections/kftc/reset")
-    public ResponseEntity<CommonResponse<KftcReconnectResult>> resetKftcConnection(@RequestBody KftcReconnectRequest request) {
-        KftcReconnectResult result = financialConnectionService.resetKftcConnection(request);
-        return ResponseEntity.ok(new CommonResponse<>("success", result, "KFTC_CONNECTION_RESET"));
     }
 }

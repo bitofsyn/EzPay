@@ -20,10 +20,6 @@ import {
     TransactionSyncResult,
     NormalizedTransactionRecord,
     Insight,
-    KftcAccountInfoResponse,
-    KftcRegisteredAccountResponse,
-    KftcReconnectResult,
-    KftcSelectedAccountResult,
 } from "../types";
 
 // 회원가입(Signup)
@@ -167,73 +163,6 @@ export const importSampleTransactions = async (userId: number): Promise<Transact
     return res.data.data ?? res.data;
 };
 
-export const getKftcAccountInfo = async (
-    userId: number,
-    connectionId?: number
-): Promise<KftcAccountInfoResponse> => {
-    const res = await api.post("/api/connections/kftc/account-info", {
-        userId,
-        connectionId,
-        inquiryBankType: "1",
-    });
-    return res.data.data ?? res.data;
-};
-
-export const saveKftcSelectedAccount = async (
-    userId: number,
-    account: {
-        bankCodeStd?: string;
-        accountNum?: string;
-        accountSeq?: string;
-        accountName?: string;
-        accountLocalCode?: string;
-    }
-): Promise<KftcSelectedAccountResult> => {
-    const res = await api.post("/api/connections/kftc/selected-account", {
-        userId,
-        ...account,
-    });
-    return res.data.data ?? res.data;
-};
-
-export const getKftcRegisteredAccounts = async (
-    userId: number,
-    connectionId?: number
-): Promise<KftcRegisteredAccountResponse> => {
-    const res = await api.post("/api/connections/kftc/registered-accounts", {
-        userId,
-        connectionId,
-    });
-    return res.data.data ?? res.data;
-};
-
-export const saveKftcRegisteredAccountSelection = async (
-    userId: number,
-    account: {
-        fintechUseNum?: string;
-        bankCodeStd?: string;
-        accountNumMasked?: string;
-        accountAlias?: string;
-        accountHolderName?: string;
-    }
-): Promise<KftcSelectedAccountResult> => {
-    const res = await api.post("/api/connections/kftc/registered-account/select", {
-        userId,
-        ...account,
-    });
-    return res.data.data ?? res.data;
-};
-
-export const resetKftcConnection = async (
-    userId: number,
-    connectionId?: number
-): Promise<KftcReconnectResult> => {
-    const res = await api.post("/api/connections/kftc/reset", {
-        userId,
-        connectionId,
-    });
-    return res.data.data ?? res.data;
-};
 
 export const getNormalizedTransactions = async (
     userId: number,

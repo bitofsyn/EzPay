@@ -39,19 +39,13 @@ export interface CreateAccountData {
   balance: number;
 }
 
-export type FinancialDataProvider = 'PLAID_SANDBOX' | 'KFTC_OPEN_BANKING';
+export type FinancialDataProvider = 'PLAID_SANDBOX';
 
 export interface FinancialConnection {
   connectionId: number;
   provider: FinancialDataProvider;
   connectionReference: string;
   providerAccountReference?: string;
-  fintechUseNum?: string;
-  selectedBankCodeStd?: string;
-  selectedAccountNum?: string;
-  selectedAccountSeq?: string;
-  selectedAccountName?: string;
-  selectedAccountLocalCode?: string;
   status: string;
   lastErrorMessage?: string;
   syncCursor?: string;
@@ -107,79 +101,6 @@ export interface Insight {
   evidenceValue: string;
 }
 
-export interface KftcAccountInfoItem {
-  bankCodeStd?: string;
-  activityType?: string;
-  accountType?: string;
-  accountNum?: string;
-  accountSeq?: string;
-  accountLocalCode?: string;
-  accountIssueDate?: string;
-  maturityDate?: string;
-  lastTranDate?: string;
-  productName?: string;
-  productSubName?: string;
-  dormancyYn?: string;
-  balanceAmt?: string;
-  availableAmt?: string;
-}
-
-export interface KftcAccountInfoResponse {
-  apiTranId?: string;
-  apiTranDtm?: string;
-  rspCode?: string;
-  rspMessage?: string;
-  totalRecordCnt?: string;
-  pageRecordCnt?: string;
-  resList: KftcAccountInfoItem[];
-}
-
-export interface KftcSelectedAccountResult {
-  userId: number;
-  connectionId: number;
-  status: string;
-  message?: string;
-  bankCodeStd?: string;
-  accountNum?: string;
-  accountSeq?: string;
-  accountName?: string;
-  accountLocalCode?: string;
-  syncTriggered: boolean;
-  syncedRecordCount?: number;
-  nextCursor?: string;
-  hasMore?: boolean;
-}
-
-export interface KftcReconnectResult {
-  userId: number;
-  connectionId: number;
-  status: string;
-  message?: string;
-  deletedTransactionCount?: number;
-}
-
-export interface KftcRegisteredAccountItem {
-  fintechUseNum?: string;
-  accountAlias?: string;
-  bankCodeStd?: string;
-  bankName?: string;
-  accountNumMasked?: string;
-  accountHolderName?: string;
-  accountType?: string;
-  inquiryAgreeYn?: string;
-  transferAgreeYn?: string;
-}
-
-export interface KftcRegisteredAccountResponse {
-  apiTranId?: string;
-  apiTranDtm?: string;
-  rspCode?: string;
-  rspMessage?: string;
-  userSeqNo?: string;
-  userName?: string;
-  resCnt?: string;
-  resList: KftcRegisteredAccountItem[];
-}
 
 export interface AccountOwner {
   accountNumber: string;
