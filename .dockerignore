@@ -1,0 +1,14 @@
+.git
+.gitignore
+.idea
+.gradle
+build
+frontend
+ai-category-server
+ai-assistant-server
+image
+**/.DS_Store
+**/node_modules
+**/build
+**/.gradle
+**/.idea

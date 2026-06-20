@@ -1,175 +1,357 @@
-# EzPay
+# EzPay - 간편 송금 서비스
 
-EzPay는 사용자의 금융 계좌를 연결해 실제 거래 데이터를 수집하고, 이를 정규화·분류·분석하여 소비 패턴 변화와 이상 지출 징후를 자동으로 설명해주는 개인 금융 분석 서비스입니다. 단순한 가계부 UI가 아니라, 한국 금융 데이터 연동 구조, 거래 동기화 파이프라인, 이벤트 기반 분석, AI 설명 레이어까지 포함한 금융 데이터 제품을 목표로 합니다.
-
----
-
-## 1. 프로젝트 방향
-
-EzPay는 더 이상 임시 계좌 기반 송금 데모를 목표로 하지 않습니다. 현재 리팩토링 방향은 아래와 같습니다.
-
-- 한국 오픈뱅킹 조회형 API에 맞는 거래 수집 파이프라인 구축
-- 사용자가 연결한 계좌의 거래 내역을 동기화하고 내부 포맷으로 정규화
-- 카테고리 분류, 반복 지출 탐지, 이상 지출 탐지를 통해 행동 가능한 인사이트 생성
-- AI 기능은 범용 챗봇이 아니라 분석 결과를 설명하는 보조 레이어로 축소
-
-핵심 메시지:
-`EzPay는 한국 금융 거래 데이터를 연결하고 해석하는 개인 금융 분석 앱이다.`
+![Java](https://img.shields.io/badge/Java-17-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.2-green)
+![React](https://img.shields.io/badge/React-19-blue)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-RDS-336791)
+![AWS](https://img.shields.io/badge/AWS-CloudFront%20%7C%20S3-orange)
 
 ---
 
-## 2. 핵심 사용자 흐름
+## 🌐 라이브 서비스
 
-1. 사용자가 오픈뱅킹 기반 계좌 연동을 진행합니다.
-2. 외부 금융 API에서 거래 내역을 동기화합니다.
-3. 거래 데이터를 정규화하고 저장합니다.
-4. 카테고리, 반복 지출, 이상 패턴을 분석합니다.
-5. 월별 소비 변화와 자동 인사이트를 대시보드에 표시합니다.
-6. 사용자는 AI 설명 기능으로 분석 근거를 확인합니다.
-
----
-
-## 3. 현재 구현 범위
-
-### 인증 및 사용자
-- JWT 기반 로그인/회원가입
-- 비밀번호 재설정 기능
-
-### 계좌 및 거래
-- 계좌 목록 조회
-- 거래 내역 조회
-- 거래 통계 및 월별 소비 화면
-
-### 분석 및 AI
-- 메모 기반 카테고리 분류 API
-- AI Assistant 서버 기반 설명형 응답 실험
-
-### 인프라
-- Frontend / Backend / AI 서버 분리 구조
-- Docker Compose 기반 로컬 실행
-- Kafka 기반 비동기 처리 실험
+| 환경 | URL | 상태 |
+|------|-----|------|
+| **프론트엔드** | https://der7dm75txez.cloudfront.net | ✅ 배포 완료 |
+| **백엔드 API** | https://ezpay-82sw.onrender.com | ✅ 배포 완료 |
+| **헬스 체크** | https://ezpay-82sw.onrender.com/health | ✅ `{"status":"ok"}` |
 
 ---
 
-## 4. 리팩토링 원칙
+## 📋 프로젝트 구조
 
-### 유지할 영역
-- 로그인/회원 관리
-- 계좌 연결 경험
-- 거래 내역 동기화
-- 소비 통계
-- 카테고리 분류
-- 자동 인사이트 생성
-- AI 설명 기능
-
-### 축소 또는 제거할 영역
-- 임시 계좌 기반 송금 UX
-- 이체 한도 중심 기능
-- 수취인 중심 흐름
-- 관리자 기능의 우선순위
-- 범용 재무 챗봇 포지셔닝
-
----
-
-## 5. 목표 아키텍처
-
-```mermaid
-flowchart TB
-    FE[Frontend\n거래 연결 · 소비 분석 · 인사이트 UI]
-
-    API[Backend API\n인증 · 거래 동기화 · 분석 · 인사이트]
-
-    CONNECTOR[Bank Connector\nKFTC Open Banking / Sandbox Adapter]
-    DB[(PostgreSQL)]
-    AI[AI Server\n카테고리 분류 · 설명 생성]
-    EVENTS[Event Pipeline\n동기화 후 분석 작업]
-
-    FE --> API
-    API --> CONNECTOR
-    API --> DB
-    API --> AI
-    API --> EVENTS
-    EVENTS --> DB
+```
+EzPay/
+├── backend/                    # Spring Boot API
+│   ├── build.gradle           # Gradle 설정 (Java 17)
+│   ├── src/main/resources/
+│   │   └── application.yml    # 환경변수 기반 설정
+│   └── src/main/java/
+│       └── com.example.ezpay/
+├── frontend/                   # React + Vite
+│   ├── vite.config.ts
+│   ├── .env                   # API URL 설정
+│   ├── src/
+│   └── dist/                  # S3에 배포되는 파일
+└── README.md
 ```
 
 ---
 
-## 6. 기술 스택
+## 🚀 빠른 시작
 
-### Backend
-- Spring Boot
-- PostgreSQL
-- Kafka
-- JWT
-- Docker
+### 백엔드 (Render에 배포됨)
 
-### Frontend
-- React
-- TypeScript
-- Tailwind CSS
-- Axios
+#### 로컬 개발
 
-### AI Server
-- FastAPI
-- scikit-learn
-- pandas
-- joblib
-
----
-
-## 7. 실행 방법
-
-### 1) 프로젝트 클론
-```bash
-git clone https://github.com/bitofsyn/EzPay.git
-cd EzPay
-```
-
-### 2) Docker Compose 실행
-```bash
-docker-compose up --build
-```
-
-### 2-1) 로컬 Spring Boot에서 AWS RDS(PostgreSQL) 연결 확인
-```bash
-cd backend
-curl -o global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
-```
-
-`backend/.env` 하나만 사용:
+**1. 환경변수 설정** (`backend/.env`)
 ```env
-SPRING_DATASOURCE_URL=jdbc:postgresql://ezpay-db.cp8sic4cotef.ap-northeast-2.rds.amazonaws.com:5432/ezpay?sslmode=verify-full&sslrootcert=/Users/your-name/Desktop/EzPay/backend/global-bundle.pem
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/ezpay
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=your-password
-SPRING_PROFILES_ACTIVE=local
+SPRING_KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
 ```
 
-실행:
+**2. 빌드 및 실행**
 ```bash
 cd backend
 ./gradlew bootRun
 ```
 
-정상 연결 시 확인 포인트:
-- `HikariPool-1 - Starting...`
-- `HikariPool-1 - Start completed.`
-- Hibernate/JPA 초기화 로그 이후 애플리케이션 부팅 완료
-
-### 3) 서비스 접속
-| 서비스 | URL |
-|--------|----------------|
-| Frontend | http://localhost:3000 |
-| Backend | http://localhost:8081 |
-| AI Category | http://localhost:8000 |
-| AI Assistant | http://localhost:8001 |
+백엔드는 `http://localhost:8081`에서 시작됩니다.
 
 ---
 
-## 8. 다음 단계
+### 프론트엔드 (CloudFront + S3에 배포됨)
 
-- 한국 오픈뱅킹 연동을 위한 connector layer 고도화
-- KFTC Open Banking 조회형 연동 스켈레톤 구현
-- 데모 데이터 import와 실제 오픈뱅킹 연동 경로 분리
-- 거래 정규화 모델 도입
-- 자동 인사이트 배치 또는 이벤트 처리 구현
-- 대시보드를 송금 중심이 아닌 소비 분석 중심으로 재설계
+#### 로컬 개발
+
+**1. 의존성 설치**
+```bash
+cd frontend
+npm install
+```
+
+**2. 개발 서버 실행**
+```bash
+npm run dev
+```
+
+프론트엔드는 `http://localhost:5173`에서 시작됩니다.
+
+**3. 프로덕션 빌드**
+```bash
+npm run build
+```
+
+`frontend/dist/` 폴더가 생성됩니다.
+
+---
+
+## 🌍 배포 가이드
+
+### 1. 백엔드 배포 (Render)
+
+#### 환경변수 설정 (Render Dashboard)
+
+```env
+# 필수
+DATABASE_URL=jdbc:postgresql://<RDS-ENDPOINT>:5432/ezpay?sslmode=require
+DB_USERNAME=postgres
+DB_PASSWORD=<YOUR_RDS_PASSWORD>
+SPRING_PROFILES_ACTIVE=prod
+PORT=8080
+
+# CORS
+CORS_ALLOWED_ORIGINS=http://localhost:3000,https://der7dm75txez.cloudfront.net
+
+# Email
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+
+# API Security
+EZPAY_INTERNAL_API_SECRET_KEY=<RANDOM_SECRET_KEY>
+
+# Monitoring (선택사항)
+SENTRY_DSN=<YOUR_SENTRY_DSN>
+```
+
+#### 배포 명령
+
+```bash
+# Render 대시보드에서 "Manual Deploy" 클릭
+# 또는 GitHub 푸시 시 자동 배포 (GitHub 연결 필요)
+```
+
+#### 빌드 및 시작 설정
+
+- **Root directory**: `backend/`
+- **Build command**: `./gradlew clean bootJar -x test`
+- **Start command**: `java -jar build/libs/app.jar`
+
+#### 배포 확인
+
+```bash
+# 헬스 체크
+curl https://ezpay-82sw.onrender.com/health
+# 응답: {"status":"ok"}
+```
+
+---
+
+### 2. 프론트엔드 배포 (S3 + CloudFront)
+
+#### 단계 1: 빌드
+
+```bash
+cd frontend
+npm run build
+```
+
+#### 단계 2: API URL 설정
+
+`frontend/.env` 수정:
+```env
+VITE_API_BASE_URL=https://ezpay-82sw.onrender.com
+```
+
+#### 단계 3: S3에 업로드
+
+```bash
+aws s3 sync frontend/dist/ s3://ezpay-bucket/ --delete
+```
+
+#### 단계 4: CloudFront 캐시 무효화
+
+```bash
+aws cloudfront create-invalidation \
+  --distribution-id E19KM0C4V1HMSY \
+  --paths "/*"
+```
+
+#### 단계 5: CloudFront 설정
+
+**AWS CloudFront Console**:
+1. Distribution ID: `E19KM0C4V1HMSY`
+2. Settings → Default Root Object: `index.html`
+3. Save
+
+---
+
+## 📊 기술 스택
+
+### 백엔드
+
+| 기술 | 버전 | 용도 |
+|------|------|------|
+| Java | 17 | 언어 |
+| Spring Boot | 3.4.2 | 프레임워크 |
+| Spring Security | 6.4.5 | 인증/인가 |
+| JPA/Hibernate | - | ORM |
+| PostgreSQL | - | 데이터베이스 |
+| JWT | 0.12.6 | 토큰 인증 |
+
+### 프론트엔드
+
+| 기술 | 버전 | 용도 |
+|------|------|------|
+| React | 19 | UI 라이브러리 |
+| Vite | - | 빌드 도구 |
+| TypeScript | - | 타입 안전성 |
+| Axios | - | HTTP 클라이언트 |
+
+### 배포/인프라
+
+| 서비스 | 용도 |
+|--------|------|
+| AWS RDS (PostgreSQL) | 데이터베이스 |
+| AWS S3 | 프론트엔드 호스팅 |
+| AWS CloudFront | CDN |
+| Render | 백엔드 호스팅 |
+
+---
+
+## 🔐 보안
+
+### 환경변수 관리
+
+민감 정보는 환경변수로만 관리됩니다:
+- ✅ 백엔드: Render Environment Variables
+- ✅ 프론트엔드: 빌드 타임 환경변수 (`.env`)
+- ❌ 코드에 하드코딩 금지
+
+### CORS 정책
+
+백엔드는 다음 도메인만 허용:
+```
+http://localhost:3000 (로컬 개발)
+https://der7dm75txez.cloudfront.net (프로덕션)
+```
+
+### HTTPS 적용
+
+- ✅ CloudFront: HTTPS 자동 제공
+- ✅ Render: 자동 SSL/TLS
+- ✅ RDS: SSL 암호화 연결
+
+---
+
+## 📝 API 문서
+
+### 헬스 체크
+
+```http
+GET /health
+```
+
+**응답:**
+```json
+{"status":"ok"}
+```
+
+---
+
+## 🛠️ 로컬 개발 환경 설정
+
+### 필수 설치
+
+- Java 17
+- Node.js 18+
+- PostgreSQL 14+
+- Git
+
+### 데이터베이스 설정
+
+```bash
+# PostgreSQL 로컬 실행
+createdb ezpay
+
+# 또는 Docker 사용
+docker run -d \
+  -e POSTGRES_DB=ezpay \
+  -e POSTGRES_PASSWORD=password \
+  -p 5432:5432 \
+  postgres:14
+```
+
+### 환경변수 설정
+
+**backend/.env**:
+```env
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/ezpay
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=password
+SPRING_PROFILES_ACTIVE=local
+```
+
+**frontend/.env**:
+```env
+VITE_API_BASE_URL=http://localhost:8081
+```
+
+### 동시 실행
+
+**터미널 1 (백엔드)**:
+```bash
+cd backend
+./gradlew bootRun
+```
+
+**터미널 2 (프론트엔드)**:
+```bash
+cd frontend
+npm run dev
+```
+
+---
+
+## ✨ 주요 기능
+
+- ✅ 회원가입/로그인 (JWT 토큰)
+- ✅ 계좌 생성 및 관리
+- ✅ 계좌 송금
+- ✅ 거래 내역 조회
+- ✅ 계좌 통계
+- ✅ 관리자 대시보드
+- ✅ 비밀번호 재설정
+
+---
+
+## 📞 문제 해결
+
+### 프론트엔드가 백엔드를 찾을 수 없음
+
+**확인 사항:**
+1. 백엔드가 실행 중인지 확인: `https://ezpay-82sw.onrender.com/health`
+2. `frontend/.env`의 `VITE_API_BASE_URL`이 올바른지 확인
+3. CORS 설정 확인: `CORS_ALLOWED_ORIGINS`에 프론트엔드 URL 포함
+
+### 데이터베이스 연결 실패
+
+**확인 사항:**
+1. RDS 엔드포인트 확인
+2. 보안 그룹에서 5432 포트 열려있는지 확인
+3. 자격증명 (사용자명/비밀번호) 확인
+
+### CloudFront에서 404 에러
+
+**확인 사항:**
+1. S3 버킷에 파일이 업로드되었는지 확인
+2. CloudFront의 Default Root Object가 `index.html`로 설정되었는지 확인
+3. 캐시 무효화 확인
+
+---
+
+## 🔄 향후 개선
+
+- [ ] 커스텀 도메인 (`ezpay.com`) 연결
+- [ ] 모바일 앱 개발
+- [ ] 2FA 추가
+- [ ] 암호화폐 연동
+- [ ] AI 기반 사기 탐지
+
+---
+
+**마지막 업데이트**: 2026-06-21
