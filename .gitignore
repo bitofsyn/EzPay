@@ -48,7 +48,11 @@ __pycache__/
 *.pyc
 
 ### Sensitive Files ###
-backend/.env
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
 
 ### Plugin / Tool Specific ###
 .idea/**/workspace.xml
