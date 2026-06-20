@@ -1,30 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowDownCircle, ArrowUpCircle, ChevronDown } from "lucide-react";
-import toast from "react-hot-toast";
-import { getFinancialConnections, getNormalizedTransactions } from "../api/UserAPI";
-import { FinancialConnection, NormalizedTransactionRecord } from "../types";
+import { getMyAccounts, getTransactionHistory } from "../api/UserAPI";
+import { Account, Transaction } from "../types";
 import { getUserData } from "../utils/storage";
+import { formatAccountNumber, formatCurrency } from "../utils/formatters";
 
 const TransactionHistory: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const user = useMemo(() => getUserData(), []);
   const userId = user?.userId;
 
-  const [connections, setConnections] = useState<FinancialConnection[]>([]);
-  const [selectedConnectionId, setSelectedConnectionId] = useState<number | null>(null);
-  const [transactions, setTransactions] = useState<NormalizedTransactionRecord[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filterType, setFilterType] = useState<string>("전체");
   const [dateFilter, setDateFilter] = useState<string>("전체");
   const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    const summary = (location.state as any)?.syncSummary;
-    if (summary?.syncedCount !== undefined) {
-      toast.success(`${summary.syncedCount}건의 거래를 동기화했습니다.`);
-    }
-  }, [location.state]);
 
   useEffect(() => {
     if (!userId) {
@@ -32,79 +24,57 @@ const TransactionHistory: React.FC = () => {
       return;
     }
 
-    const fetchConnections = async () => {
-      try {
-        const data = await getFinancialConnections(userId);
-        setConnections(data);
+    getMyAccounts()
+      .then((data) => {
+        setAccounts(data);
         if (data.length > 0) {
-          setSelectedConnectionId(data[0].connectionId);
+          setSelectedAccountId(data[0].accountId);
         }
-      } catch (err) {
-        console.error("연결 목록 조회 실패:", err);
-      }
-    };
-
-    fetchConnections();
+      })
+      .catch((err) => console.error("계좌 조회 실패:", err));
   }, [navigate, userId]);
 
   useEffect(() => {
-    if (!userId) {
+    if (!selectedAccountId) {
+      setLoading(false);
       return;
     }
 
-    const fetchTransactions = async () => {
-      setLoading(true);
-      try {
-        const txData = await getNormalizedTransactions(userId, selectedConnectionId ?? undefined);
-        setTransactions(txData);
-      } catch (err) {
-        console.error("정규화 거래 조회 실패:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, [selectedConnectionId, userId]);
+    setLoading(true);
+    getTransactionHistory(selectedAccountId)
+      .then((data) => setTransactions(data))
+      .catch((err) => console.error("거래 내역 조회 실패:", err))
+      .finally(() => setLoading(false));
+  }, [selectedAccountId]);
 
   const filteredTransactions = transactions.filter((tx) => {
+    const isSent = tx.senderAccount?.accountId === selectedAccountId;
     let isValid = true;
-    const isOutflow = tx.direction === "OUTFLOW";
-    const transactionDate = tx.postedAt ? new Date(tx.postedAt) : null;
-    const currentDate = new Date();
 
-    if (filterType !== "전체") {
-      if (filterType === "입금" && isOutflow) isValid = false;
-      if (filterType === "출금" && !isOutflow) isValid = false;
-    }
+    if (filterType === "입금" && isSent) isValid = false;
+    if (filterType === "출금" && !isSent) isValid = false;
 
-    if (!transactionDate) {
-      return isValid;
-    }
-
-    if (dateFilter === "1개월") {
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(currentDate.getMonth() - 1);
-      if (transactionDate < oneMonthAgo) isValid = false;
-    } else if (dateFilter === "3개월") {
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
-      if (transactionDate < threeMonthsAgo) isValid = false;
-    } else if (dateFilter === "6개월") {
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(currentDate.getMonth() - 6);
-      if (transactionDate < sixMonthsAgo) isValid = false;
+    const txDate = tx.transactionDate ? new Date(tx.transactionDate) : null;
+    if (txDate) {
+      const now = new Date();
+      if (dateFilter === "1개월") {
+        const ago = new Date(); ago.setMonth(now.getMonth() - 1);
+        if (txDate < ago) isValid = false;
+      } else if (dateFilter === "3개월") {
+        const ago = new Date(); ago.setMonth(now.getMonth() - 3);
+        if (txDate < ago) isValid = false;
+      } else if (dateFilter === "6개월") {
+        const ago = new Date(); ago.setMonth(now.getMonth() - 6);
+        if (txDate < ago) isValid = false;
+      }
     }
 
     return isValid;
   });
 
   const formatDate = (dateString?: string): string => {
-    if (!dateString) {
-      return "날짜 없음";
-    }
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", {
+    if (!dateString) return "날짜 없음";
+    return new Date(dateString).toLocaleDateString("ko-KR", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -115,19 +85,19 @@ const TransactionHistory: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-2">거래 내역</h2>
-      <p className="text-sm text-gray-500 mb-6">동기화된 실제 금융 거래 데이터를 기준으로 분석합니다.</p>
+      <p className="text-sm text-gray-500 mb-6">계좌별 거래 내역을 조회합니다.</p>
 
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-md p-4 space-y-3">
-        {connections.length > 0 && (
+        {accounts.length > 0 && (
           <div className="relative">
             <select
               className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-medium text-gray-700 appearance-none cursor-pointer focus:ring-2 focus:ring-blue-200 focus:outline-none"
-              value={selectedConnectionId ?? ""}
-              onChange={(e) => setSelectedConnectionId(Number(e.target.value))}
+              value={selectedAccountId ?? ""}
+              onChange={(e) => setSelectedAccountId(Number(e.target.value))}
             >
-              {connections.map((connection) => (
-                <option key={connection.connectionId} value={connection.connectionId}>
-                  {connection.provider} · {connection.connectionReference}
+              {accounts.map((acc) => (
+                <option key={acc.accountId} value={acc.accountId}>
+                  {acc.accountName} · {formatAccountNumber(acc.accountNumber)} · {formatCurrency(acc.balance)}
                 </option>
               ))}
             </select>
@@ -177,43 +147,41 @@ const TransactionHistory: React.FC = () => {
           </div>
         ) : filteredTransactions.length > 0 ? (
           filteredTransactions.map((tx) => {
-            const isOutflow = tx.direction === "OUTFLOW";
+            const isSent = tx.senderAccount?.accountId === selectedAccountId;
             return (
               <div
-                key={tx.normalizedTransactionId ?? tx.providerTransactionId}
+                key={tx.transactionId}
                 className="flex justify-between items-center bg-white rounded-xl px-4 py-3 hover:bg-gray-50 transition"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${isOutflow ? "bg-rose-50" : "bg-sky-50"}`}>
-                    {isOutflow ? (
+                  <div className={`p-2 rounded-full ${isSent ? "bg-rose-50" : "bg-sky-50"}`}>
+                    {isSent ? (
                       <ArrowUpCircle className="w-5 h-5 text-rose-500" />
                     ) : (
                       <ArrowDownCircle className="w-5 h-5 text-sky-500" />
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">{isOutflow ? "출금" : "입금"}</p>
+                    <p className="text-sm font-semibold text-gray-800">{isSent ? "출금" : "입금"}</p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {tx.merchantName || tx.description || "거래 설명 없음"}
+                      {tx.memo || tx.description || (isSent ? tx.receiverAccount?.accountNumber : tx.senderAccount?.accountNumber) || "-"}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {tx.primaryCategory || "미분류"}{tx.pending ? " · pending" : ""}
-                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">{tx.category || "미분류"}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold ${isOutflow ? "text-rose-500" : "text-sky-600"}`}>
-                    {isOutflow ? "-" : "+"}
-                    {Number(tx.amount).toLocaleString()}원
+                  <p className={`font-bold ${isSent ? "text-rose-500" : "text-sky-600"}`}>
+                    {isSent ? "-" : "+"}
+                    {formatCurrency(tx.amount)}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{formatDate(tx.postedAt)}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{formatDate(tx.transactionDate)}</p>
                 </div>
               </div>
             );
           })
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-400">동기화된 거래 내역이 없습니다.</p>
+            <p className="text-gray-400">거래 내역이 없습니다.</p>
           </div>
         )}
       </div>
