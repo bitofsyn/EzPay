@@ -13,13 +13,6 @@ import {
     TransferData,
     AccountOwner,
     ApiResponse,
-    ConnectionLinkToken,
-    ConnectionExchangeResult,
-    FinancialConnection,
-    FinancialDataProvider,
-    TransactionSyncResult,
-    NormalizedTransactionRecord,
-    Insight,
 } from "../types";
 
 // 회원가입(Signup)
@@ -126,69 +119,6 @@ export const getRecentTransactions = async (
 export const createAccount = async (accountData: CreateAccountData): Promise<ApiResponse<Account>> => {
     const response = await api.post("/account", accountData);
     return response.data;
-};
-
-export const createLinkToken = async (
-    userId: number,
-    provider: FinancialDataProvider = "PLAID_SANDBOX"
-): Promise<ConnectionLinkToken> => {
-    const res = await api.post("/api/connections/link-token", { userId, provider });
-    return res.data.data ?? res.data;
-};
-
-export const exchangeFinancialConnection = async (
-    userId: number,
-    publicToken: string,
-    provider: FinancialDataProvider = "PLAID_SANDBOX"
-): Promise<ConnectionExchangeResult> => {
-    const res = await api.post("/api/connections/exchange", { userId, provider, publicToken });
-    return res.data.data ?? res.data;
-};
-
-export const getFinancialConnections = async (userId: number): Promise<FinancialConnection[]> => {
-    const res = await api.get(`/api/connections/${userId}`);
-    return res.data.data ?? res.data;
-};
-
-export const syncFinancialConnection = async (
-    userId: number,
-    connectionId?: number
-): Promise<TransactionSyncResult> => {
-    const res = await api.post("/api/transactions/sync", { userId, connectionId });
-    return res.data.data ?? res.data;
-};
-
-export const importSampleTransactions = async (userId: number): Promise<TransactionSyncResult> => {
-    const res = await api.post("/api/connections/sample-import", { userId });
-    return res.data.data ?? res.data;
-};
-
-
-export const getNormalizedTransactions = async (
-    userId: number,
-    connectionId?: number
-): Promise<NormalizedTransactionRecord[]> => {
-    const res = await api.get("/api/normalized-transactions", {
-        params: { userId, connectionId },
-    });
-    return res.data.data ?? res.data;
-};
-
-export const getRecentNormalizedTransactions = async (
-    userId: number,
-    limit: number = 5
-): Promise<NormalizedTransactionRecord[]> => {
-    const res = await api.get("/api/normalized-transactions/recent", {
-        params: { userId, limit },
-    });
-    return res.data.data ?? res.data;
-};
-
-export const getInsights = async (userId: number): Promise<Insight[]> => {
-    const res = await api.get("/api/insights", {
-        params: { userId },
-    });
-    return res.data.data ?? res.data;
 };
 
 // 전체 계좌 조회(ViewAccount)
