@@ -28,6 +28,7 @@ replay_pid*
 
 ### Gradle ###
 .gradle/
+backend/.gradle-user-home/
 build/
 build/reports/
 
@@ -44,6 +45,7 @@ frontend/tailwind.config.js
 
 ### Python (AI Server) ###
 .venv/
+**/.venv/
 __pycache__/
 *.pyc
 
