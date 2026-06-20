@@ -23,4 +23,6 @@ COPY --from=build /app/build/libs/*.jar ./app.jar
 # JAR 확인
 RUN ls -al /app
 
+EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "app.jar"]

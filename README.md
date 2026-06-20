@@ -130,6 +130,31 @@ cd EzPay
 docker-compose up --build
 ```
 
+### 2-1) 로컬 Spring Boot에서 AWS RDS(PostgreSQL) 연결 확인
+```bash
+cd backend
+curl -o global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+```
+
+`backend/.env` 하나만 사용:
+```env
+SPRING_DATASOURCE_URL=jdbc:postgresql://ezpay-db.cp8sic4cotef.ap-northeast-2.rds.amazonaws.com:5432/ezpay?sslmode=verify-full&sslrootcert=/Users/your-name/Desktop/EzPay/backend/global-bundle.pem
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=your-password
+SPRING_PROFILES_ACTIVE=local
+```
+
+실행:
+```bash
+cd backend
+./gradlew bootRun
+```
+
+정상 연결 시 확인 포인트:
+- `HikariPool-1 - Starting...`
+- `HikariPool-1 - Start completed.`
+- Hibernate/JPA 초기화 로그 이후 애플리케이션 부팅 완료
+
 ### 3) 서비스 접속
 | 서비스 | URL |
 |--------|----------------|

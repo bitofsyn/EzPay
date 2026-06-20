@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:8081}
+  port: ${PORT:${SERVER_PORT:8081}}
 
 spring:
   main:
@@ -10,13 +10,13 @@ spring:
     import: optional:file:.env[.properties]
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/postgres}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver  # PostgreSQL 드라이버 설정
+    url: ${DATABASE_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ezpay}}}
+    username: ${DB_USERNAME:${DB_USER:${SPRING_DATASOURCE_USERNAME:postgres}}}
+    password: ${DB_PASSWORD:${DB_PASS:${SPRING_DATASOURCE_PASSWORD:password}}}
+    driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10  # 커넥션 풀 최대 크기
-      connection-timeout: 30000  # 커넥션 타임아웃 30초
+      maximum-pool-size: 10
+      connection-timeout: 30000
 
   task:
     execution:
@@ -42,20 +42,20 @@ spring:
             enable: true
 
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect  # DB 방언 설정 (PostgreSQL)
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update  # 서버 시작 시 엔티티 기준으로 DB 스키마 자동 업데이트 (컬럼 추가 가능)
-    show-sql: true  # 실행되는 SQL 콘솔 출력
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SPRING_JPA_SHOW_SQL:true}
     properties:
       hibernate:
-        format_sql: true  # SQL 이쁘게 포맷팅
+        format_sql: ${SPRING_JPA_FORMAT_SQL:true}
         jdbc:
-          time_zone: Asia/Seoul  # DB 타임존 한국 시간으로 설정
-    defer-datasource-initialization: true  # JPA 초기화 후 data.sql 실행
+          time_zone: Asia/Seoul
+    defer-datasource-initialization: true
 
   sql:
     init:
-      mode: always  # data.sql 항상 실행
+      mode: ${SPRING_SQL_INIT_MODE:always}
 
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
@@ -66,14 +66,17 @@ logging:
   level:
     org:
       hibernate:
-        SQL: DEBUG  # 하이버네이트 SQL 로그 레벨
+        SQL: ${LOGGING_LEVEL_ORG_HIBERNATE_SQL:DEBUG}
         type:
           descriptor:
             sql:
-              BasicBinder: TRACE  # 바인딩 값 출력
+              BasicBinder: ${LOGGING_LEVEL_ORG_HIBERNATE_BINDER:TRACE}
       springframework:
-        security: DEBUG  # Spring Security 디버그 레벨
+        security: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY:DEBUG}
 
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
 
 sentry:
   dsn: https://9f7f38650127a9230745a97cfc007353@o4509325284802560.ingest.us.sentry.io/4509325286244352
@@ -84,28 +87,3 @@ ezpay:
     enabled: ${EZPAY_KAFKA_ENABLED:false}
   internal-api:
     secret-key: "[REDACTED_SECRET_KEY]"
-  plaid:
-    client-id: ${PLAID_CLIENT_ID:}
-    secret: ${PLAID_SECRET:}
-    base-url: ${PLAID_BASE_URL:https://sandbox.plaid.com}
-    client-name: ${PLAID_CLIENT_NAME:EzPay}
-    language: ${PLAID_LANGUAGE:en}
-    country-code: ${PLAID_COUNTRY_CODE:US}
-    days-requested: ${PLAID_DAYS_REQUESTED:90}
-    webhook-url: ${PLAID_WEBHOOK_URL:}
-  kftc:
-    enabled: ${EZPAY_KFTC_ENABLED:false}
-    client-id: ${KFTC_CLIENT_ID:}
-    client-secret: ${KFTC_CLIENT_SECRET:}
-    base-url: ${KFTC_BASE_URL:https://openapi.openbanking.or.kr}
-    authorize-url: ${KFTC_AUTHORIZE_URL:https://testapi.openbanking.or.kr/oauth/2.0/authorize_account}
-    token-url: ${KFTC_TOKEN_URL:https://testapi.openbanking.or.kr/oauth/2.0/token}
-    redirect-uri: ${KFTC_REDIRECT_URI:}
-    client-use-code: ${KFTC_CLIENT_USE_CODE:}
-    webhook-url: ${KFTC_WEBHOOK_URL:}
-    scope: ${KFTC_SCOPE:login inquiry}
-    fintech-use-num: ${KFTC_FINTECH_USE_NUM:}
-    inquiry-start-date: ${KFTC_INQUIRY_START_DATE:20240101}
-    inquiry-end-date: ${KFTC_INQUIRY_END_DATE:20241231}
-    inquiry-bank-type: ${KFTC_INQUIRY_BANK_TYPE:1}
-    auth-type: ${KFTC_AUTH_TYPE:0}
