@@ -1,8 +1,14 @@
 from fastapi import APIRouter
+from app.model_loader import get_model_status
 from app.predict import predict_category, predict_with_confidence
 from app.schemas import PredictRequest, PredictResponse, PredictProbResponse
 
 router = APIRouter()
+
+
+@router.get("/health")
+def health():
+    return get_model_status()
 
 # 예측된 카테고리만 반환
 @router.post("/predict", response_model=PredictResponse)

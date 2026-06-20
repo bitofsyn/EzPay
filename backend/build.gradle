@@ -55,7 +55,8 @@ dependencies {
 
     // Database 관련 라이브러리
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.postgresql:postgresql' // PostgreSQL
+    implementation 'com.mysql:mysql-connector-j' // MySQL (로컬/테스트용)
+    implementation 'org.postgresql:postgresql' // PostgreSQL (RDS용)
     implementation 'com.h2database:h2' // H2 DB (테스트용)
 
     // QueryDSL 최신 버전 (5.0.0, Jakarta 버전)
@@ -78,15 +79,11 @@ dependencies {
     // Mail
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
-    // .evn 파일 로드
-    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
-
     // Model Mapper
     implementation 'org.modelmapper:modelmapper:3.1.1'
 
     // 개발 중 자동 리로드 지원
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    implementation 'org.postgresql:postgresql:42.7.7'
 
     // sentry 모니터링
     implementation 'io.sentry:sentry-spring-boot-starter:6.0.0'
@@ -115,9 +112,6 @@ sourceSets {
     }
 }
 
-tasks.withType(JavaExec).configureEach {
-    environment("DOTENV_PATH", file(".env").absolutePath)  // ✅ .env 경로 지정
-}
 tasks.withType(Test).configureEach {
     enabled = false
 }

@@ -72,7 +72,7 @@ services:
       - my_network
 
   ai-assistant:
-    image: ezpay-ai-assistant:latest
+    image: ezpay-ai-assistant
     build:
       context: ./ai-assistant-server
       dockerfile: Dockerfile
@@ -130,6 +130,9 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
       ZOOKEEPER_SYNC_LIMIT: 2
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-log:/var/lib/zookeeper/log
     networks:
       - my_network
 
@@ -150,6 +153,8 @@ services:
 volumes:
   postgres-data:
   kafka-data:
+  zookeeper-data:
+  zookeeper-log:
   jenkins-data:
   mlflow-data:
 
