@@ -1,8 +1,10 @@
 import axios from "axios";
 import { getToken } from "../utils/storage";
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+
 const api = axios.create ({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: apiBaseUrl,
   withCredentials: true, // 쿠키를 포함하여 요청 전송
 });
 

@@ -8,6 +8,7 @@ All configuration is centralized in `src/main/resources/application.yml`.
 Minimum:
 
 ```env
+SPRING_PROFILES_ACTIVE=prod
 PORT=8080
 DB_HOST=<rds-endpoint>
 DB_PORT=5432
@@ -15,14 +16,9 @@ DB_NAME=<db-name>
 DB_USERNAME=<db-username>
 DB_PASSWORD=<db-password>
 JWT_SECRET=<your-jwt-secret-if-used-in-env>
-CORS_ALLOWED_ORIGINS=http://localhost:3000,https://your-frontend-domain
-SPRING_JPA_HIBERNATE_DDL_AUTO=validate
-SPRING_JPA_SHOW_SQL=false
-SPRING_JPA_FORMAT_SQL=false
-SPRING_SQL_INIT_MODE=never
-LOGGING_LEVEL_ORG_HIBERNATE_SQL=INFO
-LOGGING_LEVEL_ORG_HIBERNATE_BINDER=INFO
-LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=INFO
+CORS_ALLOWED_ORIGINS=http://localhost:3000,https://xxxxx.cloudfront.net
+EZPAY_INTERNAL_API_SECRET_KEY=<random-secret>
+SENTRY_DSN=
 ```
 
 Alternative datasource form:
@@ -58,12 +54,20 @@ The project already includes a Dockerfile. If the platform uses Docker:
 
 ## Local Defaults
 
-If the variables above are omitted, local-friendly defaults are used:
+If `SPRING_PROFILES_ACTIVE` is omitted, `prod` is used.
+
+Local profile:
 
 - `ddl-auto=update`
 - `show-sql=true`
 - `sql.init.mode=always`
 - `localhost:5432/ezpay`
+
+Production profile:
+
+- `ddl-auto=validate`
+- `show-sql=false`
+- `sql.init.mode=never`
 
 ## Post-Deploy Checks
 
@@ -72,3 +76,14 @@ If the variables above are omitted, local-friendly defaults are used:
 - Startup log: confirm `Started EzPayApplication`
 - RDS connection: confirm no `HikariPool` connection failure
 - Hibernate validation: confirm no schema validation error under `prod`
+
+## End-to-End Order
+
+1. Deploy Spring Boot from `backend/` to Render or Railway.
+2. Set backend environment variables and confirm `GET /health` returns `200`.
+3. Copy the deployed backend URL.
+4. Update `frontend/.env` with `VITE_API_BASE_URL=<deployed-backend-url>`.
+5. Run `npm run build` in `frontend/`.
+6. Upload the files inside `frontend/dist/` to S3.
+7. Run CloudFront invalidation with `/*`.
+8. Open the CloudFront URL and test signup, login, and authenticated API calls.
