@@ -12,9 +12,9 @@
 
 | 환경 | URL | 상태 |
 |------|-----|------|
-| **프론트엔드** | https://der7dm75txez.cloudfront.net | ✅ 배포 완료 |
-| **백엔드 API** | https://ezpay-82sw.onrender.com | ✅ 배포 완료 |
-| **헬스 체크** | https://ezpay-82sw.onrender.com/health | ✅ `{"status":"ok"}` |
+| **프론트엔드** | `<CloudFront URL>` | ✅ 배포 완료 |
+| **백엔드 API** | `<Render/Railway Backend URL>` | ✅ 배포 완료 |
+| **헬스 체크** | `<Backend URL>/health` | ✅ `{"status":"ok"}` |
 
 ---
 
@@ -105,7 +105,7 @@ SPRING_PROFILES_ACTIVE=prod
 PORT=8080
 
 # CORS
-CORS_ALLOWED_ORIGINS=http://localhost:3000,https://der7dm75txez.cloudfront.net
+CORS_ALLOWED_ORIGINS=http://localhost:3000,https://<YOUR_CLOUDFRONT_DOMAIN>
 
 # Email
 SMTP_USERNAME=your-email@gmail.com
@@ -135,7 +135,7 @@ SENTRY_DSN=<YOUR_SENTRY_DSN>
 
 ```bash
 # 헬스 체크
-curl https://ezpay-82sw.onrender.com/health
+curl https://<YOUR_BACKEND_DOMAIN>/health
 # 응답: {"status":"ok"}
 ```
 
@@ -154,27 +154,27 @@ npm run build
 
 `frontend/.env` 수정:
 ```env
-VITE_API_BASE_URL=https://ezpay-82sw.onrender.com
+VITE_API_BASE_URL=https://<YOUR_BACKEND_DOMAIN>
 ```
 
 #### 단계 3: S3에 업로드
 
 ```bash
-aws s3 sync frontend/dist/ s3://ezpay-bucket/ --delete
+aws s3 sync frontend/dist/ s3://<YOUR_BUCKET_NAME>/ --delete
 ```
 
 #### 단계 4: CloudFront 캐시 무효화
 
 ```bash
 aws cloudfront create-invalidation \
-  --distribution-id E19KM0C4V1HMSY \
+  --distribution-id <YOUR_DISTRIBUTION_ID> \
   --paths "/*"
 ```
 
 #### 단계 5: CloudFront 설정
 
 **AWS CloudFront Console**:
-1. Distribution ID: `E19KM0C4V1HMSY`
+1. Distribution ID: `<YOUR_DISTRIBUTION_ID>`
 2. Settings → Default Root Object: `index.html`
 3. Save
 
@@ -227,7 +227,7 @@ aws cloudfront create-invalidation \
 백엔드는 다음 도메인만 허용:
 ```
 http://localhost:3000 (로컬 개발)
-https://der7dm75txez.cloudfront.net (프로덕션)
+https://<YOUR_CLOUDFRONT_DOMAIN> (프로덕션)
 ```
 
 ### HTTPS 적용
@@ -324,7 +324,7 @@ npm run dev
 ### 프론트엔드가 백엔드를 찾을 수 없음
 
 **확인 사항:**
-1. 백엔드가 실행 중인지 확인: `https://ezpay-82sw.onrender.com/health`
+1. 백엔드가 실행 중인지 확인: `https://<YOUR_BACKEND_DOMAIN>/health`
 2. `frontend/.env`의 `VITE_API_BASE_URL`이 올바른지 확인
 3. CORS 설정 확인: `CORS_ALLOWED_ORIGINS`에 프론트엔드 URL 포함
 
