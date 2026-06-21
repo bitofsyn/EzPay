@@ -155,6 +155,12 @@ export const setMainAccount = async (accountId: number): Promise<ApiResponse> =>
     return await api.patch(`/account/${accountId}/main`);
 };
 
+// 계좌 삭제(Dashboard)
+export const deleteAccount = async (accountId: number): Promise<ApiResponse> => {
+    const res = await api.delete(`/account/${accountId}`);
+    return res.data;
+};
+
 // 이메일 찾기 (FindEmail)
 export const findEmail = async (formData: { name: string; phoneNumber: string }): Promise<ApiResponse<{ email: string }>> => {
     const res = await api.post("/users/find-email", formData);
