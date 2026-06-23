@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "design-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "7654", "--bind", "127.0.0.1"],
+      "cwd": "/Users/soyoonjeong/Desktop/EzPay/.claude",
+      "port": 7654
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "cwd": "/Users/soyoonjeong/Desktop/EzPay/frontend",
+      "port": 5173
+    }
+  ]
+}

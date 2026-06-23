@@ -12,7 +12,7 @@
 
 | 환경 | URL | 상태 |
 |------|-----|------|
-| **프론트엔드** | `<CloudFront URL>` | ✅ 배포 완료 |
+| **프론트엔드** | `der7dm75txez.cloudfront.net` | ✅ 배포 완료 |
 | **백엔드 API** | `<Render/Railway Backend URL>` | ✅ 배포 완료 |
 | **헬스 체크** | `<Backend URL>/health` | ✅ `{"status":"ok"}` |
 

@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowDownCircle, ArrowUpCircle, ChevronDown } from "lucide-react";
+import {
+  ArrowDownCircle,
+  ArrowLeft,
+  ArrowUpCircle,
+  Bell,
+  ChevronDown,
+  SearchX,
+} from "lucide-react";
 import { getMyAccounts, getTransactionHistory } from "../api/UserAPI";
 import { Account, Transaction } from "../types";
 import { getUserData } from "../utils/storage";
 import { formatAccountNumber, formatCurrency } from "../utils/formatters";
+import UserSidebar from "../components/UserSidebar";
 
 const TransactionHistory: React.FC = () => {
   const navigate = useNavigate();
@@ -23,13 +31,10 @@ const TransactionHistory: React.FC = () => {
       navigate("/login");
       return;
     }
-
     getMyAccounts()
       .then((data) => {
         setAccounts(data);
-        if (data.length > 0) {
-          setSelectedAccountId(data[0].accountId);
-        }
+        if (data.length > 0) setSelectedAccountId(data[0].accountId);
       })
       .catch((err) => console.error("계좌 조회 실패:", err));
   }, [navigate, userId]);
@@ -39,7 +44,6 @@ const TransactionHistory: React.FC = () => {
       setLoading(false);
       return;
     }
-
     setLoading(true);
     getTransactionHistory(selectedAccountId)
       .then((data) => setTransactions(data))
@@ -50,10 +54,8 @@ const TransactionHistory: React.FC = () => {
   const filteredTransactions = transactions.filter((tx) => {
     const isSent = tx.senderAccount?.accountId === selectedAccountId;
     let isValid = true;
-
     if (filterType === "입금" && isSent) isValid = false;
     if (filterType === "출금" && !isSent) isValid = false;
-
     const txDate = tx.transactionDate ? new Date(tx.transactionDate) : null;
     if (txDate) {
       const now = new Date();
@@ -68,130 +70,202 @@ const TransactionHistory: React.FC = () => {
         if (txDate < ago) isValid = false;
       }
     }
-
     return isValid;
   });
 
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return "날짜 없음";
-    return new Date(dateString).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "short",
+  const groupedByDate = useMemo(() => {
+    const groups: Record<string, Transaction[]> = {};
+    filteredTransactions.forEach((tx) => {
+      const date = tx.transactionDate
+        ? new Date(tx.transactionDate).toLocaleDateString("ko-KR", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "short",
+          })
+        : "날짜 없음";
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(tx);
     });
-  };
+    return groups;
+  }, [filteredTransactions]);
+
+  const selectedAccount = accounts.find((acc) => acc.accountId === selectedAccountId);
+
+  const totalIn = filteredTransactions.reduce((s, tx) => {
+    return tx.senderAccount?.accountId !== selectedAccountId ? s + Number(tx.amount || 0) : s;
+  }, 0);
+  const totalOut = filteredTransactions.reduce((s, tx) => {
+    return tx.senderAccount?.accountId === selectedAccountId ? s + Number(tx.amount || 0) : s;
+  }, 0);
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-50 p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">거래 내역</h2>
-      <p className="text-sm text-gray-500 mb-6">계좌별 거래 내역을 조회합니다.</p>
+    <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
+      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
+        <UserSidebar />
 
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-md p-4 space-y-3">
-        {accounts.length > 0 && (
-          <div className="relative">
-            <select
-              className="w-full px-4 py-3 bg-gray-50 border-none rounded-xl text-sm font-medium text-gray-700 appearance-none cursor-pointer focus:ring-2 focus:ring-blue-200 focus:outline-none"
-              value={selectedAccountId ?? ""}
-              onChange={(e) => setSelectedAccountId(Number(e.target.value))}
-            >
-              {accounts.map((acc) => (
-                <option key={acc.accountId} value={acc.accountId}>
-                  {acc.accountName} · {formatAccountNumber(acc.accountNumber)} · {formatCurrency(acc.balance)}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <div className="flex-1 flex bg-gray-100 rounded-xl p-1">
-            {["전체", "입금", "출금"].map((type) => (
-              <button
-                key={type}
-                onClick={() => setFilterType(type)}
-                className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${
-                  filterType === type
-                    ? "bg-white text-gray-800 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-          <select
-            className="px-3 py-2 bg-gray-100 rounded-xl text-sm text-gray-600 border-none focus:ring-2 focus:ring-blue-200 focus:outline-none"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-          >
-            <option value="전체">전체</option>
-            <option value="1개월">1개월</option>
-            <option value="3개월">3개월</option>
-            <option value="6개월">6개월</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="w-full max-w-lg mt-4 px-1">
-        <p className="text-sm text-gray-500">
-          총 <span className="font-semibold text-gray-700">{filteredTransactions.length}</span>건
-        </p>
-      </div>
-
-      <div className="w-full max-w-lg mt-3 space-y-2">
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
-          </div>
-        ) : filteredTransactions.length > 0 ? (
-          filteredTransactions.map((tx) => {
-            const isSent = tx.senderAccount?.accountId === selectedAccountId;
-            return (
-              <div
-                key={tx.transactionId}
-                className="flex justify-between items-center bg-white rounded-xl px-4 py-3 hover:bg-gray-50 transition"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${isSent ? "bg-rose-50" : "bg-sky-50"}`}>
-                    {isSent ? (
-                      <ArrowUpCircle className="w-5 h-5 text-rose-500" />
-                    ) : (
-                      <ArrowDownCircle className="w-5 h-5 text-sky-500" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">{isSent ? "출금" : "입금"}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {tx.memo || tx.description || (isSent ? tx.receiverAccount?.accountNumber : tx.senderAccount?.accountNumber) || "-"}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">{tx.category || "미분류"}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`font-bold ${isSent ? "text-rose-500" : "text-sky-600"}`}>
-                    {isSent ? "-" : "+"}
-                    {formatCurrency(tx.amount)}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{formatDate(tx.transactionDate)}</p>
+        <main className="flex flex-col gap-5">
+          {/* Header */}
+          <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate("/dashboard")}
+                  className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <div>
+                  <h1 className="text-[2rem] font-black tracking-tight text-slate-950">거래 내역</h1>
+                  <p className="text-sm font-semibold text-slate-400">계좌별 입출금 내역 조회</p>
                 </div>
               </div>
-            );
-          })
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-400">거래 내역이 없습니다.</p>
-          </div>
-        )}
-      </div>
+              <button
+                type="button"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
+                onClick={() => navigate("/settings/notification")}
+              >
+                <Bell size={18} />
+              </button>
+            </div>
+          </header>
 
-      <button
-        onClick={() => navigate("/dashboard")}
-        className="mt-8 px-6 py-3 bg-gray-800 text-white font-medium rounded-xl hover:bg-gray-700 transition"
-      >
-        대시보드로 이동
-      </button>
+          {/* Account selector + filters */}
+          <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center">
+              {/* Account dropdown */}
+              <div className="relative flex-1">
+                <select
+                  className="w-full appearance-none rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                  value={selectedAccountId ?? ""}
+                  onChange={(e) => setSelectedAccountId(Number(e.target.value))}
+                >
+                  {accounts.map((acc) => (
+                    <option key={acc.accountId} value={acc.accountId}>
+                      {acc.accountName} · {formatAccountNumber(acc.accountNumber)} · {formatCurrency(acc.balance)}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
+              {/* Type filter */}
+              <div className="flex rounded-[16px] bg-slate-100 p-1">
+                {["전체", "입금", "출금"].map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setFilterType(type)}
+                    className={`rounded-[12px] px-4 py-2 text-sm font-bold transition ${
+                      filterType === type
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+
+              {/* Date filter */}
+              <div className="relative">
+                <select
+                  className="appearance-none rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3 pr-8 text-sm font-bold text-slate-700 transition focus:border-slate-400 focus:outline-none"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                >
+                  <option value="전체">전체 기간</option>
+                  <option value="1개월">최근 1개월</option>
+                  <option value="3개월">최근 3개월</option>
+                  <option value="6개월">최근 6개월</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          {/* Summary cards */}
+          <div className="grid gap-5 sm:grid-cols-3">
+            <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+              <p className="text-xs font-semibold text-slate-400">총 거래 건수</p>
+              <p className="mt-1 text-[1.8rem] font-black text-slate-950">{filteredTransactions.length}건</p>
+            </div>
+            <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+              <p className="text-xs font-semibold text-slate-400">총 입금</p>
+              <p className="mt-1 text-[1.8rem] font-black text-cyan-600">+{formatCurrency(totalIn)}</p>
+            </div>
+            <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+              <p className="text-xs font-semibold text-slate-400">총 출금</p>
+              <p className="mt-1 text-[1.8rem] font-black text-rose-500">-{formatCurrency(totalOut)}</p>
+            </div>
+          </div>
+
+          {/* Transaction list */}
+          <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+            {loading ? (
+              <div className="flex justify-center py-16">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-700" />
+              </div>
+            ) : Object.keys(groupedByDate).length > 0 ? (
+              <div className="space-y-6">
+                {Object.entries(groupedByDate).map(([date, txs]) => (
+                  <div key={date}>
+                    <p className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-400">{date}</p>
+                    <div className="space-y-2">
+                      {txs.map((tx) => {
+                        const isSent = tx.senderAccount?.accountId === selectedAccountId;
+                        const counterparty = isSent ? tx.receiverAccount : tx.senderAccount;
+                        return (
+                          <div
+                            key={tx.transactionId}
+                            className="flex items-center justify-between rounded-[20px] bg-slate-50 px-4 py-3.5 transition hover:bg-slate-100"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isSent ? "bg-rose-100" : "bg-cyan-100"}`}>
+                                {isSent ? (
+                                  <ArrowUpCircle size={18} className="text-rose-500" />
+                                ) : (
+                                  <ArrowDownCircle size={18} className="text-cyan-600" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-black text-slate-950">
+                                  {counterparty?.bankName || (isSent ? "출금" : "입금")}
+                                </p>
+                                <p className="mt-0.5 text-xs font-semibold text-slate-400">
+                                  {tx.memo || tx.description || tx.category || "-"}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-base font-black ${isSent ? "text-rose-500" : "text-cyan-700"}`}>
+                                {isSent ? "-" : "+"}
+                                {formatCurrency(tx.amount)}
+                              </p>
+                              <p className="mt-0.5 text-xs font-semibold text-slate-400">
+                                {tx.category || "미분류"}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+                  <SearchX size={28} className="text-slate-400" />
+                </div>
+                <p className="text-base font-bold text-slate-500">거래 내역이 없습니다</p>
+                <p className="mt-1 text-sm font-medium text-slate-400">필터 조건을 변경해 보세요.</p>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
