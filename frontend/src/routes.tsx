@@ -20,6 +20,7 @@ const FindEmail = lazy(() => import("./pages/FindEmail"));
 const FindPassword = lazy(() => import("./pages/FindPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AIAssistant = lazy(() => import("./pages/AIAssistant"));
+const Friends = lazy(() => import("./pages/Friends"));
 
 // Settings pages
 const LayoutSettings = lazy(() => import("./pages/settings/LayoutSettings"));
@@ -70,6 +71,7 @@ const AppRoutes = () => {
           <Route path="/accounts" element={<PrivateRoute><ViewAccounts /></PrivateRoute>} />
           <Route path="/account/:id" element={<PrivateRoute><AccountDetail /></PrivateRoute>} />
           <Route path="/ai-assistant" element={<PrivateRoute><AIAssistant /></PrivateRoute>} />
+          <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} />
 
           {/* 달력 관련 */}
           <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />

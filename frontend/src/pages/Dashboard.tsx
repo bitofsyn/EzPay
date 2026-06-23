@@ -13,9 +13,11 @@ import {
   YAxis,
 } from "recharts";
 import {
+  AlignJustify,
+  ArrowDown,
+  ArrowUp,
   Bell,
   ChevronRight,
-  Copy,
   CreditCard,
   Landmark,
   LayoutDashboard,
@@ -24,6 +26,7 @@ import {
   SendHorizontal,
   Settings,
   UserCircle2,
+  Users,
 } from "lucide-react";
 import { getDashboardInfo } from "../api/UserAPI";
 import {
@@ -49,12 +52,6 @@ type BudgetItem = {
   budget: number;
   tone: string;
 };
-
-const cardGradients = [
-  "from-sky-500 to-cyan-500",
-  "from-orange-500 to-red-500",
-  "from-blue-600 to-indigo-600",
-];
 
 const monthLabels = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
 
@@ -108,101 +105,79 @@ const Dashboard: React.FC = () => {
     return [...accounts].sort((a, b) => {
       const aIsMain = a.main ?? a.isMain ?? false;
       const bIsMain = b.main ?? b.isMain ?? false;
-
-      if (aIsMain === bIsMain) {
-        return a.accountId - b.accountId;
-      }
-
+      if (aIsMain === bIsMain) return a.accountId - b.accountId;
       return aIsMain ? -1 : 1;
     });
   }, [accounts]);
 
-  const ownAccountIds = useMemo(() => new Set(sortedAccounts.map((account) => account.accountId)), [sortedAccounts]);
+  const ownAccountIds = useMemo(
+    () => new Set(sortedAccounts.map((account) => account.accountId)),
+    [sortedAccounts]
+  );
 
-  const previewAccounts = sortedAccounts.slice(0, 2);
+  const mainAccount = sortedAccounts[0] ?? null;
   const totalBalance = sortedAccounts.reduce((sum, account) => sum + Number(account.balance || 0), 0);
   const unreadNotifications = Math.min(transactions.length, 3);
 
   const monthlyStats = useMemo(() => {
     const now = new Date();
-    const currentMonthTransactions = transactions.filter((transaction) => {
-      const txDate = parseDate(transaction.transactionDate);
-      return txDate.getFullYear() === now.getFullYear() && txDate.getMonth() === now.getMonth();
+    const currentMonthTx = transactions.filter((t) => {
+      const d = parseDate(t.transactionDate);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     });
 
-    const sentTransactions = currentMonthTransactions.filter((transaction) =>
-      ownAccountIds.has(transaction.senderAccount?.accountId)
-    );
-    const receivedTransactions = currentMonthTransactions.filter(
-      (transaction) =>
-        ownAccountIds.has(transaction.receiverAccount?.accountId) &&
-        !ownAccountIds.has(transaction.senderAccount?.accountId)
-    );
+    const totalSent = currentMonthTx
+      .filter((t) => ownAccountIds.has(t.senderAccount?.accountId))
+      .reduce((s, t) => s + Number(t.amount || 0), 0);
 
-    const totalSent = sentTransactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
-    const totalReceived = receivedTransactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
-    const averageAmount = currentMonthTransactions.length
-      ? Math.round(
-          currentMonthTransactions.reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0) /
-            currentMonthTransactions.length
-        )
+    const totalReceived = currentMonthTx
+      .filter(
+        (t) =>
+          ownAccountIds.has(t.receiverAccount?.accountId) &&
+          !ownAccountIds.has(t.senderAccount?.accountId)
+      )
+      .reduce((s, t) => s + Number(t.amount || 0), 0);
+
+    const averageAmount = currentMonthTx.length
+      ? Math.round(currentMonthTx.reduce((s, t) => s + Number(t.amount || 0), 0) / currentMonthTx.length)
       : 0;
 
-    return {
-      totalSent,
-      totalReceived,
-      count: currentMonthTransactions.length,
-      averageAmount,
-    };
+    return { totalSent, totalReceived, count: currentMonthTx.length, averageAmount };
   }, [ownAccountIds, transactions]);
 
   const monthlyExpenseData = useMemo(() => {
     const now = new Date();
-
     return Array.from({ length: 6 }).map((_, index) => {
       const target = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
       const label = monthLabels[target.getMonth()];
-
-      const amount = transactions.reduce((sum, transaction) => {
-        const txDate = parseDate(transaction.transactionDate);
-        const isSameMonth =
-          txDate.getFullYear() === target.getFullYear() && txDate.getMonth() === target.getMonth();
-        const isOutgoing = ownAccountIds.has(transaction.senderAccount?.accountId);
-
-        return isSameMonth && isOutgoing ? sum + Number(transaction.amount || 0) : sum;
+      const amount = transactions.reduce((sum, t) => {
+        const d = parseDate(t.transactionDate);
+        const isSameMonth = d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth();
+        const isOutgoing = ownAccountIds.has(t.senderAccount?.accountId);
+        return isSameMonth && isOutgoing ? sum + Number(t.amount || 0) : sum;
       }, 0);
-
-      return {
-        month: label,
-        amount,
-      };
+      return { month: label, amount };
     });
   }, [ownAccountIds, transactions]);
 
   const assetTrendData = useMemo(() => {
     const monthlyNetFlows = monthlyExpenseData.map((expenseItem) => {
       const monthNumber = Number(expenseItem.month.replace("월", ""));
-      const incoming = transactions.reduce((sum, transaction) => {
-        const txDate = parseDate(transaction.transactionDate);
+      const incoming = transactions.reduce((sum, t) => {
+        const d = parseDate(t.transactionDate);
         const isIncoming =
-          ownAccountIds.has(transaction.receiverAccount?.accountId) &&
-          !ownAccountIds.has(transaction.senderAccount?.accountId);
-
-        return txDate.getMonth() + 1 === monthNumber && isIncoming ? sum + Number(transaction.amount || 0) : sum;
+          ownAccountIds.has(t.receiverAccount?.accountId) &&
+          !ownAccountIds.has(t.senderAccount?.accountId);
+        return d.getMonth() + 1 === monthNumber && isIncoming ? sum + Number(t.amount || 0) : sum;
       }, 0);
-
       return incoming - expenseItem.amount;
     });
 
-    const seed = Math.max(totalBalance - monthlyNetFlows.reduce((sum, value) => sum + value, 0), 0);
+    const seed = Math.max(totalBalance - monthlyNetFlows.reduce((s, v) => s + v, 0), 0);
     let running = seed;
-
     return monthlyExpenseData.map((item, index) => {
       running += monthlyNetFlows[index];
-      return {
-        month: item.month,
-        balance: Math.max(running, 0),
-      };
+      return { month: item.month, balance: Math.max(running, 0) };
     });
   }, [monthlyExpenseData, ownAccountIds, totalBalance, transactions]);
 
@@ -210,57 +185,43 @@ const Dashboard: React.FC = () => {
     const defaultBudgets: Record<string, { label: string; budget: number; tone: string; keywords: string[] }> = {
       food: { label: "식비", budget: 300000, tone: "bg-slate-600", keywords: ["food", "meal", "cafe", "coffee", "식비", "카페", "음식"] },
       transport: { label: "교통", budget: 100000, tone: "bg-slate-500", keywords: ["transport", "taxi", "bus", "subway", "교통", "택시", "버스"] },
-      housing: { label: "주거", budget: 700000, tone: "bg-rose-500", keywords: ["rent", "home", "house", "housing", "주거", "월세", "관리비"] },
+      housing: { label: "주거", budget: 700000, tone: "bg-amber-500", keywords: ["rent", "home", "house", "housing", "주거", "월세", "관리비"] },
     };
-
-    const totals = {
-      food: 0,
-      transport: 0,
-      housing: 0,
-    };
-
+    const totals = { food: 0, transport: 0, housing: 0 };
     const now = new Date();
 
-    transactions.forEach((transaction) => {
-      const txDate = parseDate(transaction.transactionDate);
-      const isOutgoing = ownAccountIds.has(transaction.senderAccount?.accountId);
-      if (!isOutgoing || txDate.getFullYear() !== now.getFullYear() || txDate.getMonth() !== now.getMonth()) {
-        return;
-      }
-
-      const sourceText = `${transaction.category || ""} ${transaction.memo || ""} ${transaction.description || ""}`.toLowerCase();
-
-      if (defaultBudgets.food.keywords.some((keyword) => sourceText.includes(keyword))) {
-        totals.food += Number(transaction.amount || 0);
-        return;
-      }
-      if (defaultBudgets.transport.keywords.some((keyword) => sourceText.includes(keyword))) {
-        totals.transport += Number(transaction.amount || 0);
-        return;
-      }
-      totals.housing += Number(transaction.amount || 0);
+    transactions.forEach((t) => {
+      const d = parseDate(t.transactionDate);
+      const isOutgoing = ownAccountIds.has(t.senderAccount?.accountId);
+      if (!isOutgoing || d.getFullYear() !== now.getFullYear() || d.getMonth() !== now.getMonth()) return;
+      const src = `${t.category || ""} ${t.memo || ""} ${t.description || ""}`.toLowerCase();
+      if (defaultBudgets.food.keywords.some((k) => src.includes(k))) { totals.food += Number(t.amount || 0); return; }
+      if (defaultBudgets.transport.keywords.some((k) => src.includes(k))) { totals.transport += Number(t.amount || 0); return; }
+      totals.housing += Number(t.amount || 0);
     });
 
     return [
-      {
-        label: defaultBudgets.food.label,
-        spent: totals.food,
-        budget: defaultBudgets.food.budget,
-        tone: defaultBudgets.food.tone,
-      },
-      {
-        label: defaultBudgets.transport.label,
-        spent: totals.transport,
-        budget: defaultBudgets.transport.budget,
-        tone: defaultBudgets.transport.tone,
-      },
-      {
-        label: defaultBudgets.housing.label,
-        spent: totals.housing,
-        budget: defaultBudgets.housing.budget,
-        tone: defaultBudgets.housing.tone,
-      },
+      { label: defaultBudgets.food.label, spent: totals.food, budget: defaultBudgets.food.budget, tone: defaultBudgets.food.tone },
+      { label: defaultBudgets.transport.label, spent: totals.transport, budget: defaultBudgets.transport.budget, tone: defaultBudgets.transport.tone },
+      { label: defaultBudgets.housing.label, spent: totals.housing, budget: defaultBudgets.housing.budget, tone: defaultBudgets.housing.tone },
     ];
+  }, [ownAccountIds, transactions]);
+
+  const frequentFriends = useMemo(() => {
+    const outgoing = transactions.filter((t) => ownAccountIds.has(t.senderAccount?.accountId));
+    const frequency: Record<number, { name: string; count: number }> = {};
+    outgoing.forEach((t) => {
+      const id = t.receiverAccount?.accountId;
+      const name = t.receiverAccount?.bankName || "상대방";
+      if (id != null) {
+        if (!frequency[id]) frequency[id] = { name, count: 0 };
+        frequency[id].count++;
+      }
+    });
+    return Object.entries(frequency)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 4)
+      .map(([id, { name }]) => ({ id: Number(id), name }));
   }, [ownAccountIds, transactions]);
 
   const recentTransactions = useMemo(() => {
@@ -274,20 +235,21 @@ const Dashboard: React.FC = () => {
     navigate("/login");
   };
 
-  const handleCopyAccount = async (accountNumber: string) => {
-    try {
-      await navigator.clipboard.writeText(accountNumber);
-    } catch (error) {
-      console.error("계좌번호 복사 실패:", error);
-    }
-  };
-
   const menuItems = [
     { label: "대시보드", icon: LayoutDashboard, onClick: () => navigate("/dashboard"), active: true },
     { label: "내 계좌", icon: CreditCard, onClick: () => navigate("/accounts"), active: false },
     { label: "송금하기", icon: SendHorizontal, onClick: () => navigate("/send"), active: false },
+    { label: "친구", icon: Users, onClick: () => navigate("/send"), active: false },
     { label: "거래 내역", icon: Receipt, onClick: () => navigate("/transactions"), active: false },
+    { label: "알림", icon: Bell, onClick: () => navigate("/settings/notification"), active: false },
     { label: "설정", icon: Settings, onClick: () => navigate("/settings"), active: false },
+  ];
+
+  const heroActions = [
+    { label: "이체", Icon: ArrowUp, path: "/send" },
+    { label: "충전", Icon: ArrowDown, path: "/accounts" },
+    { label: "내역", Icon: AlignJustify, path: "/transactions" },
+    { label: "친구", Icon: Users, path: "/send" },
   ];
 
   if (isLoading) {
@@ -302,12 +264,8 @@ const Dashboard: React.FC = () => {
           <div className="space-y-6">
             <Skeleton className="h-24 w-full rounded-[28px]" />
             <div className="grid gap-6 xl:grid-cols-[1.65fr_1fr]">
-              <Skeleton className="h-64 w-full rounded-[28px]" />
-              <Skeleton className="h-64 w-full rounded-[28px]" />
-            </div>
-            <div className="grid gap-6 xl:grid-cols-[1.65fr_1fr]">
-              <Skeleton className="h-80 w-full rounded-[28px]" />
-              <Skeleton className="h-80 w-full rounded-[28px]" />
+              <Skeleton className="h-96 w-full rounded-[28px]" />
+              <Skeleton className="h-96 w-full rounded-[28px]" />
             </div>
           </div>
         </div>
@@ -318,6 +276,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
       <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
+        {/* Sidebar */}
         <aside className="flex min-h-[calc(100vh-1.5rem)] flex-col rounded-[28px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
           <div className="flex items-center gap-3 rounded-[22px] border border-slate-100 bg-slate-50 px-4 py-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-cyan-400 shadow-lg shadow-slate-950/15">
@@ -372,14 +331,14 @@ const Dashboard: React.FC = () => {
           </button>
         </aside>
 
-        <main className="space-y-5">
+        <main className="flex flex-col gap-5">
+          {/* Header */}
           <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div>
                 <h1 className="text-[2rem] font-black tracking-tight text-slate-950">사용자 홈</h1>
                 <p className="mt-1 text-sm font-semibold text-slate-400">EzPay · {todayLabel}</p>
               </div>
-
               <div className="flex flex-wrap items-center gap-3">
                 <div className="inline-flex rounded-full bg-slate-100 p-1 text-sm font-semibold">
                   <button type="button" className="rounded-full bg-slate-950 px-5 py-2 text-white">
@@ -393,7 +352,6 @@ const Dashboard: React.FC = () => {
                     관리자 뷰
                   </button>
                 </div>
-
                 <button
                   type="button"
                   className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
@@ -410,241 +368,268 @@ const Dashboard: React.FC = () => {
             </div>
           </header>
 
-          <section className="grid gap-5 xl:grid-cols-[1.55fr_1fr]">
-            <div className="rounded-[28px] bg-gradient-to-r from-[#264997] via-[#175f8b] to-[#17667b] p-6 text-white shadow-[0_30px_70px_rgba(23,53,120,0.32)]">
-              <p className="text-sm font-semibold text-white/70">총 자산</p>
-              <p className="mt-3 text-[3rem] font-black tracking-tight lg:text-[3.35rem]">
-                ₩{totalBalance.toLocaleString()}
-              </p>
+          {/* 2-column layout: left (hero + chart + transactions) | right (friends + stats + expense + budget) */}
+          <div className="grid flex-1 gap-5 xl:grid-cols-[1.55fr_1fr]">
+            {/* Left column */}
+            <div className="flex flex-col gap-5">
+              {/* Hero Card */}
+              <div className="rounded-[28px] bg-gradient-to-r from-[#264997] via-[#175f8b] to-[#17667b] p-6 text-white shadow-[0_30px_70px_rgba(23,53,120,0.32)]">
+                <p className="text-sm font-semibold text-white/70">총 보유 자산</p>
+                <p className="mt-2 text-[3rem] font-black tracking-tight lg:text-[3.35rem]">
+                  ₩{totalBalance.toLocaleString()}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-white/60">
+                  계좌 {sortedAccounts.length}개 · 전월 대비 +12.5%
+                </p>
 
-              <div className="mt-6 grid gap-3 md:grid-cols-2">
-                {previewAccounts.map((account) => (
-                  <button
-                    key={account.accountId}
-                    type="button"
-                    onClick={() => navigate(`/account/${account.accountId}`)}
-                    className="rounded-[18px] bg-white/14 px-4 py-4 text-left transition hover:bg-white/20"
-                  >
-                    <p className="text-xs font-semibold text-white/65">{account.bankName || "연결 계좌"}</p>
-                    <p className="mt-2 text-[1.75rem] font-black">{formatCurrency(account.balance).replace(" 원", "")}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-              <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950">이달의 통계</h2>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[18px] bg-slate-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-slate-400">총 송금</p>
-                  <p className="mt-2 text-[1.75rem] font-black text-slate-950">{formatCurrency(monthlyStats.totalSent)}</p>
-                </div>
-                <div className="rounded-[18px] bg-slate-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-slate-400">총 입금</p>
-                  <p className="mt-2 text-[1.75rem] font-black text-slate-950">{formatCurrency(monthlyStats.totalReceived)}</p>
-                </div>
-                <div className="rounded-[18px] bg-slate-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-slate-400">거래 건수</p>
-                  <p className="mt-2 text-[1.75rem] font-black text-slate-950">{monthlyStats.count}건</p>
-                </div>
-                <div className="rounded-[18px] bg-slate-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-slate-400">평균 금액</p>
-                  <p className="mt-2 text-[1.75rem] font-black text-slate-950">{formatCurrency(monthlyStats.averageAmount)}</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="grid gap-5 xl:grid-cols-[1.55fr_1fr]">
-            <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950">내 계좌</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate("/accounts")}
-                  className="text-lg font-bold text-slate-400 transition hover:text-slate-700"
-                >
-                  + 계좌 추가
-                </button>
-              </div>
-
-              <div className="mt-5 grid gap-3 md:grid-cols-2">
-                {previewAccounts.map((account, index) => (
-                  <article
-                    key={account.accountId}
-                    className={`rounded-[22px] bg-gradient-to-r ${cardGradients[index % cardGradients.length]} p-5 text-white shadow-[0_20px_40px_rgba(15,23,42,0.16)]`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-semibold text-white/70">{account.bankName || "EzPay Bank"}</p>
-                        <p className="mt-2 text-[1.7rem] font-black">{account.accountName}</p>
-                        <p className="mt-3 text-base font-semibold tracking-[0.14em] text-white/80">
-                          {formatAccountNumber(account.accountNumber)}
-                        </p>
+                {mainAccount && (
+                  <div className="mt-5 rounded-[18px] bg-white/14 px-4 py-4 transition hover:bg-white/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-white/70">{mainAccount.bankName || "EzPay Bank"}</p>
+                        <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white">대표</span>
                       </div>
-                      <div className="h-7 w-7 rounded-md border-2 border-white/55" />
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between gap-3">
-                      <p className="text-[2rem] font-black tracking-tight">{formatCurrency(account.balance).replace(" 원", "")}</p>
                       <button
                         type="button"
-                        onClick={() => handleCopyAccount(account.accountNumber)}
-                        className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/30"
+                        onClick={() => navigate("/accounts")}
+                        className="text-xs font-semibold text-white/60 transition hover:text-white"
                       >
-                        <Copy size={14} />
-                        복사
+                        전체 계좌 →
                       </button>
                     </div>
-                  </article>
-                ))}
-
-                {previewAccounts.length === 0 && (
-                  <div className="col-span-full rounded-[24px] border border-dashed border-slate-200 px-6 py-10 text-center text-slate-500">
-                    연결된 계좌가 없습니다.
+                    <p className="mt-2 text-sm font-semibold tracking-[0.14em] text-white/70">
+                      {formatAccountNumber(mainAccount.accountNumber)}
+                    </p>
+                    <p className="mt-2 text-[2rem] font-black">
+                      {formatCurrency(mainAccount.balance).replace(" 원", "")}
+                    </p>
                   </div>
                 )}
-              </div>
-            </div>
 
-            <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-              <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950">월별 지출</h2>
-              <div className="mt-5 h-[190px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyExpenseData} barGap={12}>
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 13, fontWeight: 700 }} />
-                    <Tooltip
-                      cursor={{ fill: "rgba(148,163,184,0.08)" }}
-                      formatter={(value: number) => [formatCurrency(value), "지출"]}
-                      labelFormatter={(label) => `${label}`}
-                    />
-                    <Bar dataKey="amount" radius={[8, 8, 0, 0]}>
-                      {monthlyExpenseData.map((entry, index) => (
-                        <Cell
-                          key={entry.month}
-                          fill={index === monthlyExpenseData.length - 1 ? "#0f172a" : "#9aa8bd"}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </section>
-
-          <section className="grid gap-5 xl:grid-cols-[1.55fr_1fr]">
-            <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-              <div className="flex items-center justify-between gap-4">
-                <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950">자산 추이</h2>
-                <div className="rounded-full bg-slate-100 px-4 py-2 text-base font-bold text-slate-500">
-                  ↑ 12.5%
-                </div>
-              </div>
-
-              <div className="mt-5 h-[260px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={assetTrendData} margin={{ left: 6, right: 12, top: 12, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="assetFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#1f9ac0" stopOpacity={0.24} />
-                        <stop offset="95%" stopColor="#1f9ac0" stopOpacity={0.04} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid vertical={false} stroke="#dbe5f1" />
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 13, fontWeight: 700 }} />
-                    <YAxis hide />
-                    <Tooltip formatter={(value: number) => [formatCurrency(value), "자산"]} labelFormatter={(label) => `${label}`} />
-                    <Area
-                      type="monotone"
-                      dataKey="balance"
-                      stroke="#1597be"
-                      strokeWidth={4}
-                      fill="url(#assetFill)"
-                      dot={{ r: 5, strokeWidth: 4, fill: "#ffffff", stroke: "#1597be" }}
-                      activeDot={{ r: 8, strokeWidth: 4, fill: "#ffffff", stroke: "#1597be" }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-              <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950">월간 예산</h2>
-              <div className="mt-5 space-y-5">
-                {budgetItems.map((item) => {
-                  const progress = item.budget > 0 ? Math.min((item.spent / item.budget) * 100, 100) : 0;
-                  const remain = Math.max(item.budget - item.spent, 0);
-
-                  return (
-                    <div key={item.label}>
-                      <div className="flex items-end justify-between gap-4">
-                        <p className="text-lg font-black text-slate-950">{item.label}</p>
-                        <p className="text-base font-bold text-slate-300">
-                          {formatCurrency(item.spent)} / {formatCurrency(item.budget)}
-                        </p>
-                      </div>
-                      <div className="mt-3 h-2 rounded-full bg-slate-100">
-                        <div className={`h-2 rounded-full ${item.tone}`} style={{ width: `${progress}%` }} />
-                      </div>
-                      <p className="mt-2 text-sm font-semibold text-slate-400">
-                        {Math.round(progress)}% 사용 · 남은 {formatCurrency(remain)}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-            <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950">최근 거래</h2>
-            <div className="mt-5 space-y-3">
-              {recentTransactions.length > 0 ? (
-                recentTransactions.map((transaction) => {
-                  const isOutgoing = ownAccountIds.has(transaction.senderAccount?.accountId);
-                  const counterparty = isOutgoing ? transaction.receiverAccount : transaction.senderAccount;
-
-                  return (
+                <div className="mt-5 grid grid-cols-4 gap-3">
+                  {heroActions.map(({ label, Icon, path }) => (
                     <button
-                      key={transaction.transactionId}
+                      key={label}
                       type="button"
-                      onClick={() => navigate("/transactions")}
-                      className="flex w-full items-center justify-between rounded-[20px] bg-slate-50 px-4 py-3 text-left transition hover:bg-slate-100"
+                      onClick={() => navigate(path)}
+                      className="flex flex-col items-center gap-2 rounded-[16px] bg-white/14 py-3 transition hover:bg-white/20"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`flex h-11 w-11 items-center justify-center rounded-full text-xs font-black ${isOutgoing ? "bg-slate-200 text-slate-700" : "bg-cyan-100 text-cyan-700"}`}>
-                          {isOutgoing ? "출금" : "입금"}
-                        </div>
-                        <div>
-                          <p className="text-base font-black text-slate-950">
-                            {counterparty?.bankName || "거래 상대"}
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-slate-400">
-                            {transaction.memo || transaction.description || formatDateShort(transaction.transactionDate)}
-                          </p>
-                        </div>
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+                        <Icon size={16} />
                       </div>
-                      <div className="text-right">
-                        <p className={`text-xl font-black ${isOutgoing ? "text-slate-700" : "text-cyan-700"}`}>
-                          {isOutgoing ? "-" : "+"}
-                          {formatCurrency(transaction.amount)}
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-slate-400">
-                          {formatDateShort(transaction.transactionDate)}
-                        </p>
-                      </div>
+                      <span className="text-xs font-bold">{label}</span>
                     </button>
-                  );
-                })
-              ) : (
-                <div className="rounded-[24px] border border-dashed border-slate-200 px-6 py-10 text-center text-slate-500">
-                  최근 거래 내역이 없습니다.
+                  ))}
                 </div>
-              )}
+              </div>
+
+              {/* Asset Trend */}
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+                <div className="flex items-center justify-between gap-4">
+                  <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950">자산 추이</h2>
+                  <div className="rounded-full bg-slate-100 px-4 py-2 text-base font-bold text-emerald-500">
+                    ↑ 12.5%
+                  </div>
+                </div>
+                <div className="mt-5 h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={assetTrendData} margin={{ left: 6, right: 12, top: 12, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="assetFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#1f9ac0" stopOpacity={0.24} />
+                          <stop offset="95%" stopColor="#1f9ac0" stopOpacity={0.04} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid vertical={false} stroke="#dbe5f1" />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 13, fontWeight: 700 }} />
+                      <YAxis hide />
+                      <Tooltip formatter={(value: number) => [formatCurrency(value), "자산"]} labelFormatter={(label) => `${label}`} />
+                      <Area
+                        type="monotone"
+                        dataKey="balance"
+                        stroke="#1597be"
+                        strokeWidth={4}
+                        fill="url(#assetFill)"
+                        dot={{ r: 5, strokeWidth: 4, fill: "#ffffff", stroke: "#1597be" }}
+                        activeDot={{ r: 8, strokeWidth: 4, fill: "#ffffff", stroke: "#1597be" }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Recent Transactions */}
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+                <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950">최근 거래</h2>
+                <div className="mt-5 space-y-3">
+                  {recentTransactions.length > 0 ? (
+                    recentTransactions.map((transaction) => {
+                      const isOutgoing = ownAccountIds.has(transaction.senderAccount?.accountId);
+                      const counterparty = isOutgoing ? transaction.receiverAccount : transaction.senderAccount;
+                      return (
+                        <button
+                          key={transaction.transactionId}
+                          type="button"
+                          onClick={() => navigate("/transactions")}
+                          className="flex w-full items-center justify-between rounded-[20px] bg-slate-50 px-4 py-3 text-left transition hover:bg-slate-100"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`flex h-11 w-11 items-center justify-center rounded-full text-xs font-black ${isOutgoing ? "bg-slate-200 text-slate-700" : "bg-cyan-100 text-cyan-700"}`}>
+                              {isOutgoing ? "출금" : "입금"}
+                            </div>
+                            <div>
+                              <p className="text-base font-black text-slate-950">
+                                {counterparty?.bankName || "거래 상대"}
+                              </p>
+                              <p className="mt-1 text-sm font-semibold text-slate-400">
+                                {transaction.memo || transaction.description || formatDateShort(transaction.transactionDate)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-xl font-black ${isOutgoing ? "text-slate-700" : "text-cyan-700"}`}>
+                              {isOutgoing ? "-" : "+"}
+                              {formatCurrency(transaction.amount)}
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-400">
+                              {formatDateShort(transaction.transactionDate)}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="rounded-[24px] border border-dashed border-slate-200 px-6 py-10 text-center text-slate-500">
+                      최근 거래 내역이 없습니다.
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </section>
+
+            {/* Right column */}
+            <div className="flex flex-col gap-5">
+              {/* Frequent Friends */}
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">자주 보내는 친구</h2>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/transactions")}
+                    className="text-sm font-semibold text-cyan-500 transition hover:text-cyan-700"
+                  >
+                    전체보기
+                  </button>
+                </div>
+                <div className="mt-4 grid grid-cols-4 gap-3">
+                  {frequentFriends.length > 0 ? (
+                    frequentFriends.map((friend, index) => {
+                      const avatarColors = [
+                        "bg-blue-600 text-white",
+                        "bg-cyan-500 text-white",
+                        "bg-indigo-500 text-white",
+                        "bg-slate-800 text-white",
+                      ];
+                      return (
+                        <button
+                          key={friend.id}
+                          type="button"
+                          onClick={() => navigate("/send")}
+                          className="flex flex-col items-center gap-2"
+                        >
+                          <div className={`flex h-12 w-12 items-center justify-center rounded-full text-base font-black ${avatarColors[index % avatarColors.length]}`}>
+                            {friend.name.charAt(0)}
+                          </div>
+                          <span className="w-full truncate text-center text-xs font-semibold text-slate-600">
+                            {friend.name}
+                          </span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="col-span-4 py-5 text-center text-sm text-slate-400">
+                      거래 내역이 없습니다
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Monthly Stats */}
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">이달의 통계</h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[18px] bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold text-slate-400">총 송금</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-slate-950">{formatCurrency(monthlyStats.totalSent)}</p>
+                  </div>
+                  <div className="rounded-[18px] bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold text-slate-400">총 입금</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-slate-950">{formatCurrency(monthlyStats.totalReceived)}</p>
+                  </div>
+                  <div className="rounded-[18px] bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold text-slate-400">거래 건수</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-slate-950">{monthlyStats.count}건</p>
+                  </div>
+                  <div className="rounded-[18px] bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold text-slate-400">평균 금액</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-slate-950">{formatCurrency(monthlyStats.averageAmount)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Monthly Expense */}
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">월별 지출</h2>
+                <div className="mt-4 h-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyExpenseData} barGap={12}>
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 700 }} />
+                      <Tooltip
+                        cursor={{ fill: "rgba(148,163,184,0.08)" }}
+                        formatter={(value: number) => [formatCurrency(value), "지출"]}
+                        labelFormatter={(label) => `${label}`}
+                      />
+                      <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
+                        {monthlyExpenseData.map((entry, index) => (
+                          <Cell
+                            key={entry.month}
+                            fill={index === monthlyExpenseData.length - 1 ? "#0f172a" : "#9aa8bd"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Monthly Budget */}
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">월간 예산</h2>
+                <div className="mt-4 space-y-4">
+                  {budgetItems.map((item) => {
+                    const progress = item.budget > 0 ? Math.min((item.spent / item.budget) * 100, 100) : 0;
+                    const remain = Math.max(item.budget - item.spent, 0);
+                    return (
+                      <div key={item.label}>
+                        <div className="flex items-end justify-between gap-4">
+                          <p className="text-sm font-black text-slate-950">{item.label}</p>
+                          <p className="text-xs font-bold text-slate-400">
+                            {formatCurrency(item.spent)} / {formatCurrency(item.budget)}
+                          </p>
+                        </div>
+                        <div className="mt-2 h-2 rounded-full bg-slate-100">
+                          <div className={`h-2 rounded-full ${item.tone}`} style={{ width: `${progress}%` }} />
+                        </div>
+                        <p className="mt-1 text-xs font-semibold text-slate-400">
+                          {Math.round(progress)}% 사용 · 남은 {formatCurrency(remain)}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
         </main>
       </div>
     </div>
