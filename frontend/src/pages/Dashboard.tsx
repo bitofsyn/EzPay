@@ -27,6 +27,9 @@ import {
   Settings,
   UserCircle2,
   Users,
+  TrendingUp,
+  Wallet,
+  Activity,
 } from "lucide-react";
 import { getDashboardInfo } from "../api/UserAPI";
 import {
@@ -254,9 +257,14 @@ const Dashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-100 p-4 lg:p-5">
-        <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-          <div className="rounded-[28px] bg-white p-5 shadow-sm">
+      <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1a2847] to-[#0f172a] p-4 lg:p-5 relative overflow-hidden">
+        {/* Background circles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+        </div>
+        <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)] relative z-10">
+          <div className="rounded-[28px] bg-white/5 backdrop-blur-md p-5 border border-white/10">
             <Skeleton className="h-12 w-40 rounded-2xl" />
             <Skeleton className="mt-6 h-16 w-full rounded-[24px]" />
             <Skeleton className="mt-6 h-80 w-full rounded-[28px]" />
@@ -274,28 +282,34 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
-      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1a2847] to-[#0f172a] p-3 text-white lg:p-4 relative overflow-hidden">
+      {/* Background decorative circles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)] relative z-10">
         {/* Sidebar */}
-        <aside className="flex min-h-[calc(100vh-1.5rem)] flex-col rounded-[28px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-          <div className="flex items-center gap-3 rounded-[22px] border border-slate-100 bg-slate-50 px-4 py-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-cyan-400 shadow-lg shadow-slate-950/15">
+        <aside className="flex min-h-[calc(100vh-1.5rem)] flex-col rounded-[28px] border border-white/10 bg-white/5 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+          <div className="flex items-center gap-3 rounded-[22px] border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-4 py-3 backdrop-blur">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20">
               <Landmark size={20} />
             </div>
             <div>
-              <p className="text-[1.7rem] leading-none font-black tracking-tight text-slate-950">EzPay</p>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Personal</p>
+              <p className="text-[1.7rem] leading-none font-black tracking-tight text-white">EzPay</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-400/70">Personal</p>
             </div>
           </div>
 
-          <div className="mt-4 rounded-[22px] bg-slate-50 p-4">
+          <div className="mt-4 rounded-[22px] border border-white/10 bg-white/5 p-4 backdrop-blur">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-600">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400">
                 <UserCircle2 size={24} />
               </div>
               <div>
-                <p className="text-[15px] font-bold text-slate-900">{user?.name || "사용자"} 님</p>
-                <p className="text-xs font-medium text-slate-400">일반 사용자</p>
+                <p className="text-[15px] font-bold text-white">{user?.name || "사용자"} 님</p>
+                <p className="text-xs font-medium text-cyan-400/60">일반 사용자</p>
               </div>
             </div>
           </div>
@@ -308,15 +322,15 @@ const Dashboard: React.FC = () => {
                 onClick={onClick}
                 className={`flex w-full items-center justify-between rounded-[18px] px-4 py-3 text-left transition ${
                   active
-                    ? "bg-slate-950 text-white shadow-[0_18px_30px_rgba(15,23,42,0.18)]"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-white border border-cyan-500/50 shadow-[0_18px_30px_rgba(34,211,238,0.15)]"
+                    : "text-cyan-300/60 hover:bg-white/5 hover:text-cyan-300 hover:border hover:border-white/10"
                 }`}
               >
                 <span className="flex items-center gap-3 text-[14px] font-semibold">
                   <Icon size={17} />
                   {label}
                 </span>
-                {active ? <span className="h-2 w-2 rounded-full bg-white" /> : <ChevronRight size={15} />}
+                {active ? <span className="h-2 w-2 rounded-full bg-cyan-400" /> : <ChevronRight size={15} />}
               </button>
             ))}
           </nav>
@@ -324,7 +338,7 @@ const Dashboard: React.FC = () => {
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-auto flex items-center justify-center gap-2 rounded-[18px] bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-500 transition hover:bg-rose-100"
+            className="mt-auto flex items-center justify-center gap-2 rounded-[18px] border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-400 transition hover:bg-rose-500/20 hover:border-rose-500/50"
           >
             <LogOut size={16} />
             로그아웃
@@ -333,20 +347,20 @@ const Dashboard: React.FC = () => {
 
         <main className="flex flex-col gap-5">
           {/* Header */}
-          <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+          <header className="rounded-[28px] border border-white/10 bg-white/5 px-5 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div>
-                <h1 className="text-[2rem] font-black tracking-tight text-slate-950">사용자 홈</h1>
-                <p className="mt-1 text-sm font-semibold text-slate-400">EzPay · {todayLabel}</p>
+                <h1 className="text-[2rem] font-black tracking-tight text-white">사용자 홈</h1>
+                <p className="mt-1 text-sm font-semibold text-cyan-400/60">EzPay · {todayLabel}</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex rounded-full bg-slate-100 p-1 text-sm font-semibold">
-                  <button type="button" className="rounded-full bg-slate-950 px-5 py-2 text-white">
+                <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-1 text-sm font-semibold backdrop-blur">
+                  <button type="button" className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2 text-white shadow-lg shadow-cyan-500/20">
                     사용자 뷰
                   </button>
                   <button
                     type="button"
-                    className="rounded-full px-5 py-2 text-slate-400 transition hover:text-slate-700"
+                    className="rounded-full px-5 py-2 text-cyan-300/60 transition hover:text-cyan-300"
                     onClick={() => navigate("/admin/dashboard")}
                   >
                     관리자 뷰
@@ -354,12 +368,12 @@ const Dashboard: React.FC = () => {
                 </div>
                 <button
                   type="button"
-                  className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+                  className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-cyan-400 transition hover:border-cyan-500/50 hover:bg-cyan-500/10"
                   onClick={() => navigate("/settings/notification")}
                 >
                   <Bell size={18} />
                   {unreadNotifications > 0 && (
-                    <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white">
+                    <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white shadow-lg shadow-rose-500/30">
                       {unreadNotifications}
                     </span>
                   )}
@@ -373,61 +387,70 @@ const Dashboard: React.FC = () => {
             {/* Left column */}
             <div className="flex flex-col gap-5">
               {/* Hero Card */}
-              <div className="rounded-[28px] bg-gradient-to-r from-[#264997] via-[#175f8b] to-[#17667b] p-6 text-white shadow-[0_30px_70px_rgba(23,53,120,0.32)]">
-                <p className="text-sm font-semibold text-white/70">총 보유 자산</p>
-                <p className="mt-2 text-[3rem] font-black tracking-tight lg:text-[3.35rem]">
-                  ₩{totalBalance.toLocaleString()}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-white/60">
-                  계좌 {sortedAccounts.length}개 · 전월 대비 +12.5%
-                </p>
+              <div className="rounded-[28px] bg-gradient-to-br from-cyan-500/30 via-blue-600/30 to-blue-900/30 border border-cyan-500/40 p-6 text-white shadow-[0_30px_70px_rgba(34,211,238,0.15)] backdrop-blur-xl overflow-hidden relative">
+                {/* Decorative circles */}
+                <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-400/20 rounded-full blur-2xl" />
+                <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl" />
 
-                {mainAccount && (
-                  <div className="mt-5 rounded-[18px] bg-white/14 px-4 py-4 transition hover:bg-white/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold text-white/70">{mainAccount.bankName || "EzPay Bank"}</p>
-                        <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white">대표</span>
+                <div className="relative z-10">
+                  <p className="text-sm font-semibold text-white/70">총 보유 자산</p>
+                  <p className="mt-2 text-[3rem] font-black tracking-tight lg:text-[3.35rem]">
+                    ₩{totalBalance.toLocaleString()}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-cyan-300/70">
+                    계좌 {sortedAccounts.length}개 · <span className="text-emerald-400">전월 대비 +12.5%</span>
+                  </p>
+
+                  {mainAccount && (
+                    <div className="mt-5 rounded-[18px] border border-white/15 bg-white/10 px-4 py-4 transition hover:bg-white/15 hover:border-white/25 backdrop-blur">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-white/70">{mainAccount.bankName || "EzPay Bank"}</p>
+                          <span className="rounded-full bg-cyan-500/30 border border-cyan-400/50 px-2 py-0.5 text-xs font-bold text-cyan-300">대표</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => navigate("/accounts")}
+                          className="text-xs font-semibold text-cyan-300/70 transition hover:text-cyan-300"
+                        >
+                          전체 계좌 →
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => navigate("/accounts")}
-                        className="text-xs font-semibold text-white/60 transition hover:text-white"
-                      >
-                        전체 계좌 →
-                      </button>
+                      <p className="mt-2 text-sm font-semibold tracking-[0.14em] text-white/60">
+                        {formatAccountNumber(mainAccount.accountNumber)}
+                      </p>
+                      <p className="mt-2 text-[2rem] font-black text-white">
+                        {formatCurrency(mainAccount.balance).replace(" 원", "")}
+                      </p>
                     </div>
-                    <p className="mt-2 text-sm font-semibold tracking-[0.14em] text-white/70">
-                      {formatAccountNumber(mainAccount.accountNumber)}
-                    </p>
-                    <p className="mt-2 text-[2rem] font-black">
-                      {formatCurrency(mainAccount.balance).replace(" 원", "")}
-                    </p>
-                  </div>
-                )}
+                  )}
 
-                <div className="mt-5 grid grid-cols-4 gap-3">
-                  {heroActions.map(({ label, Icon, path }) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => navigate(path)}
-                      className="flex flex-col items-center gap-2 rounded-[16px] bg-white/14 py-3 transition hover:bg-white/20"
-                    >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
-                        <Icon size={16} />
-                      </div>
-                      <span className="text-xs font-bold">{label}</span>
-                    </button>
-                  ))}
+                  <div className="mt-5 grid grid-cols-4 gap-3">
+                    {heroActions.map(({ label, Icon, path }) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => navigate(path)}
+                        className="flex flex-col items-center gap-2 rounded-[16px] border border-white/15 bg-white/10 py-3 transition hover:bg-white/20 hover:border-white/25 backdrop-blur"
+                      >
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+                          <Icon size={16} />
+                        </div>
+                        <span className="text-xs font-bold">{label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Asset Trend */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
                 <div className="flex items-center justify-between gap-4">
-                  <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950">자산 추이</h2>
-                  <div className="rounded-full bg-slate-100 px-4 py-2 text-base font-bold text-emerald-500">
+                  <h2 className="text-[1.7rem] font-black tracking-tight text-white flex items-center gap-2">
+                    <TrendingUp size={28} className="text-cyan-400" />
+                    자산 추이
+                  </h2>
+                  <div className="rounded-full bg-emerald-500/20 border border-emerald-500/50 px-4 py-2 text-base font-bold text-emerald-400">
                     ↑ 12.5%
                   </div>
                 </div>
@@ -436,22 +459,22 @@ const Dashboard: React.FC = () => {
                     <AreaChart data={assetTrendData} margin={{ left: 6, right: 12, top: 12, bottom: 0 }}>
                       <defs>
                         <linearGradient id="assetFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#1f9ac0" stopOpacity={0.24} />
-                          <stop offset="95%" stopColor="#1f9ac0" stopOpacity={0.04} />
+                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.05} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid vertical={false} stroke="#dbe5f1" />
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 13, fontWeight: 700 }} />
+                      <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.1)" />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#7dd3fc", fontSize: 13, fontWeight: 700 }} />
                       <YAxis hide />
-                      <Tooltip formatter={(value: number) => [formatCurrency(value), "자산"]} labelFormatter={(label) => `${label}`} />
+                      <Tooltip formatter={(value: number) => [formatCurrency(value), "자산"]} labelFormatter={(label) => `${label}`} contentStyle={{ backgroundColor: "rgba(15,23,42,0.9)", border: "1px solid rgba(34,211,238,0.3)", borderRadius: "12px" }} />
                       <Area
                         type="monotone"
                         dataKey="balance"
-                        stroke="#1597be"
-                        strokeWidth={4}
+                        stroke="#06b6d4"
+                        strokeWidth={3}
                         fill="url(#assetFill)"
-                        dot={{ r: 5, strokeWidth: 4, fill: "#ffffff", stroke: "#1597be" }}
-                        activeDot={{ r: 8, strokeWidth: 4, fill: "#ffffff", stroke: "#1597be" }}
+                        dot={{ r: 5, strokeWidth: 3, fill: "#0f172a", stroke: "#06b6d4" }}
+                        activeDot={{ r: 8, strokeWidth: 3, fill: "#0f172a", stroke: "#06b6d4" }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -459,8 +482,11 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Recent Transactions */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-                <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950">최근 거래</h2>
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+                <h2 className="text-[1.7rem] font-black tracking-tight text-white flex items-center gap-2">
+                  <Activity size={28} className="text-cyan-400" />
+                  최근 거래
+                </h2>
                 <div className="mt-5 space-y-3">
                   {recentTransactions.length > 0 ? (
                     recentTransactions.map((transaction) => {
@@ -471,27 +497,27 @@ const Dashboard: React.FC = () => {
                           key={transaction.transactionId}
                           type="button"
                           onClick={() => navigate("/transactions")}
-                          className="flex w-full items-center justify-between rounded-[20px] bg-slate-50 px-4 py-3 text-left transition hover:bg-slate-100"
+                          className="flex w-full items-center justify-between rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:bg-white/10 hover:border-white/20 backdrop-blur"
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`flex h-11 w-11 items-center justify-center rounded-full text-xs font-black ${isOutgoing ? "bg-slate-200 text-slate-700" : "bg-cyan-100 text-cyan-700"}`}>
+                            <div className={`flex h-11 w-11 items-center justify-center rounded-full text-xs font-black ${isOutgoing ? "bg-rose-500/20 text-rose-300 border border-rose-500/30" : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"}`}>
                               {isOutgoing ? "출금" : "입금"}
                             </div>
                             <div>
-                              <p className="text-base font-black text-slate-950">
+                              <p className="text-base font-black text-white">
                                 {counterparty?.bankName || "거래 상대"}
                               </p>
-                              <p className="mt-1 text-sm font-semibold text-slate-400">
+                              <p className="mt-1 text-sm font-semibold text-cyan-300/60">
                                 {transaction.memo || transaction.description || formatDateShort(transaction.transactionDate)}
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className={`text-xl font-black ${isOutgoing ? "text-slate-700" : "text-cyan-700"}`}>
+                            <p className={`text-xl font-black ${isOutgoing ? "text-rose-400" : "text-emerald-400"}`}>
                               {isOutgoing ? "-" : "+"}
                               {formatCurrency(transaction.amount)}
                             </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-400">
+                            <p className="mt-1 text-sm font-semibold text-cyan-300/60">
                               {formatDateShort(transaction.transactionDate)}
                             </p>
                           </div>
@@ -499,7 +525,7 @@ const Dashboard: React.FC = () => {
                       );
                     })
                   ) : (
-                    <div className="rounded-[24px] border border-dashed border-slate-200 px-6 py-10 text-center text-slate-500">
+                    <div className="rounded-[24px] border border-dashed border-white/10 px-6 py-10 text-center text-cyan-300/50">
                       최근 거래 내역이 없습니다.
                     </div>
                   )}
@@ -510,13 +536,13 @@ const Dashboard: React.FC = () => {
             {/* Right column */}
             <div className="flex flex-col gap-5">
               {/* Frequent Friends */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">자주 보내는 친구</h2>
+                  <h2 className="text-[1.4rem] font-black tracking-tight text-white">자주 보내는 친구</h2>
                   <button
                     type="button"
                     onClick={() => navigate("/transactions")}
-                    className="text-sm font-semibold text-cyan-500 transition hover:text-cyan-700"
+                    className="text-sm font-semibold text-cyan-400/70 transition hover:text-cyan-300"
                   >
                     전체보기
                   </button>
@@ -525,29 +551,29 @@ const Dashboard: React.FC = () => {
                   {frequentFriends.length > 0 ? (
                     frequentFriends.map((friend, index) => {
                       const avatarColors = [
-                        "bg-blue-600 text-white",
-                        "bg-cyan-500 text-white",
-                        "bg-indigo-500 text-white",
-                        "bg-slate-800 text-white",
+                        "bg-gradient-to-r from-blue-500 to-cyan-500",
+                        "bg-gradient-to-r from-cyan-500 to-teal-500",
+                        "bg-gradient-to-r from-indigo-500 to-purple-500",
+                        "bg-gradient-to-r from-violet-500 to-pink-500",
                       ];
                       return (
                         <button
                           key={friend.id}
                           type="button"
                           onClick={() => navigate("/send")}
-                          className="flex flex-col items-center gap-2"
+                          className="flex flex-col items-center gap-2 group"
                         >
-                          <div className={`flex h-12 w-12 items-center justify-center rounded-full text-base font-black ${avatarColors[index % avatarColors.length]}`}>
+                          <div className={`flex h-12 w-12 items-center justify-center rounded-full text-base font-black text-white shadow-lg transition group-hover:shadow-xl ${avatarColors[index % avatarColors.length]}`}>
                             {friend.name.charAt(0)}
                           </div>
-                          <span className="w-full truncate text-center text-xs font-semibold text-slate-600">
+                          <span className="w-full truncate text-center text-xs font-semibold text-cyan-300/70 group-hover:text-cyan-300">
                             {friend.name}
                           </span>
                         </button>
                       );
                     })
                   ) : (
-                    <div className="col-span-4 py-5 text-center text-sm text-slate-400">
+                    <div className="col-span-4 py-5 text-center text-sm text-cyan-300/50">
                       거래 내역이 없습니다
                     </div>
                   )}
@@ -555,45 +581,47 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Monthly Stats */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">이달의 통계</h2>
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+                <h2 className="text-[1.4rem] font-black tracking-tight text-white">이달의 통계</h2>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[18px] bg-slate-50 px-4 py-4">
-                    <p className="text-xs font-semibold text-slate-400">총 송금</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-slate-950">{formatCurrency(monthlyStats.totalSent)}</p>
+                  <div className="rounded-[18px] border border-rose-500/30 bg-rose-500/10 px-4 py-4 backdrop-blur">
+                    <p className="text-xs font-semibold text-rose-400/70">총 송금</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-rose-300">{formatCurrency(monthlyStats.totalSent)}</p>
                   </div>
-                  <div className="rounded-[18px] bg-slate-50 px-4 py-4">
-                    <p className="text-xs font-semibold text-slate-400">총 입금</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-slate-950">{formatCurrency(monthlyStats.totalReceived)}</p>
+                  <div className="rounded-[18px] border border-emerald-500/30 bg-emerald-500/10 px-4 py-4 backdrop-blur">
+                    <p className="text-xs font-semibold text-emerald-400/70">총 입금</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-emerald-300">{formatCurrency(monthlyStats.totalReceived)}</p>
                   </div>
-                  <div className="rounded-[18px] bg-slate-50 px-4 py-4">
-                    <p className="text-xs font-semibold text-slate-400">거래 건수</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-slate-950">{monthlyStats.count}건</p>
+                  <div className="rounded-[18px] border border-cyan-500/30 bg-cyan-500/10 px-4 py-4 backdrop-blur">
+                    <p className="text-xs font-semibold text-cyan-400/70">거래 건수</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-cyan-300">{monthlyStats.count}건</p>
                   </div>
-                  <div className="rounded-[18px] bg-slate-50 px-4 py-4">
-                    <p className="text-xs font-semibold text-slate-400">평균 금액</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-slate-950">{formatCurrency(monthlyStats.averageAmount)}</p>
+                  <div className="rounded-[18px] border border-purple-500/30 bg-purple-500/10 px-4 py-4 backdrop-blur">
+                    <p className="text-xs font-semibold text-purple-400/70">평균 금액</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-purple-300">{formatCurrency(monthlyStats.averageAmount)}</p>
                   </div>
                 </div>
               </div>
 
               {/* Monthly Expense */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">월별 지출</h2>
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+                <h2 className="text-[1.4rem] font-black tracking-tight text-white">월별 지출</h2>
                 <div className="mt-4 h-[180px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={monthlyExpenseData} barGap={12}>
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 700 }} />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#7dd3fc", fontSize: 12, fontWeight: 700 }} />
                       <Tooltip
-                        cursor={{ fill: "rgba(148,163,184,0.08)" }}
+                        cursor={{ fill: "rgba(34,211,238,0.1)" }}
                         formatter={(value: number) => [formatCurrency(value), "지출"]}
                         labelFormatter={(label) => `${label}`}
+                        contentStyle={{ backgroundColor: "rgba(15,23,42,0.9)", border: "1px solid rgba(34,211,238,0.3)", borderRadius: "12px" }}
                       />
                       <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                         {monthlyExpenseData.map((entry, index) => (
                           <Cell
                             key={entry.month}
-                            fill={index === monthlyExpenseData.length - 1 ? "#0f172a" : "#9aa8bd"}
+                            fill={index === monthlyExpenseData.length - 1 ? "#06b6d4" : "#06b6d4"}
+                            fillOpacity={index === monthlyExpenseData.length - 1 ? 1 : 0.5}
                           />
                         ))}
                       </Bar>
@@ -603,24 +631,30 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Monthly Budget */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">월간 예산</h2>
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+                <h2 className="text-[1.4rem] font-black tracking-tight text-white">월간 예산</h2>
                 <div className="mt-4 space-y-4">
                   {budgetItems.map((item) => {
                     const progress = item.budget > 0 ? Math.min((item.spent / item.budget) * 100, 100) : 0;
                     const remain = Math.max(item.budget - item.spent, 0);
+                    const toneMap: Record<string, string> = {
+                      "bg-slate-600": "from-slate-500 to-slate-600",
+                      "bg-slate-500": "from-blue-500 to-cyan-500",
+                      "bg-amber-500": "from-amber-500 to-orange-500",
+                    };
+                    const gradientTone = toneMap[item.tone] || "from-cyan-500 to-blue-500";
                     return (
                       <div key={item.label}>
                         <div className="flex items-end justify-between gap-4">
-                          <p className="text-sm font-black text-slate-950">{item.label}</p>
-                          <p className="text-xs font-bold text-slate-400">
+                          <p className="text-sm font-black text-white">{item.label}</p>
+                          <p className="text-xs font-bold text-cyan-400/60">
                             {formatCurrency(item.spent)} / {formatCurrency(item.budget)}
                           </p>
                         </div>
-                        <div className="mt-2 h-2 rounded-full bg-slate-100">
-                          <div className={`h-2 rounded-full ${item.tone}`} style={{ width: `${progress}%` }} />
+                        <div className="mt-2 h-2 rounded-full bg-white/10 border border-white/10 overflow-hidden">
+                          <div className={`h-2 rounded-full bg-gradient-to-r ${gradientTone}`} style={{ width: `${progress}%` }} />
                         </div>
-                        <p className="mt-1 text-xs font-semibold text-slate-400">
+                        <p className="mt-1 text-xs font-semibold text-cyan-400/60">
                           {Math.round(progress)}% 사용 · 남은 {formatCurrency(remain)}
                         </p>
                       </div>
