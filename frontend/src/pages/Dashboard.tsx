@@ -244,7 +244,7 @@ const Dashboard: React.FC = () => {
     { label: "송금하기", icon: SendHorizontal, onClick: () => navigate("/send"), active: false },
     { label: "친구", icon: Users, onClick: () => navigate("/send"), active: false },
     { label: "거래 내역", icon: Receipt, onClick: () => navigate("/transactions"), active: false },
-    { label: "알림", icon: Bell, onClick: () => navigate("/settings/notification"), active: false },
+    { label: "알림", icon: Bell, onClick: () => navigate("/notifications"), active: false },
     { label: "설정", icon: Settings, onClick: () => navigate("/settings"), active: false },
   ];
 
@@ -292,7 +292,11 @@ const Dashboard: React.FC = () => {
       <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)] relative z-10">
         {/* Sidebar */}
         <aside className="flex min-h-[calc(100vh-1.5rem)] flex-col rounded-[28px] border border-white/10 bg-white/5 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-xl">
-          <div className="flex items-center gap-3 rounded-[22px] border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-4 py-3 backdrop-blur">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-3 rounded-[22px] border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-4 py-3 backdrop-blur transition hover:bg-cyan-500/20"
+          >
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20">
               <Landmark size={20} />
             </div>
@@ -300,7 +304,7 @@ const Dashboard: React.FC = () => {
               <p className="text-[1.7rem] leading-none font-black tracking-tight text-white">EzPay</p>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-400/70">Personal</p>
             </div>
-          </div>
+          </button>
 
           <div className="mt-4 rounded-[22px] border border-white/10 bg-white/5 p-4 backdrop-blur">
             <div className="flex items-center gap-3">
@@ -369,7 +373,7 @@ const Dashboard: React.FC = () => {
                 <button
                   type="button"
                   className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-cyan-400 transition hover:border-cyan-500/50 hover:bg-cyan-500/10"
-                  onClick={() => navigate("/settings/notification")}
+                  onClick={() => navigate("/notifications")}
                 >
                   <Bell size={18} />
                   {unreadNotifications > 0 && (
