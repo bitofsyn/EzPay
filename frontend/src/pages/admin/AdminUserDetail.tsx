@@ -4,8 +4,6 @@ import { FiActivity, FiArrowLeft, FiCalendar, FiCreditCard, FiMail, FiPhone, FiU
 import toast from "react-hot-toast";
 import { getUserAccounts, getUserById, getUserTransactions, updateUserStatus } from "../../api/AdminAPI";
 import AdminShell from "../../components/admin/AdminShell";
-import { createPreviewUserDetail } from "../../utils/adminPreviewData";
-import { isAdminPreviewForbiddenError } from "../../utils/adminView";
 
 type UserStatus = "ACTIVE" | "INACTIVE" | "LOCKED";
 type TabType = "accounts" | "transactions";
@@ -65,14 +63,6 @@ const AdminUserDetail: React.FC = () => {
       setAccounts(accountsData as unknown as Account[]);
       setTransactions(transactionsData as unknown as Transaction[]);
     } catch (error) {
-      if (isAdminPreviewForbiddenError(error)) {
-        const previewData = createPreviewUserDetail(numericUserId);
-        setUserInfo(previewData.userInfo);
-        setAccounts(previewData.accounts);
-        setTransactions(previewData.transactions);
-        return;
-      }
-
       console.error("사용자 상세 정보 조회 실패:", error);
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(axiosError.response?.data?.message || "사용자 정보를 불러오는데 실패했습니다.");
@@ -94,11 +84,6 @@ const AdminUserDetail: React.FC = () => {
       toast.success("사용자 상태가 변경되었습니다.");
       fetchUserDetails();
     } catch (error) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setUserInfo((prev) => (prev ? { ...prev, status: newStatus } : prev));
-        return;
-      }
-
       console.error("사용자 상태 변경 실패:", error);
       toast.error("사용자 상태 변경에 실패했습니다.");
     }

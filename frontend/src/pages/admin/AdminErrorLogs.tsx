@@ -3,8 +3,6 @@ import { FiAlertCircle, FiCheckCircle, FiFilter, FiRefreshCw, FiTrash2 } from "r
 import toast from "react-hot-toast";
 import { deleteErrorLog, getAllErrorLogs, getErrorLogsByStatus, resolveErrorLog } from "../../api/AdminAPI";
 import AdminShell from "../../components/admin/AdminShell";
-import { previewErrorLogs } from "../../utils/adminPreviewData";
-import { isAdminPreviewForbiddenError } from "../../utils/adminView";
 
 interface ErrorLog {
   logId: number;
@@ -27,11 +25,6 @@ const AdminErrorLogs: React.FC = () => {
       const data = statusFilter === "ALL" ? await getAllErrorLogs() : await getErrorLogsByStatus(statusFilter);
       setErrorLogs(data);
     } catch (error) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setErrorLogs(statusFilter === "ALL" ? previewErrorLogs : previewErrorLogs.filter((log) => log.status === statusFilter));
-        return;
-      }
-
       console.error("에러 로그 조회 실패:", error);
       toast.error("에러 로그를 불러오는데 실패했습니다.");
     } finally {
@@ -51,11 +44,6 @@ const AdminErrorLogs: React.FC = () => {
       toast.success("에러 로그가 해결 완료 처리되었습니다.");
       fetchErrorLogs();
     } catch (error) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setErrorLogs((prev) => prev.map((log) => (log.logId === logId ? { ...log, status: "RESOLVED" } : log)));
-        return;
-      }
-
       console.error("에러 로그 해결 처리 실패:", error);
       toast.error("에러 로그 해결 처리에 실패했습니다.");
     }
@@ -69,11 +57,6 @@ const AdminErrorLogs: React.FC = () => {
       toast.success("에러 로그가 삭제되었습니다.");
       fetchErrorLogs();
     } catch (error) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setErrorLogs((prev) => prev.filter((log) => log.logId !== logId));
-        return;
-      }
-
       console.error("에러 로그 삭제 실패:", error);
       toast.error("에러 로그 삭제에 실패했습니다.");
     }
