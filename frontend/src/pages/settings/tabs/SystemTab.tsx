@@ -144,8 +144,9 @@ const SystemTab: React.FC = () => {
                         <p className="font-medium text-gray-800">간결한 보기</p>
                         <p className="text-sm text-gray-500">더 많은 정보를 한 화면에 표시합니다.</p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label htmlFor="compactMode" aria-label="간결한 보기" className="relative inline-flex items-center cursor-pointer">
                         <input
+                            id="compactMode"
                             type="checkbox"
                             checked={compactMode}
                             onChange={handleCompactModeToggle}

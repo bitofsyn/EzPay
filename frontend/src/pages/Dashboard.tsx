@@ -17,10 +17,6 @@ import {
   ArrowDown,
   ArrowUp,
   Bell,
-  CreditCard,
-  LayoutDashboard,
-  Receipt,
-  SendHorizontal,
   Users,
   TrendingUp,
   Activity,
@@ -34,7 +30,8 @@ import {
   parseDate,
 } from "../utils/formatters";
 import { clearUserData } from "../utils/storage";
-import { Account, Transaction, User } from "../types";
+import { navigateToAdminDashboard } from "../utils/adminView";
+import { Account, Transaction } from "../types";
 import { Skeleton } from "../components/Skeleton";
 
 interface DashboardAccount extends Account {
@@ -59,9 +56,8 @@ const normalizeAccounts = (accountList: DashboardAccount[]): DashboardAccount[] 
     main: account.main ?? account.isMain ?? false,
   }));
 
-const Dashboard: React.FC = () => {
+const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
   const [accounts, setAccounts] = useState<DashboardAccount[]>([]);
   const [transactions, setTransactions] = useState<DashboardTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,20 +69,11 @@ const Dashboard: React.FC = () => {
   });
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user") || sessionStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-
     const fetchDashboard = async () => {
       try {
         const dashboardRes = await getDashboardInfo();
         setAccounts(normalizeAccounts(dashboardRes.data?.account || []));
         setTransactions((dashboardRes.data?.transactions || []) as DashboardTransaction[]);
-
-        if (dashboardRes.data?.user) {
-          setUser(dashboardRes.data.user);
-        }
       } catch (error) {
         console.error("대시보드 조회 실패:", error);
         clearUserData();
@@ -283,7 +270,7 @@ const Dashboard: React.FC = () => {
                   <button
                     type="button"
                     className="rounded-full px-5 py-2 text-slate-600 transition hover:text-slate-900"
-                    onClick={() => navigate("/admin/dashboard")}
+                    onClick={() => navigateToAdminDashboard(navigate)}
                   >
                     관리자 뷰
                   </button>
@@ -401,9 +388,9 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Recent Transactions */}
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                <h2 className="text-[1.7rem] font-black tracking-tight text-white flex items-center gap-2">
-                  <Activity size={28} className="text-cyan-400" />
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+                <h2 className="flex items-center gap-2 text-[1.7rem] font-black tracking-tight text-slate-950">
+                  <Activity size={28} className="text-cyan-600" />
                   최근 거래
                 </h2>
                 <div className="mt-5 space-y-3">
@@ -416,17 +403,17 @@ const Dashboard: React.FC = () => {
                           key={transaction.transactionId}
                           type="button"
                           onClick={() => navigate("/transactions")}
-                          className="flex w-full items-center justify-between rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:bg-white/10 hover:border-white/20 backdrop-blur"
+                          className="flex w-full items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/10"
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`flex h-11 w-11 items-center justify-center rounded-full text-xs font-black ${isOutgoing ? "bg-rose-500/20 text-rose-300 border border-rose-500/30" : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"}`}>
+                            <div className={`flex h-11 w-11 items-center justify-center rounded-full border text-xs font-black ${isOutgoing ? "border-rose-200 bg-rose-50 text-rose-600" : "border-emerald-200 bg-emerald-50 text-emerald-600"}`}>
                               {isOutgoing ? "출금" : "입금"}
                             </div>
                             <div>
-                              <p className="text-base font-black text-white">
+                              <p className="text-base font-black text-slate-950">
                                 {counterparty?.bankName || "거래 상대"}
                               </p>
-                              <p className="mt-1 text-sm font-semibold text-cyan-300/60">
+                              <p className="mt-1 text-sm font-semibold text-slate-500">
                                 {transaction.memo || transaction.description || formatDateShort(transaction.transactionDate)}
                               </p>
                             </div>
@@ -436,7 +423,7 @@ const Dashboard: React.FC = () => {
                               {isOutgoing ? "-" : "+"}
                               {formatCurrency(transaction.amount)}
                             </p>
-                            <p className="mt-1 text-sm font-semibold text-cyan-300/60">
+                            <p className="mt-1 text-sm font-semibold text-slate-400">
                               {formatDateShort(transaction.transactionDate)}
                             </p>
                           </div>
@@ -444,7 +431,7 @@ const Dashboard: React.FC = () => {
                       );
                     })
                   ) : (
-                    <div className="rounded-[24px] border border-dashed border-white/10 px-6 py-10 text-center text-cyan-300/50">
+                    <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center text-slate-400">
                       최근 거래 내역이 없습니다.
                     </div>
                   )}
@@ -455,13 +442,13 @@ const Dashboard: React.FC = () => {
             {/* Right column */}
             <div className="flex flex-col gap-5">
               {/* Frequent Friends */}
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-[1.4rem] font-black tracking-tight text-white">자주 보내는 친구</h2>
+                  <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">자주 보내는 친구</h2>
                   <button
                     type="button"
                     onClick={() => navigate("/transactions")}
-                    className="text-sm font-semibold text-cyan-400/70 transition hover:text-cyan-300"
+                    className="text-sm font-semibold text-slate-500 transition hover:text-slate-700"
                   >
                     전체보기
                   </button>
@@ -480,19 +467,19 @@ const Dashboard: React.FC = () => {
                           key={friend.id}
                           type="button"
                           onClick={() => navigate("/send")}
-                          className="flex flex-col items-center gap-2 group"
+                          className="group flex flex-col items-center gap-2"
                         >
                           <div className={`flex h-12 w-12 items-center justify-center rounded-full text-base font-black text-white shadow-lg transition group-hover:shadow-xl ${avatarColors[index % avatarColors.length]}`}>
                             {friend.name.charAt(0)}
                           </div>
-                          <span className="w-full truncate text-center text-xs font-semibold text-cyan-300/70 group-hover:text-cyan-300">
+                          <span className="w-full truncate text-center text-xs font-semibold text-slate-500 group-hover:text-slate-800">
                             {friend.name}
                           </span>
                         </button>
                       );
                     })
                   ) : (
-                    <div className="col-span-4 py-5 text-center text-sm text-cyan-300/50">
+                    <div className="col-span-4 rounded-[18px] bg-slate-50 py-5 text-center text-sm text-slate-400">
                       거래 내역이 없습니다
                     </div>
                   )}
@@ -500,40 +487,41 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Monthly Stats */}
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                <h2 className="text-[1.4rem] font-black tracking-tight text-white">이달의 통계</h2>
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">이달의 통계</h2>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[18px] border border-rose-500/30 bg-rose-500/10 px-4 py-4 backdrop-blur">
-                    <p className="text-xs font-semibold text-rose-400/70">총 송금</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-rose-300">{formatCurrency(monthlyStats.totalSent)}</p>
+                  <div className="rounded-[18px] border border-rose-200 bg-rose-50 px-4 py-4">
+                    <p className="text-xs font-semibold text-rose-500">총 송금</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-rose-600">{formatCurrency(monthlyStats.totalSent)}</p>
                   </div>
-                  <div className="rounded-[18px] border border-emerald-500/30 bg-emerald-500/10 px-4 py-4 backdrop-blur">
-                    <p className="text-xs font-semibold text-emerald-400/70">총 입금</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-emerald-300">{formatCurrency(monthlyStats.totalReceived)}</p>
+                  <div className="rounded-[18px] border border-emerald-200 bg-emerald-50 px-4 py-4">
+                    <p className="text-xs font-semibold text-emerald-600">총 입금</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-emerald-700">{formatCurrency(monthlyStats.totalReceived)}</p>
                   </div>
-                  <div className="rounded-[18px] border border-cyan-500/30 bg-cyan-500/10 px-4 py-4 backdrop-blur">
-                    <p className="text-xs font-semibold text-cyan-400/70">거래 건수</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-cyan-300">{monthlyStats.count}건</p>
+                  <div className="rounded-[18px] border border-cyan-200 bg-cyan-50 px-4 py-4">
+                    <p className="text-xs font-semibold text-cyan-700">거래 건수</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-cyan-800">{monthlyStats.count}건</p>
                   </div>
-                  <div className="rounded-[18px] border border-purple-500/30 bg-purple-500/10 px-4 py-4 backdrop-blur">
-                    <p className="text-xs font-semibold text-purple-400/70">평균 금액</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-purple-300">{formatCurrency(monthlyStats.averageAmount)}</p>
+                  <div className="rounded-[18px] border border-indigo-200 bg-indigo-50 px-4 py-4">
+                    <p className="text-xs font-semibold text-indigo-600">평균 금액</p>
+                    <p className="mt-1 text-[1.4rem] font-black text-indigo-700">{formatCurrency(monthlyStats.averageAmount)}</p>
                   </div>
                 </div>
               </div>
 
               {/* Monthly Expense */}
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                <h2 className="text-[1.4rem] font-black tracking-tight text-white">월별 지출</h2>
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">월별 지출</h2>
                 <div className="mt-4 h-[180px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={monthlyExpenseData} barGap={12}>
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#7dd3fc", fontSize: 12, fontWeight: 700 }} />
+                      <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#475569", fontSize: 12, fontWeight: 700 }} />
                       <Tooltip
-                        cursor={{ fill: "rgba(34,211,238,0.1)" }}
+                        cursor={{ fill: "rgba(15,23,42,0.04)" }}
                         formatter={(value: number) => [formatCurrency(value), "지출"]}
                         labelFormatter={(label) => `${label}`}
-                        contentStyle={{ backgroundColor: "rgba(15,23,42,0.9)", border: "1px solid rgba(34,211,238,0.3)", borderRadius: "12px" }}
+                        contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", color: "#0f172a" }}
                       />
                       <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
                         {monthlyExpenseData.map((entry, index) => (
@@ -550,8 +538,8 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Monthly Budget */}
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                <h2 className="text-[1.4rem] font-black tracking-tight text-white">월간 예산</h2>
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">월간 예산</h2>
                 <div className="mt-4 space-y-4">
                   {budgetItems.map((item) => {
                     const progress = item.budget > 0 ? Math.min((item.spent / item.budget) * 100, 100) : 0;
@@ -565,15 +553,15 @@ const Dashboard: React.FC = () => {
                     return (
                       <div key={item.label}>
                         <div className="flex items-end justify-between gap-4">
-                          <p className="text-sm font-black text-white">{item.label}</p>
-                          <p className="text-xs font-bold text-cyan-400/60">
+                          <p className="text-sm font-black text-slate-900">{item.label}</p>
+                          <p className="text-xs font-bold text-slate-500">
                             {formatCurrency(item.spent)} / {formatCurrency(item.budget)}
                           </p>
                         </div>
-                        <div className="mt-2 h-2 rounded-full bg-white/10 border border-white/10 overflow-hidden">
+                        <div className="mt-2 h-2 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
                           <div className={`h-2 rounded-full bg-gradient-to-r ${gradientTone}`} style={{ width: `${progress}%` }} />
                         </div>
-                        <p className="mt-1 text-xs font-semibold text-cyan-400/60">
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
                           {Math.round(progress)}% 사용 · 남은 {formatCurrency(remain)}
                         </p>
                       </div>

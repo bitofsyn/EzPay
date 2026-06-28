@@ -17,7 +17,6 @@ const Notification: React.FC = () => {
         const fetchInfo = async (): Promise<void> => {
             try {
                 const userRes = await getUserInfo();
-                console.log("공지 :", userRes)
                 const id = userRes.userId;
                 setUserId(id);
 
@@ -38,8 +37,12 @@ const Notification: React.FC = () => {
     }, []);
 
     const handleToggle = async (type: string, currentValue: boolean): Promise<void> => {
+        if (!userId) {
+            toast.error("사용자 정보를 불러올 수 없습니다.");
+            return;
+        }
         try {
-            await updateNotificationSetting(userId!, type, !currentValue);
+            await updateNotificationSetting(userId, type, !currentValue);
             if (type === "EMAIL") setEmailEnabled(!currentValue);
             if (type === "PUSH") setPushEnabled(!currentValue);
             toast.success("알림 설정이 변경되었습니다.");

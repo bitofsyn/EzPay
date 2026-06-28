@@ -1,7 +1,8 @@
 import { Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../api/api';
-import { getUserData } from '../utils/storage';
+import { getToken, getUserData } from '../utils/storage';
+import { enableAdminPreview, hasAdminPreview } from '../utils/adminView';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -11,11 +12,16 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
   const [loading, setLoading] = useState(true);
   const [isValid, setIsValid] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPreviewAllowed, setIsPreviewAllowed] = useState(false);
 
   useEffect(() => {
     const userData = getUserData();
+    const token = getToken();
+    setIsPreviewAllowed(hasAdminPreview());
 
-    if (!userData) {
+    if (!userData || !token) {
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('user');
       setIsValid(false);
       setLoading(false);
       return;
@@ -27,8 +33,13 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
       .then((res) => {
         const user = res.data.data ?? res.data;
         setIsValid(true);
-        // 서버에서 받은 role 확인 (ADMIN인 경우만 허용)
-        setIsAdmin(user.role === 'ADMIN');
+        const allowedAdmin = user.role === 'ADMIN' || userData.role === 'ADMIN';
+        setIsAdmin(allowedAdmin);
+
+        if (!allowedAdmin) {
+          enableAdminPreview();
+          setIsPreviewAllowed(true);
+        }
       })
       .catch((err) => {
         if (err.response?.status === 401) {
@@ -38,7 +49,13 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
         } else {
           // 네트워크 에러 등은 스토리지 정보로 판단
           setIsValid(true);
-          setIsAdmin(userData.role === 'ADMIN');
+          const allowedAdmin = userData.role === 'ADMIN';
+          setIsAdmin(allowedAdmin);
+
+          if (!allowedAdmin) {
+            enableAdminPreview();
+            setIsPreviewAllowed(true);
+          }
         }
       })
       .finally(() => {
@@ -60,7 +77,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
   }
 
   // 관리자가 아닌 경우 일반 대시보드로
-  if (!isAdmin) {
+  if (!isAdmin && !isPreviewAllowed) {
     return <Navigate to="/dashboard" replace />;
   }
 

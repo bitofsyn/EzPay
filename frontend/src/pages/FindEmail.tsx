@@ -40,12 +40,10 @@ const FindEmail: React.FC = () => {
       setErrorMessage("");
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'response' in error) {
-        const err = error as any;
-        if (err.response?.data?.message) {
-          setErrorMessage(err.response.data.message);
-        } else {
-          setErrorMessage("이메일 찾기에 실패했습니다.");
-        }
+        const axiosError = error as Record<string, unknown>;
+        const response = axiosError.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        setErrorMessage(String(data?.message ?? "이메일 찾기에 실패했습니다."));
       } else {
         setErrorMessage("이메일 찾기에 실패했습니다.");
       }
@@ -61,8 +59,9 @@ const FindEmail: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-gray-700 font-semibold">이름</label>
+            <label htmlFor="name" className="block text-gray-700 font-semibold">이름</label>
             <input
+              id="name"
               type="text"
               name="name"
               placeholder="이름을 입력하세요"
@@ -73,8 +72,9 @@ const FindEmail: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 font-semibold">핸드폰 번호</label>
+            <label htmlFor="phoneNumber" className="block text-gray-700 font-semibold">핸드폰 번호</label>
             <input
+              id="phoneNumber"
               type="text"
               name="phoneNumber"
               placeholder="01012345678"

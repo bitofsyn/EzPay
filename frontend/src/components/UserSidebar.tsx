@@ -21,7 +21,7 @@ const navItems = [
   { label: "친구", icon: Users, path: "/friends" },
   { label: "거래 내역", icon: Receipt, path: "/transactions" },
   { label: "알림", icon: Bell, path: "/notifications" },
-  { label: "설정", icon: Settings, path: "/" },
+  { label: "설정", icon: Settings, path: "/settings" },
 ];
 
 interface UserSidebarProps {
@@ -40,7 +40,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({ unreadCount = 0 }) => {
 
   const isActive = (path: string) => {
     if (path === "/settings") {
-      return location.pathname === "/settings";
+      return location.pathname === "/settings" || location.pathname.startsWith("/settings/");
     }
     if (path === "/notifications") {
       return location.pathname === "/notifications";

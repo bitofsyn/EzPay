@@ -1,15 +1,26 @@
 import api from "./api";
-import { User, Account, Transaction, ApiResponse } from "../types";
+import {
+  User,
+  Account,
+  Transaction,
+  ApiResponse,
+  AdminDashboardStats,
+  Activity,
+  HourlyTransaction,
+  WeeklyTrendData,
+  ErrorLog,
+  AdminTransferLimitInfo,
+} from "../types";
 
 // ========== Dashboard API ==========
 // Admin 대시보드 통계 조회
-export const getAdminDashboardStats = async (): Promise<any> => {
+export const getAdminDashboardStats = async (): Promise<AdminDashboardStats> => {
     const res = await api.get("/admin/dashboard");
     return res.data;
 };
 
 // 최근 활동 로그 조회
-export const getRecentActivities = async (limit: number = 50): Promise<any> => {
+export const getRecentActivities = async (limit: number = 50): Promise<Activity[]> => {
     const res = await api.get("/admin/dashboard/recent-activities", {
         params: { limit }
     });
@@ -17,13 +28,13 @@ export const getRecentActivities = async (limit: number = 50): Promise<any> => {
 };
 
 // 시간대별 거래량 조회 (오늘)
-export const getTodayHourlyTransactions = async (): Promise<any> => {
+export const getTodayHourlyTransactions = async (): Promise<HourlyTransaction[]> => {
     const res = await api.get("/admin/dashboard/hourly-transactions");
     return res.data;
 };
 
 // 주간 거래 추이 조회 (최근 7일)
-export const getWeeklyTransactionTrend = async (): Promise<any> => {
+export const getWeeklyTransactionTrend = async (): Promise<WeeklyTrendData[]> => {
     const res = await api.get("/admin/dashboard/weekly-trend");
     return res.data;
 };
@@ -82,13 +93,13 @@ export const deleteTransaction = async (transactionId: number): Promise<ApiRespo
 
 // ========== Error Log Management API ==========
 // 모든 에러 로그 조회
-export const getAllErrorLogs = async (): Promise<any[]> => {
+export const getAllErrorLogs = async (): Promise<ErrorLog[]> => {
     const res = await api.get("/admin/error-logs");
     return res.data.data ?? res.data;
 };
 
 // 특정 상태의 에러 로그 조회
-export const getErrorLogsByStatus = async (status: string): Promise<any[]> => {
+export const getErrorLogsByStatus = async (status: string): Promise<ErrorLog[]> => {
     const res = await api.get(`/admin/error-logs/status/${status}`);
     return res.data.data ?? res.data;
 };
@@ -107,7 +118,7 @@ export const deleteErrorLog = async (logId: number): Promise<ApiResponse> => {
 
 // ========== Transfer Limit Management API ==========
 // 모든 사용자 송금 한도 조회
-export const getAllTransferLimits = async (): Promise<any[]> => {
+export const getAllTransferLimits = async (): Promise<AdminTransferLimitInfo[]> => {
     const res = await api.get("/admin/transfer-limits/all");
     return res.data.data ?? res.data;
 };
@@ -129,13 +140,13 @@ export const resetUserTransferLimit = async (userId: number): Promise<ApiRespons
 
 // ========== Admin Alerts API ==========
 // 모든 알림 조회
-export const getAdminAlerts = async (): Promise<any> => {
+export const getAdminAlerts = async (): Promise<ApiResponse> => {
     const res = await api.get("/admin/dashboard/alerts");
     return res.data;
 };
 
 // 읽지 않은 알림 개수 조회
-export const getUnreadAlertCount = async (): Promise<any> => {
+export const getUnreadAlertCount = async (): Promise<ApiResponse> => {
     const res = await api.get("/admin/dashboard/alerts/unread-count");
     return res.data;
 };
@@ -154,13 +165,13 @@ export const markAllAlertsAsRead = async (): Promise<ApiResponse> => {
 
 // ========== Admin Messages API ==========
 // 모든 메시지 조회
-export const getAdminMessages = async (): Promise<any> => {
+export const getAdminMessages = async (): Promise<ApiResponse> => {
     const res = await api.get("/admin/dashboard/messages");
     return res.data;
 };
 
 // 읽지 않은 메시지 개수 조회
-export const getUnreadMessageCount = async (): Promise<any> => {
+export const getUnreadMessageCount = async (): Promise<ApiResponse> => {
     const res = await api.get("/admin/dashboard/messages/unread-count");
     return res.data;
 };

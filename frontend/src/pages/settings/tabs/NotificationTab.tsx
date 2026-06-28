@@ -37,8 +37,12 @@ const NotificationTab: React.FC = () => {
     }, []);
 
     const handleToggle = async (type: string, currentValue: boolean): Promise<void> => {
+        if (!userId) {
+            toast.error("사용자 정보를 불러올 수 없습니다.");
+            return;
+        }
         try {
-            await updateNotificationSetting(userId!, type, !currentValue);
+            await updateNotificationSetting(userId, type, !currentValue);
             if (type === "EMAIL") setEmailEnabled(!currentValue);
             if (type === "PUSH") setPushEnabled(!currentValue);
             toast.success("알림 설정이 변경되었습니다.");
@@ -67,8 +71,9 @@ const NotificationTab: React.FC = () => {
                         <p className="font-medium text-gray-800">이메일 알림 수신</p>
                         <p className="text-sm text-gray-500">거래 내역, 공지사항 등을 이메일로 받습니다.</p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label htmlFor="emailEnabled" aria-label="이메일 알림 수신" className="relative inline-flex items-center cursor-pointer">
                         <input
+                            id="emailEnabled"
                             type="checkbox"
                             checked={emailEnabled}
                             onChange={() => handleToggle("EMAIL", emailEnabled)}
@@ -89,8 +94,9 @@ const NotificationTab: React.FC = () => {
                         <p className="font-medium text-gray-800">푸시 알림 수신</p>
                         <p className="text-sm text-gray-500">실시간 거래 알림을 받습니다.</p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label htmlFor="pushEnabled" aria-label="푸시 알림 수신" className="relative inline-flex items-center cursor-pointer">
                         <input
+                            id="pushEnabled"
                             type="checkbox"
                             checked={pushEnabled}
                             onChange={() => handleToggle("PUSH", pushEnabled)}

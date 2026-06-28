@@ -116,7 +116,7 @@ export interface LoginHistoryItem {
 }
 
 // API Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   status: string;
   message?: string;
   data?: T;
@@ -179,7 +179,7 @@ export interface AdminUser {
   email: string;
   name: string;
   phoneNumber?: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
   createdAt: string;
   lastLoginAt?: string;
   accountCount?: number;

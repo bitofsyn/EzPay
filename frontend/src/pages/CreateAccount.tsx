@@ -62,9 +62,15 @@ const CreateAccount: React.FC = () => {
       await createAccount({ userId: user.userId, bankName, balance: parsedBalance });
       setSuccess(true);
       setTimeout(() => navigate("/accounts"), 1200);
-    } catch (err) {
-      const message = (err as any)?.response?.data?.message || "계좌 개설에 실패했습니다.";
-      setError(message);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as Record<string, unknown>;
+        const response = axiosError.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        setError(String(data?.message ?? "계좌 개설에 실패했습니다."));
+      } else {
+        setError("계좌 개설에 실패했습니다.");
+      }
     } finally {
       setIsSubmitting(false);
     }

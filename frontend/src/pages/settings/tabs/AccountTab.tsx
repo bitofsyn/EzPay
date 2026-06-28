@@ -123,8 +123,9 @@ const AccountTab: React.FC = () => {
                 ) : (
                     <div className="space-y-3">
                         {accounts.map((account) => (
-                            <div
+                            <button
                                 key={account.accountId}
+                                type="button"
                                 className={`p-4 border-2 rounded-lg cursor-pointer transition-all
                                     ${account.isMain
                                         ? "bg-blue-50 border-blue-500"
@@ -152,7 +153,7 @@ const AccountTab: React.FC = () => {
                                         <span className="text-gray-400 text-xs">클릭하여 대표 설정</span>
                                     )}
                                 </div>
-                            </div>
+                            </button>
                         ))}
                     </div>
                 )}

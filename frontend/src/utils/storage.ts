@@ -8,6 +8,7 @@ export interface UserData {
   userId: number;
   email: string;
   name: string;
+  phoneNumber?: string;
   role?: UserRole;
 }
 
@@ -27,7 +28,33 @@ export const getUserData = (): UserData | null => {
   const sessionData = sessionStorage.getItem('user');
 
   const data = localData || sessionData;
-  return data ? JSON.parse(data) : null;
+  if (!data) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(data) as UserData;
+  } catch {
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
+    return null;
+  }
+};
+
+export const updateStoredUserData = (partial: Partial<UserData>): void => {
+  const storages = [localStorage, sessionStorage];
+
+  storages.forEach((storage) => {
+    const raw = storage.getItem("user");
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw) as UserData;
+      storage.setItem("user", JSON.stringify({ ...parsed, ...partial }));
+    } catch {
+      storage.removeItem("user");
+    }
+  });
 };
 
 /**

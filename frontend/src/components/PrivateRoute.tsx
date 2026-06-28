@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "../api/api";
+import { getToken } from "../utils/storage";
 
 interface PrivateRouteProps {
     children: React.ReactNode;
@@ -15,8 +16,11 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
     const localUser = localStorage.getItem("user");
     const sessionUser = sessionStorage.getItem("user");
     const user = localUser || sessionUser;
+    const token = getToken();
 
-    if (!user) {
+    if (!user || !token) {
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("user");
       setIsValid(false);
       setLoading(false);
       return;

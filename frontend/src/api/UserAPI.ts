@@ -91,6 +91,14 @@ export const getUserInfo = async (): Promise<User> => {
     return res.data.data ?? res.data;
 };
 
+export const updateUserInfo = async (
+    userId: number,
+    payload: { name?: string; email?: string; password?: string }
+): Promise<User> => {
+    const res = await api.put(`/users/${userId}`, payload);
+    return res.data.data ?? res.data;
+};
+
 // 최근 로그인 기록 조회(Settings)
 export const getLoginHistory = async (userId: number): Promise<LoginHistoryItem[]> => {
     const res = await api.get(`/users/${userId}/login-history`);
