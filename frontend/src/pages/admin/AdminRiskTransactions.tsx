@@ -1,12 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { FiAlertTriangle, FiCheckCircle, FiXCircle } from "react-icons/fi";
 import AdminShell from "../../components/admin/AdminShell";
+import type { RiskTransaction } from "../../types";
+import toast from "react-hot-toast";
 
-type RiskLevel = "위험" | "주의";
+const getRiskLevelBadgeClass = (level: string): string => {
+  return level === "위험"
+    ? "bg-red-50 text-red-500 border border-red-200"
+    : "bg-amber-50 text-amber-600 border border-amber-200";
+};
 
 interface RiskTx {
   id: string;
-  level: RiskLevel;
+  level: "위험" | "주의";
   sender: string;
   receiver: string;
   amount: number;
@@ -15,63 +21,42 @@ interface RiskTx {
   reason: string;
 }
 
-const MOCK_RISK: RiskTx[] = [
-  {
-    id: "TX003",
-    level: "주의",
-    sender: "소윤",
-    receiver: "박서준",
-    amount: 120000,
-    datetime: "2026-06-19 10:20",
-    category: "선물",
-    reason: "평소 송금액 대비 큰 금액이거나 처음 송금하는 수취인입니다.",
-  },
-  {
-    id: "TX006",
-    level: "위험",
-    sender: "박서준",
-    receiver: "이지현",
-    amount: 980000,
-    datetime: "2026-06-16 23:55",
-    category: "기타",
-    reason: "고액 + 야간 시간대 + 신규 수취인으로 위험 거래가 감지되었습니다.",
-  },
-  {
-    id: "TX007",
-    level: "주의",
-    sender: "정수현",
-    receiver: "김민수",
-    amount: 450000,
-    datetime: "2026-06-15 11:30",
-    category: "기타",
-    reason: "평소 송금액 대비 큰 금액이거나 처음 송금하는 수취인입니다.",
-  },
-];
-
-const DANGER_COUNT = MOCK_RISK.filter((r) => r.level === "위험").length;
-const CAUTION_COUNT = MOCK_RISK.filter((r) => r.level === "주의").length;
-const UNHANDLED_COUNT = MOCK_RISK.length;
-
-const LevelBadge: React.FC<{ level: RiskLevel }> = ({ level }) => {
-  const cls =
-    level === "위험"
-      ? "bg-red-50 text-red-500 border border-red-200"
-      : "bg-amber-50 text-amber-600 border border-amber-200";
-  return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${cls}`}>
-      {level}
-    </span>
-  );
-};
-
 const AdminRiskTransactions: React.FC = () => {
+  const [riskTransactions, setRiskTransactions] = useState<RiskTx[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [handled, setHandled] = useState<Record<string, "승인" | "차단" | null>>({});
+
+  useEffect(() => {
+    fetchRiskTransactions();
+  }, []);
+
+  const fetchRiskTransactions = async () => {
+    try {
+      setIsLoading(true);
+      setIsError(false);
+      // TODO: API 연동
+      // const response = await getRiskTransactions();
+      // setRiskTransactions(response);
+      setRiskTransactions([]);
+    } catch (error) {
+      console.error("위험 거래 조회 실패:", error);
+      setIsError(true);
+      toast.error("위험 거래를 불러오는데 실패했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAction = (id: string, action: "승인" | "차단") => {
     setHandled((prev) => ({ ...prev, [id]: action }));
   };
 
-  const visible = MOCK_RISK.filter((r) => !handled[r.id]);
+  const visible = riskTransactions.filter((r) => !handled[r.id]);
+
+  const dangerCount = useMemo(() => riskTransactions.filter((r) => r.level === "위험").length, [riskTransactions]);
+  const cautionCount = useMemo(() => riskTransactions.filter((r) => r.level === "주의").length, [riskTransactions]);
+  const totalCount = riskTransactions.length;
 
   return (
     <AdminShell title="AI 위험 거래">
@@ -83,7 +68,7 @@ const AdminRiskTransactions: React.FC = () => {
               위험 (DANGER)
             </p>
             <p className="text-4xl font-black text-red-500">
-              {DANGER_COUNT}
+              {dangerCount}
               <span className="text-xl font-bold ml-1">건</span>
             </p>
           </div>
@@ -92,7 +77,7 @@ const AdminRiskTransactions: React.FC = () => {
               주의 (CAUTION)
             </p>
             <p className="text-4xl font-black text-amber-500">
-              {CAUTION_COUNT}
+              {cautionCount}
               <span className="text-xl font-bold ml-1">건</span>
             </p>
           </div>
@@ -109,7 +94,7 @@ const AdminRiskTransactions: React.FC = () => {
 
         {/* Description */}
         <p className="text-sm text-slate-400">
-          EzPay 내부 기준 분석 · {UNHANDLED_COUNT}건 감지
+          EzPay 내부 기준 분석 · {totalCount}건 감지
         </p>
 
         {/* Risk Cards */}
@@ -129,7 +114,9 @@ const AdminRiskTransactions: React.FC = () => {
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-mono font-bold text-slate-700">{tx.id}</span>
-                    <LevelBadge level={tx.level} />
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${getRiskLevelBadgeClass(tx.level)}`}>
+                      {tx.level}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button

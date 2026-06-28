@@ -3,9 +3,8 @@ import { FiArrowRight, FiCalendar, FiFilter, FiSearch, FiTrash2 } from "react-ic
 import toast from "react-hot-toast";
 import { deleteTransaction, getAllTransactions } from "../../api/AdminAPI";
 import AdminShell from "../../components/admin/AdminShell";
+import { BadgeLight } from "../../components/ui";
 import type { ApiResponse, Transaction } from "../../types";
-import { previewAdminTransactions } from "../../utils/adminPreviewData";
-import { isAdminPreviewForbiddenError } from "../../utils/adminView";
 import { formatAmount } from "../../utils/formatters";
 
 const AdminTransactions: React.FC = () => {
@@ -50,12 +49,6 @@ const AdminTransactions: React.FC = () => {
       setTransactions(transactionsData);
       setFilteredTransactions(transactionsData);
     } catch (error: unknown) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setTransactions(previewAdminTransactions);
-        setFilteredTransactions(previewAdminTransactions);
-        return;
-      }
-
       console.error("거래 내역 조회 실패:", error);
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "거래 내역을 불러오는데 실패했습니다.");
@@ -76,42 +69,12 @@ const AdminTransactions: React.FC = () => {
       }
       throw new Error(response.message || "삭제 실패");
     } catch (error: unknown) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setTransactions((prev) => prev.filter((tx) => tx.transactionId !== transactionId));
-        return;
-      }
-
       console.error("거래 삭제 실패:", error);
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "거래 삭제에 실패했습니다.");
     }
   };
 
-  const getStatusBadgeStyle = (status: string) => {
-    switch (status) {
-      case "SUCCESS":
-        return "bg-emerald-50 text-emerald-700";
-      case "PENDING":
-        return "bg-amber-50 text-amber-700";
-      case "FAILED":
-        return "bg-rose-50 text-rose-700";
-      default:
-        return "bg-slate-100 text-slate-700";
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "SUCCESS":
-        return "성공";
-      case "PENDING":
-        return "대기중";
-      case "FAILED":
-        return "실패";
-      default:
-        return status;
-    }
-  };
 
   const totalAmount = filteredTransactions.reduce((sum, tx) => sum + tx.amount, 0);
   const successCount = filteredTransactions.filter((tx) => tx.status === "SUCCESS").length;
@@ -222,9 +185,7 @@ const AdminTransactions: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-bold text-cyan-700">{formatAmount(tx.amount)}원</td>
                       <td className="px-6 py-4">
-                        <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${getStatusBadgeStyle(tx.status)}`}>
-                          {getStatusText(tx.status)}
-                        </span>
+                        <BadgeLight variant="status" value={tx.status} />
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-500">
                         {new Date(tx.transactionDate).toLocaleString("ko-KR")}

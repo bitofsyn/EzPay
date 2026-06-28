@@ -205,3 +205,32 @@ export interface AdminTransferLimitInfo {
   usedAmount: number;
   remainingAmount: number;
 }
+
+// Re-export admin types
+export type {
+  LogLevel,
+  LogFilterType,
+  LogEntry,
+  TransactionStatus,
+  RealtimeTransaction,
+  MetricCard,
+  DashboardMetrics,
+  UserStatusType,
+  UserStatusCount,
+  RiskLevel,
+  RiskTransaction,
+  TransferLimitPolicy,
+  RiskManagementPolicy,
+  PolicyConfig,
+  AdminAccount,
+  AdminActivityLog,
+  BadgeVariant,
+  BadgeColor,
+  BadgeProps,
+  FilterConfig,
+  PaginationState,
+  ToggleSwitchProps,
+  RangeSliderProps,
+  TableColumn,
+  TableProps,
+} from "./admin";

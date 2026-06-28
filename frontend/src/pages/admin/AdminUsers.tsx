@@ -5,8 +5,6 @@ import toast from "react-hot-toast";
 import { deleteUserByAdmin, getAllUsers, updateUserStatus } from "../../api/AdminAPI";
 import AdminShell from "../../components/admin/AdminShell";
 import type { AdminUser, ApiResponse } from "../../types";
-import { previewAdminUsers } from "../../utils/adminPreviewData";
-import { isAdminPreviewForbiddenError } from "../../utils/adminView";
 
 const AdminUsers: React.FC = () => {
   const navigate = useNavigate();
@@ -45,12 +43,6 @@ const AdminUsers: React.FC = () => {
       setUsers(usersData);
       setFilteredUsers(usersData);
     } catch (error: unknown) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setUsers(previewAdminUsers);
-        setFilteredUsers(previewAdminUsers);
-        return;
-      }
-
       console.error("사용자 목록 조회 실패:", error);
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "사용자 목록을 불러오는데 실패했습니다.");
@@ -71,11 +63,6 @@ const AdminUsers: React.FC = () => {
       }
       throw new Error(response.message || "상태 변경 실패");
     } catch (error: unknown) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setUsers((prev) => prev.map((user) => (user.userId === userId ? { ...user, status: newStatus as AdminUser["status"] } : user)));
-        return;
-      }
-
       console.error("사용자 상태 변경 실패:", error);
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "사용자 상태 변경에 실패했습니다.");
@@ -94,11 +81,6 @@ const AdminUsers: React.FC = () => {
       }
       throw new Error(response.message || "삭제 실패");
     } catch (error: unknown) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setUsers((prev) => prev.filter((user) => user.userId !== userId));
-        return;
-      }
-
       console.error("사용자 삭제 실패:", error);
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "사용자 삭제에 실패했습니다.");

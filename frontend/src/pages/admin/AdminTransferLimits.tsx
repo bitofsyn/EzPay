@@ -4,8 +4,6 @@ import toast from "react-hot-toast";
 import { getAllTransferLimits, resetUserTransferLimit, updateUserTransferLimit } from "../../api/AdminAPI";
 import AdminShell from "../../components/admin/AdminShell";
 import type { AdminTransferLimitInfo, ApiResponse } from "../../types";
-import { previewTransferLimits } from "../../utils/adminPreviewData";
-import { isAdminPreviewForbiddenError } from "../../utils/adminView";
 import { formatAmount } from "../../utils/formatters";
 
 const AdminTransferLimits: React.FC = () => {
@@ -42,12 +40,6 @@ const AdminTransferLimits: React.FC = () => {
       setTransferLimits(limitsData);
       setFilteredLimits(limitsData);
     } catch (error: unknown) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setTransferLimits(previewTransferLimits);
-        setFilteredLimits(previewTransferLimits);
-        return;
-      }
-
       console.error("송금 한도 조회 실패:", error);
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "송금 한도를 불러오는데 실패했습니다.");
@@ -101,23 +93,6 @@ const AdminTransferLimits: React.FC = () => {
 
       throw new Error(response.message || "수정 실패");
     } catch (error: unknown) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setTransferLimits((prev) =>
-          prev.map((limit) =>
-            limit.userId === editingLimit.userId
-              ? {
-                  ...limit,
-                  dailyLimit: dailyLimitNum,
-                  perTransactionLimit: perTxLimitNum,
-                  remainingAmount: Math.max(dailyLimitNum - limit.usedAmount, 0),
-                }
-              : limit,
-          ),
-        );
-        handleCloseEditModal();
-        return;
-      }
-
       console.error("송금 한도 수정 실패:", error);
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "송금 한도 수정에 실패했습니다.");
@@ -137,22 +112,6 @@ const AdminTransferLimits: React.FC = () => {
       }
       throw new Error(response.message || "초기화 실패");
     } catch (error: unknown) {
-      if (isAdminPreviewForbiddenError(error)) {
-        setTransferLimits((prev) =>
-          prev.map((limit) =>
-            limit.userId === userId
-              ? {
-                  ...limit,
-                  dailyLimit: 3000000,
-                  perTransactionLimit: 1000000,
-                  remainingAmount: Math.max(3000000 - limit.usedAmount, 0),
-                }
-              : limit,
-          ),
-        );
-        return;
-      }
-
       console.error("송금 한도 초기화 실패:", error);
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "송금 한도 초기화에 실패했습니다.");

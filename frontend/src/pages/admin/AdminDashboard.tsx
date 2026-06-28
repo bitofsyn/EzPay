@@ -29,52 +29,6 @@ interface TxRow {
   responseMs: number;
 }
 
-// ─── Mock data helpers ────────────────────────────────────────────────────────
-
-const NAMES = ["한예지", "오세훈", "윤서희", "최유진", "이지현", "정수현", "김민수", "박서준"];
-
-let uidCounter = 0;
-const nextUid = () => String(++uidCounter);
-
-const rnd = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-const pick = <T,>(arr: T[]): T => arr[rnd(0, arr.length - 1)];
-
-const randStatus = (): TxStatus => {
-  const r = Math.random();
-  if (r < 0.5) return "SUCCESS";
-  if (r < 0.75) return "PENDING";
-  return "FAILED";
-};
-
-const randTxId = () =>
-  "TX" +
-  Math.random()
-    .toString(36)
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 7);
-
-const fmtTime = (d: Date) =>
-  [d.getHours(), d.getMinutes(), d.getSeconds()]
-    .map((n) => String(n).padStart(2, "0"))
-    .join(":");
-
-const makeTx = (): TxRow => ({
-  uid: nextUid(),
-  time: fmtTime(new Date()),
-  id: randTxId(),
-  sender: pick(NAMES),
-  receiver: pick(NAMES),
-  amount: rnd(1, 50) * 10000,
-  status: randStatus(),
-  responseMs: rnd(200, 900),
-});
-
-const initTxList = (): TxRow[] =>
-  Array.from({ length: 10 }, (_, i) => {
-    const d = new Date(Date.now() - (10 - i) * 2000);
-    return { ...makeTx(), time: fmtTime(d) };
-  });
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -108,28 +62,28 @@ const MetricCards: React.FC<MetricCardsProps> = ({ tps, tpsSpark }) => {
       value: tps,
       sub: "초당 트랜잭션 수",
       color: "#06b6d4",
-      spark: tpsSpark,
+      spark: tpsSpark.length > 0 ? tpsSpark : [{ v: 0 }],
     },
     {
       label: "성공률",
-      value: "50%",
-      sub: "15건 성공",
+      value: "-",
+      sub: "로드 중...",
       color: "#10b981",
-      spark: [30, 45, 38, 52, 48, 55, 50].map((v) => ({ v })),
+      spark: [{ v: 0 }],
     },
     {
       label: "실패율",
-      value: "23%",
-      sub: "7건 실패",
+      value: "-",
+      sub: "로드 중...",
       color: "#ef4444",
-      spark: [15, 20, 18, 25, 22, 19, 23].map((v) => ({ v })),
+      spark: [{ v: 0 }],
     },
     {
       label: "활성 사용자",
-      value: 181,
-      sub: "지난 1시간 기준",
+      value: "-",
+      sub: "로드 중...",
       color: "#8b5cf6",
-      spark: [150, 162, 170, 165, 175, 178, 181].map((v) => ({ v })),
+      spark: [{ v: 0 }],
     },
   ];
 
@@ -434,46 +388,42 @@ const PolicyPanel: React.FC = () => {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 const AdminDashboard: React.FC = () => {
-  const [tps, setTps] = useState(26);
-  const [tpsSpark, setTpsSpark] = useState<SparkPoint[]>(
-    [12, 18, 22, 15, 26, 20, 26].map((v) => ({ v }))
-  );
-  const [txs, setTxs] = useState<TxRow[]>(initTxList);
-
-  // TPS 2초마다 갱신
-  useEffect(() => {
-    const id = setInterval(() => {
-      const next = rnd(10, 45);
-      setTps(next);
-      setTpsSpark((prev) => [...prev.slice(-6), { v: next }]);
-    }, 2000);
-    return () => clearInterval(id);
-  }, []);
-
-  // 트랜잭션 2초마다 앞에 추가
-  const addTx = useCallback(() => {
-    setTxs((prev) => [makeTx(), ...prev.slice(0, 29)]);
-  }, []);
+  const [tps, setTps] = useState(0);
+  const [tpsSpark, setTpsSpark] = useState<SparkPoint[]>([]);
+  const [txs, setTxs] = useState<TxRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const id = setInterval(addTx, 2000);
-    return () => clearInterval(id);
-  }, [addTx]);
+    // TODO: useRealtimeMetrics 훅으로 대체
+    // const { metrics, tpsMetrics } = useRealtimeMetrics();
+    setIsLoading(false);
+  }, []);
+
+  // TODO: useRealtimeTransactionStream 훅으로 대체
+  // const { transactions } = useRealtimeTransactionStream(30);
 
   return (
     <AdminShell title="관리자 대시보드">
       <div className="space-y-4">
-        {/* 1. 핵심 지표 카드 */}
-        <MetricCards tps={tps} tpsSpark={tpsSpark} />
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20 text-gray-400">
+            대시보드를 로드하는 중입니다...
+          </div>
+        ) : (
+          <>
+            {/* 1. 핵심 지표 카드 */}
+            <MetricCards tps={tps} tpsSpark={tpsSpark} />
 
-        {/* 2. 프로세스 파이프라인 */}
-        <ProcessPipeline activeTx={txs[0]} />
+            {/* 2. 프로세스 파이프라인 */}
+            <ProcessPipeline activeTx={txs[0]} />
 
-        {/* 3. 트랜잭션 로그 + 정책 설정 */}
-        <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
-          <TransactionLog txs={txs} />
-          <PolicyPanel />
-        </div>
+            {/* 3. 트랜잭션 로그 + 정책 설정 */}
+            <div className="grid gap-4 xl:grid-cols-[1fr_300px]">
+              <TransactionLog txs={txs} />
+              <PolicyPanel />
+            </div>
+          </>
+        )}
       </div>
     </AdminShell>
   );

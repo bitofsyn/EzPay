@@ -15,11 +15,6 @@ export const hasAdminPreview = (): boolean => {
   return sessionStorage.getItem(ADMIN_PREVIEW_KEY) === "true";
 };
 
-export const isAdminPreviewForbiddenError = (error: unknown): boolean => {
-  const status = (error as { response?: { status?: number } })?.response?.status;
-  return hasAdminPreview() && status === 403;
-};
-
 export const navigateToAdminDashboard = (navigate: NavigateFunction): void => {
   const userData = getUserData();
 
