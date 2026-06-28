@@ -282,43 +282,37 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1a2847] to-[#0f172a] p-3 text-white lg:p-4 relative overflow-hidden">
-      {/* Background decorative circles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)] relative z-10">
+    <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
+      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
         {/* Sidebar */}
-        <aside className="flex min-h-[calc(100vh-1.5rem)] flex-col rounded-[28px] border border-white/10 bg-white/5 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+        <aside className="flex min-h-[calc(100vh-1.5rem)] flex-col rounded-[28px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="flex items-center gap-3 rounded-[22px] border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 px-4 py-3 backdrop-blur transition hover:bg-cyan-500/20"
+            className="flex items-center gap-3 rounded-[22px] border border-slate-100 bg-slate-50 px-4 py-3 transition hover:bg-slate-100"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-cyan-400 shadow-lg shadow-slate-950/15">
               <Landmark size={20} />
             </div>
             <div>
-              <p className="text-[1.7rem] leading-none font-black tracking-tight text-white">EzPay</p>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-400/70">Personal</p>
+              <p className="text-[1.7rem] leading-none font-black tracking-tight text-slate-950">EzPay</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Personal</p>
             </div>
           </button>
 
-          <div className="mt-4 rounded-[22px] border border-white/10 bg-white/5 p-4 backdrop-blur">
+          <div className="mt-4 rounded-[22px] bg-slate-50 p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-400">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-600">
                 <UserCircle2 size={24} />
               </div>
               <div>
-                <p className="text-[15px] font-bold text-white">{user?.name || "사용자"} 님</p>
-                <p className="text-xs font-medium text-cyan-400/60">일반 사용자</p>
+                <p className="text-[15px] font-bold text-slate-900">{user?.name || "사용자"} 님</p>
+                <p className="text-xs font-medium text-slate-400">일반 사용자</p>
               </div>
             </div>
           </div>
 
-          <nav className="mt-4 space-y-2">
+          <nav className="mt-4 space-y-1.5">
             {menuItems.map(({ label, icon: Icon, onClick, active }) => (
               <button
                 key={label}
@@ -326,15 +320,15 @@ const Dashboard: React.FC = () => {
                 onClick={onClick}
                 className={`flex w-full items-center justify-between rounded-[18px] px-4 py-3 text-left transition ${
                   active
-                    ? "bg-gradient-to-r from-cyan-500/30 to-blue-500/30 text-white border border-cyan-500/50 shadow-[0_18px_30px_rgba(34,211,238,0.15)]"
-                    : "text-cyan-300/60 hover:bg-white/5 hover:text-cyan-300 hover:border hover:border-white/10"
+                    ? "bg-slate-950 text-white shadow-[0_18px_30px_rgba(15,23,42,0.18)]"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 }`}
               >
                 <span className="flex items-center gap-3 text-[14px] font-semibold">
                   <Icon size={17} />
                   {label}
                 </span>
-                {active ? <span className="h-2 w-2 rounded-full bg-cyan-400" /> : <ChevronRight size={15} />}
+                {active ? <span className="h-2 w-2 rounded-full bg-white" /> : <ChevronRight size={15} />}
               </button>
             ))}
           </nav>
@@ -342,7 +336,7 @@ const Dashboard: React.FC = () => {
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-auto flex items-center justify-center gap-2 rounded-[18px] border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-400 transition hover:bg-rose-500/20 hover:border-rose-500/50"
+            className="mt-auto flex items-center justify-center gap-2 rounded-[18px] bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-500 transition hover:bg-rose-100"
           >
             <LogOut size={16} />
             로그아웃
@@ -351,20 +345,20 @@ const Dashboard: React.FC = () => {
 
         <main className="flex flex-col gap-5">
           {/* Header */}
-          <header className="rounded-[28px] border border-white/10 bg-white/5 px-5 py-4 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+          <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div>
-                <h1 className="text-[2rem] font-black tracking-tight text-white">사용자 홈</h1>
-                <p className="mt-1 text-sm font-semibold text-cyan-400/60">EzPay · {todayLabel}</p>
+                <h1 className="text-[2rem] font-black tracking-tight text-slate-950">사용자 홈</h1>
+                <p className="mt-1 text-sm font-semibold text-slate-400">EzPay · {todayLabel}</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-1 text-sm font-semibold backdrop-blur">
-                  <button type="button" className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2 text-white shadow-lg shadow-cyan-500/20">
+                <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 text-sm font-semibold">
+                  <button type="button" className="rounded-full bg-slate-950 px-5 py-2 text-white shadow-sm">
                     사용자 뷰
                   </button>
                   <button
                     type="button"
-                    className="rounded-full px-5 py-2 text-cyan-300/60 transition hover:text-cyan-300"
+                    className="rounded-full px-5 py-2 text-slate-600 transition hover:text-slate-900"
                     onClick={() => navigate("/admin/dashboard")}
                   >
                     관리자 뷰
@@ -372,7 +366,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <button
                   type="button"
-                  className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-cyan-400 transition hover:border-cyan-500/50 hover:bg-cyan-500/10"
+                  className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
                   onClick={() => navigate("/notifications")}
                 >
                   <Bell size={18} />
@@ -391,39 +385,36 @@ const Dashboard: React.FC = () => {
             {/* Left column */}
             <div className="flex flex-col gap-5">
               {/* Hero Card */}
-              <div className="rounded-[28px] bg-gradient-to-br from-cyan-500/30 via-blue-600/30 to-blue-900/30 border border-cyan-500/40 p-6 text-white shadow-[0_30px_70px_rgba(34,211,238,0.15)] backdrop-blur-xl overflow-hidden relative">
-                {/* Decorative circles */}
-                <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-400/20 rounded-full blur-2xl" />
-                <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl" />
+              <div className="rounded-[28px] bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-slate-100 border border-cyan-500/30 p-6 text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur overflow-hidden relative">
 
                 <div className="relative z-10">
-                  <p className="text-sm font-semibold text-white/70">총 보유 자산</p>
+                  <p className="text-sm font-semibold text-slate-600">총 보유 자산</p>
                   <p className="mt-2 text-[3rem] font-black tracking-tight lg:text-[3.35rem]">
                     ₩{totalBalance.toLocaleString()}
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-cyan-300/70">
-                    계좌 {sortedAccounts.length}개 · <span className="text-emerald-400">전월 대비 +12.5%</span>
+                  <p className="mt-1 text-sm font-semibold text-slate-500">
+                    계좌 {sortedAccounts.length}개 · <span className="text-emerald-600">전월 대비 +12.5%</span>
                   </p>
 
                   {mainAccount && (
-                    <div className="mt-5 rounded-[18px] border border-white/15 bg-white/10 px-4 py-4 transition hover:bg-white/15 hover:border-white/25 backdrop-blur">
+                    <div className="mt-5 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4 transition hover:bg-slate-100 hover:border-slate-300">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-white/70">{mainAccount.bankName || "EzPay Bank"}</p>
-                          <span className="rounded-full bg-cyan-500/30 border border-cyan-400/50 px-2 py-0.5 text-xs font-bold text-cyan-300">대표</span>
+                          <p className="text-sm font-semibold text-slate-600">{mainAccount.bankName || "EzPay Bank"}</p>
+                          <span className="rounded-full bg-cyan-100 border border-cyan-300 px-2 py-0.5 text-xs font-bold text-cyan-700">대표</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => navigate("/accounts")}
-                          className="text-xs font-semibold text-cyan-300/70 transition hover:text-cyan-300"
+                          className="text-xs font-semibold text-slate-500 transition hover:text-slate-700"
                         >
                           전체 계좌 →
                         </button>
                       </div>
-                      <p className="mt-2 text-sm font-semibold tracking-[0.14em] text-white/60">
+                      <p className="mt-2 text-sm font-semibold tracking-[0.14em] text-slate-500">
                         {formatAccountNumber(mainAccount.accountNumber)}
                       </p>
-                      <p className="mt-2 text-[2rem] font-black text-white">
+                      <p className="mt-2 text-[2rem] font-black text-slate-900">
                         {formatCurrency(mainAccount.balance).replace(" 원", "")}
                       </p>
                     </div>
@@ -435,12 +426,12 @@ const Dashboard: React.FC = () => {
                         key={label}
                         type="button"
                         onClick={() => navigate(path)}
-                        className="flex flex-col items-center gap-2 rounded-[16px] border border-white/15 bg-white/10 py-3 transition hover:bg-white/20 hover:border-white/25 backdrop-blur"
+                        className="flex flex-col items-center gap-2 rounded-[16px] border border-slate-200 bg-slate-100 py-3 transition hover:bg-slate-200 hover:border-slate-300"
                       >
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
-                          <Icon size={16} />
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200">
+                          <Icon size={16} className="text-slate-700" />
                         </div>
-                        <span className="text-xs font-bold">{label}</span>
+                        <span className="text-xs font-bold text-slate-700">{label}</span>
                       </button>
                     ))}
                   </div>
@@ -448,13 +439,13 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Asset Trend */}
-              <div className="rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
                 <div className="flex items-center justify-between gap-4">
-                  <h2 className="text-[1.7rem] font-black tracking-tight text-white flex items-center gap-2">
-                    <TrendingUp size={28} className="text-cyan-400" />
+                  <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950 flex items-center gap-2">
+                    <TrendingUp size={28} className="text-cyan-600" />
                     자산 추이
                   </h2>
-                  <div className="rounded-full bg-emerald-500/20 border border-emerald-500/50 px-4 py-2 text-base font-bold text-emerald-400">
+                  <div className="rounded-full bg-emerald-100 border border-emerald-300 px-4 py-2 text-base font-bold text-emerald-700">
                     ↑ 12.5%
                   </div>
                 </div>
