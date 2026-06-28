@@ -20,7 +20,7 @@ const navItems = [
   { label: "송금하기", icon: SendHorizontal, path: "/send" },
   { label: "친구", icon: Users, path: "/friends" },
   { label: "거래 내역", icon: Receipt, path: "/transactions" },
-  { label: "알림", icon: Bell, path: "/settings/notification" },
+  { label: "알림", icon: Bell, path: "/notifications" },
   { label: "설정", icon: Settings, path: "/settings" },
 ];
 
@@ -42,15 +42,19 @@ const UserSidebar: React.FC<UserSidebarProps> = ({ unreadCount = 0 }) => {
     if (path === "/settings") {
       return location.pathname === "/settings";
     }
-    if (path === "/settings/notification") {
-      return location.pathname === "/settings/notification";
+    if (path === "/notifications") {
+      return location.pathname === "/notifications";
     }
     return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
   return (
     <aside className="flex min-h-[calc(100vh-1.5rem)] flex-col rounded-[28px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-      <div className="flex items-center gap-3 rounded-[22px] border border-slate-100 bg-slate-50 px-4 py-3">
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        className="flex items-center gap-3 rounded-[22px] border border-slate-100 bg-slate-50 px-4 py-3 transition hover:bg-slate-100"
+      >
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-cyan-400 shadow-lg shadow-slate-950/15">
           <Landmark size={20} />
         </div>
@@ -58,7 +62,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({ unreadCount = 0 }) => {
           <p className="text-[1.7rem] leading-none font-black tracking-tight text-slate-950">EzPay</p>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Personal</p>
         </div>
-      </div>
+      </button>
 
       <div className="mt-4 rounded-[22px] bg-slate-50 p-4">
         <div className="flex items-center gap-3">

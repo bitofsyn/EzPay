@@ -124,7 +124,7 @@ const TransactionHistory: React.FC = () => {
               <button
                 type="button"
                 className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
-                onClick={() => navigate("/settings/notification")}
+                onClick={() => navigate("/notifications")}
               >
                 <Bell size={18} />
               </button>
