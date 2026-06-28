@@ -21,7 +21,7 @@ const navItems = [
   { label: "친구", icon: Users, path: "/friends" },
   { label: "거래 내역", icon: Receipt, path: "/transactions" },
   { label: "알림", icon: Bell, path: "/notifications" },
-  { label: "설정", icon: Settings, path: "/settings" },
+  { label: "설정", icon: Settings, path: "/" },
 ];
 
 interface UserSidebarProps {
