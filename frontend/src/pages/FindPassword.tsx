@@ -130,8 +130,10 @@ function FindPasswordForm() {
       navigate("/reset-password");
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
-        const e = err as any;
-        setError(e.response?.data?.message ?? "비밀번호 재설정 요청에 실패했습니다.");
+        const axiosError = err as Record<string, unknown>;
+        const response = axiosError.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        setError(String(data?.message ?? "비밀번호 재설정 요청에 실패했습니다."));
       } else {
         setError("비밀번호 재설정 요청에 실패했습니다.");
       }

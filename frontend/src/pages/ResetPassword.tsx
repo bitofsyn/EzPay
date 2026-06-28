@@ -73,7 +73,13 @@ const ResetPassword: React.FC = () => {
                 navigate("/login");
             }, 2500);
         } catch (err: unknown) {
-            const errorMessage = (err as any).response?.data?.message || "비밀번호 변경에 실패했습니다.";
+            let errorMessage = "비밀번호 변경에 실패했습니다.";
+            if (err && typeof err === 'object' && 'response' in err) {
+                const axiosError = err as Record<string, unknown>;
+                const response = axiosError.response as Record<string, unknown> | undefined;
+                const data = response?.data as Record<string, unknown> | undefined;
+                errorMessage = String(data?.message ?? "비밀번호 변경에 실패했습니다.");
+            }
             setError(errorMessage);
             Sentry.captureException(err);
         }
@@ -91,8 +97,9 @@ const ResetPassword: React.FC = () => {
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block font-semibold text-gray-700">새 비밀번호</label>
+                            <label htmlFor="newPassword" className="block font-semibold text-gray-700">새 비밀번호</label>
                             <input
+                                id="newPassword"
                                 type="password"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
@@ -103,8 +110,9 @@ const ResetPassword: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block font-semibold text-gray-700">비밀번호 확인</label>
+                            <label htmlFor="confirmPassword" className="block font-semibold text-gray-700">비밀번호 확인</label>
                             <input
+                                id="confirmPassword"
                                 type="password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}

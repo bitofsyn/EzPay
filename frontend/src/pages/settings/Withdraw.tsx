@@ -22,8 +22,12 @@ const Withdraw: React.FC = () => {
     }, [navigate]);
 
     const handleDelete = async (): Promise<void> => {
+        if (!userId) {
+            toast.error("사용자 정보가 없습니다.");
+            return;
+        }
         try {
-            await deleteUser(userId!);
+            await deleteUser(userId);
             sessionStorage.clear();
             localStorage.clear();
             toast.success("회원 탈퇴가 완료되었습니다.");

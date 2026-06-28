@@ -32,7 +32,6 @@ const CalendarPage: React.FC = () => {
       try {
         if (!userId) return;
         const result = await fetchMonthlyStatistics(String(userId), currentMonth.year(), currentMonth.month() + 1);
-        console.log("result", result);
         setMonthlyData(result);
       } catch (error) {
         console.error(error);
@@ -67,8 +66,9 @@ const CalendarPage: React.FC = () => {
       }
 
       days.push(
-        <div
+        <button
           key={day.toString()}
+          type="button"
           className={`relative flex flex-col items-center justify-center rounded-full cursor-pointer ${
             day.isSame(today, "day") ? "bg-yellow-300 font-bold text-white" : ""
           } ${
@@ -93,7 +93,7 @@ const CalendarPage: React.FC = () => {
               -{totalSuccessAmount.toLocaleString()}원
             </div>
           )}
-        </div>
+        </button>
       );
       day = day.add(1, "day");
     }
@@ -121,9 +121,13 @@ const CalendarPage: React.FC = () => {
     <div className="min-h-screen bg-gray-100 flex flex-col items-center py-6 px-4">
       {/* 상단 네비 */}
       <div className="w-full flex justify-between items-center mb-6 max-w-6xl">
-        <div className="text-2xl font-bold cursor-pointer" onClick={() => navigate("/dashboard")}>
+        <button
+          type="button"
+          className="text-2xl font-bold cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => navigate("/dashboard")}
+        >
           EzPay
-        </div>
+        </button>
         <div className="text-gray-500 text-sm">{today.format("YYYY년 M월 D일")}</div>
       </div>
 

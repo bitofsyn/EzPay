@@ -252,10 +252,15 @@ const SendMoney: React.FC = () => {
   const handleConfirm = async () => {
     setShowConfirmModal(false);
     setIsLoading(true);
+    if (!fromAccountId || !receiverAccountId) {
+      toast.error("계좌 정보가 없습니다.");
+      setIsLoading(false);
+      return;
+    }
     try {
       await transferMoney({
-        fromAccountId: fromAccountId!,
-        toAccountId: receiverAccountId!,
+        fromAccountId,
+        toAccountId: receiverAccountId,
         amount: parseAmount(amount),
         memo,
         category: aiCategory || "기타",
@@ -387,8 +392,9 @@ const SendMoney: React.FC = () => {
                 <p className="mb-4 text-sm font-black text-slate-950">받는 사람</p>
                 <div className="space-y-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-bold text-slate-500">은행</label>
+                    <label htmlFor="receiverBank" className="mb-1.5 block text-xs font-bold text-slate-500">은행</label>
                     <input
+                      id="receiverBank"
                       type="text"
                       list="bank-list"
                       placeholder="토스뱅크"
@@ -402,9 +408,10 @@ const SendMoney: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-xs font-bold text-slate-500">계좌번호</label>
+                    <label htmlFor="toAccountNumber" className="mb-1.5 block text-xs font-bold text-slate-500">계좌번호</label>
                     <div className="relative">
                       <input
+                        id="toAccountNumber"
                         type="text"
                         inputMode="numeric"
                         placeholder="숫자만 입력"
@@ -433,8 +440,9 @@ const SendMoney: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-xs font-bold text-slate-500">받는 사람 이름</label>
+                    <label htmlFor="receiverInputName" className="mb-1.5 block text-xs font-bold text-slate-500">받는 사람 이름</label>
                     <input
+                      id="receiverInputName"
                       type="text"
                       placeholder="예: 김민수"
                       value={receiverInputName}
@@ -491,8 +499,9 @@ const SendMoney: React.FC = () => {
                   ))}
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold text-slate-500">메모 (선택)</label>
+                  <label htmlFor="memo" className="mb-1.5 block text-xs font-bold text-slate-500">메모 (선택)</label>
                   <input
+                    id="memo"
                     type="text"
                     placeholder="예: 점심값 정산"
                     value={memo}

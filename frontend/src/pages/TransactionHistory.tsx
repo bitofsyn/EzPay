@@ -90,7 +90,7 @@ const TransactionHistory: React.FC = () => {
     return groups;
   }, [filteredTransactions]);
 
-  const selectedAccount = accounts.find((acc) => acc.accountId === selectedAccountId);
+  const _selectedAccount = accounts.find((acc) => acc.accountId === selectedAccountId);
 
   const totalIn = filteredTransactions.reduce((s, tx) => {
     return tx.senderAccount?.accountId !== selectedAccountId ? s + Number(tx.amount || 0) : s;

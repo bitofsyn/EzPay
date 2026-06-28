@@ -1,16 +1,13 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
-  CreditCard,
-  LayoutDashboard,
   Receipt,
   SendHorizontal,
   ShieldAlert,
-  Users,
 } from "lucide-react";
-import { clearUserData, getUserData } from "../utils/storage";
 import UserSidebar from "../components/UserSidebar";
+import { navigateToAdminDashboard } from "../utils/adminView";
 
 type NotificationType = "transfer" | "deposit" | "security";
 
@@ -50,7 +47,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
   },
 ];
 
-const typeConfig: Record<NotificationType, { bg: string; dot: string; icon: React.ReactNode }> = {
+const typeConfig: Record<NotificationType, { bg: string; dot: string; icon: ReactNode }> = {
   transfer: {
     bg: "bg-emerald-500/20",
     dot: "bg-emerald-500",
@@ -75,17 +72,11 @@ const todayLabel = new Date().toLocaleDateString("ko-KR", {
   day: "numeric",
 });
 
-const NotificationsPage: React.FC = () => {
+const NotificationsPage = () => {
   const navigate = useNavigate();
-  const user = getUserData();
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const handleLogout = () => {
-    clearUserData();
-    navigate("/login");
-  };
 
   const markAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -122,7 +113,7 @@ const NotificationsPage: React.FC = () => {
                   <button
                     type="button"
                     className="rounded-full px-5 py-2 text-slate-600 transition hover:text-slate-900"
-                    onClick={() => navigate("/admin/dashboard")}
+                    onClick={() => navigateToAdminDashboard(navigate)}
                   >
                     관리자 뷰
                   </button>
@@ -165,7 +156,11 @@ const NotificationsPage: React.FC = () => {
                     key={notification.id}
                     type="button"
                     onClick={() => markRead(notification.id)}
-                    className="flex w-full items-center gap-4 rounded-[20px] border border-white/10 bg-white/5 px-5 py-4 text-left transition hover:bg-white/10 hover:border-white/20 backdrop-blur"
+                    className={`flex w-full items-center gap-4 rounded-[20px] border px-5 py-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/10 ${
+                      notification.read
+                        ? "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100"
+                        : "border-cyan-100 bg-cyan-50/70 hover:border-cyan-200 hover:bg-cyan-50"
+                    }`}
                   >
                     {/* Icon */}
                     <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full ${config.bg}`}>
@@ -174,9 +169,9 @@ const NotificationsPage: React.FC = () => {
 
                     {/* Text */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-[15px] font-bold text-white">{notification.title}</p>
-                      <p className="mt-0.5 text-sm font-semibold text-cyan-300/60">{notification.message}</p>
-                      <p className="mt-1 text-xs font-medium text-cyan-300/40">{notification.time}</p>
+                      <p className="text-[15px] font-bold text-slate-950">{notification.title}</p>
+                      <p className="mt-0.5 text-sm font-semibold text-slate-600">{notification.message}</p>
+                      <p className="mt-1 text-xs font-medium text-slate-400">{notification.time}</p>
                     </div>
 
                     {/* Unread indicator */}
@@ -188,7 +183,7 @@ const NotificationsPage: React.FC = () => {
               })}
 
               {notifications.length === 0 && (
-                <div className="rounded-[24px] border border-dashed border-white/10 px-6 py-12 text-center text-cyan-300/50">
+                <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-slate-400">
                   새로운 알림이 없습니다.
                 </div>
               )}

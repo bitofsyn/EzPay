@@ -126,11 +126,11 @@ const Friends: React.FC = () => {
     const q = search.trim().toLowerCase();
     if (!q) return friends;
     return friends.filter(
-      (f) =>
-        f.nickname.toLowerCase().includes(q) ||
-        f.realName.toLowerCase().includes(q) ||
-        f.bank.toLowerCase().includes(q) ||
-        f.accountNumber.includes(q)
+      (_f) =>
+        _f.nickname.toLowerCase().includes(q) ||
+        _f.realName.toLowerCase().includes(q) ||
+        _f.bank.toLowerCase().includes(q) ||
+        _f.accountNumber.includes(q)
     );
   }, [friends, search]);
 
@@ -204,7 +204,7 @@ const Friends: React.FC = () => {
     setFriends(updated);
   };
 
-  const handleSend = (f: Friend) => {
+  const handleSend = (_f: Friend) => {
     navigate("/send");
   };
 
@@ -405,8 +405,9 @@ const Friends: React.FC = () => {
             <div className="space-y-3 px-6 py-5">
               {/* 이름 (실명) */}
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">이름</label>
+                <label htmlFor="formRealName" className="mb-1.5 block text-sm font-semibold text-slate-700">이름</label>
                 <input
+                  id="formRealName"
                   type="text"
                   placeholder="홍길동"
                   value={formRealName}
@@ -417,8 +418,9 @@ const Friends: React.FC = () => {
 
               {/* 별칭 (선택) */}
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">별칭(선택)</label>
+                <label htmlFor="formNickname" className="mb-1.5 block text-sm font-semibold text-slate-700">별칭(선택)</label>
                 <input
+                  id="formNickname"
                   type="text"
                   placeholder="예: 민수 형"
                   value={formNickname}
@@ -429,8 +431,9 @@ const Friends: React.FC = () => {
 
               {/* 계좌번호 */}
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">계좌번호</label>
+                <label htmlFor="formAccount" className="mb-1.5 block text-sm font-semibold text-slate-700">계좌번호</label>
                 <input
+                  id="formAccount"
                   type="text"
                   inputMode="numeric"
                   placeholder="숫자만 입력"
@@ -442,8 +445,9 @@ const Friends: React.FC = () => {
 
               {/* 은행 */}
               <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">은행</label>
+                <label htmlFor="formBank" className="mb-1.5 block text-sm font-semibold text-slate-700">은행</label>
                 <select
+                  id="formBank"
                   value={formBank}
                   onChange={(e) => setFormBank(e.target.value)}
                   className="w-full appearance-none rounded-[10px] border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-200"

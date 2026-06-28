@@ -68,7 +68,7 @@ const Signup: React.FC = () => {
     const { phoneNumber, birthDate, gender } = state.identity as IdentityValues;
 
     // Spring Boot API 페이로드 구조로 매핑
-    const apiPayload = {
+    const _apiPayload = {
       name,
       email,
       password,
@@ -81,8 +81,6 @@ const Signup: React.FC = () => {
         marketing: termsData.isMarketingAgreed,
       },
     };
-
-    console.log("[SignupPayload →]", JSON.stringify(apiPayload, null, 2));
 
     dispatch({ type: "SET_SUBMITTING", payload: true });
     try {

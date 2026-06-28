@@ -29,8 +29,12 @@ const TransferLimit: React.FC = () => {
     }, []);
 
     const handleSubmit = async (): Promise<void> => {
+        if (!userId) {
+            toast.error("사용자 정보가 없습니다.");
+            return;
+        }
         try {
-            await updateTransferLimit(userId!, perLimit, dailyLimit);
+            await updateTransferLimit(userId, perLimit, dailyLimit);
             toast.success("송금 한도 저장 완료");
         } catch (err) {
             toast.error("송금 한도 저장 실패");
@@ -52,20 +56,22 @@ const TransferLimit: React.FC = () => {
         <div className="bg-white p-6 rounded-xl shadow">
             <h2 className="text-lg font-semibold text-gray-800">송금 한도 설정</h2>
 
-            <label className="block mt-4 text-sm font-medium text-gray-700">
+            <label htmlFor="perLimit" className="block mt-4 text-sm font-medium text-gray-700">
                 1회 송금 한도
             </label>
             <input
+                id="perLimit"
                 type="text"
                 value={formatNumber(perLimit)}
                 onChange={handleChange(setPerLimit)}
                 className="mt-1 w-full border px-3 py-2 rounded"
             />
 
-            <label className="block mt-4 text-sm font-medium text-gray-700">
+            <label htmlFor="dailyLimit" className="block mt-4 text-sm font-medium text-gray-700">
                 1일 송금 한도
             </label>
             <input
+                id="dailyLimit"
                 type="text"
                 value={formatNumber(dailyLimit)}
                 onChange={handleChange(setDailyLimit)}

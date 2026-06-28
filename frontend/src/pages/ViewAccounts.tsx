@@ -104,8 +104,14 @@ const ViewAccounts: React.FC = () => {
       setShowModal(false);
       setLoading(true);
       await fetchAccounts();
-    } catch (err) {
-      const message = (err as any)?.response?.data?.message || "계좌 등록에 실패했습니다.";
+    } catch (err: unknown) {
+      let message = "계좌 등록에 실패했습니다.";
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as Record<string, unknown>;
+        const response = axiosError.response as Record<string, unknown> | undefined;
+        const data = response?.data as Record<string, unknown> | undefined;
+        message = String(data?.message ?? "계좌 등록에 실패했습니다.");
+      }
       setModalError(message);
     } finally {
       setModalSubmitting(false);
@@ -310,9 +316,10 @@ const ViewAccounts: React.FC = () => {
             <div className="space-y-4 px-6 py-5">
               {/* 은행 선택 */}
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">은행 선택</label>
+                <label htmlFor="modalBankName" className="mb-1.5 block text-sm font-bold text-slate-700">은행 선택</label>
                 <div className="relative">
                   <select
+                    id="modalBankName"
                     value={modalBankName}
                     onChange={(e) => setModalBankName(e.target.value)}
                     className="w-full appearance-none rounded-[14px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-100"
@@ -327,8 +334,9 @@ const ViewAccounts: React.FC = () => {
 
               {/* 계좌 별칭 */}
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">계좌 별칭</label>
+                <label htmlFor="modalAlias" className="mb-1.5 block text-sm font-bold text-slate-700">계좌 별칭</label>
                 <input
+                  id="modalAlias"
                   type="text"
                   placeholder="예: 생활비 통장"
                   value={modalAlias}
@@ -339,8 +347,9 @@ const ViewAccounts: React.FC = () => {
 
               {/* 계좌번호 */}
               <div>
-                <label className="mb-1.5 block text-sm font-bold text-slate-700">계좌번호 (숫자만 입력)</label>
+                <label htmlFor="modalAccountNumber" className="mb-1.5 block text-sm font-bold text-slate-700">계좌번호 (숫자만 입력)</label>
                 <input
+                  id="modalAccountNumber"
                   type="text"
                   inputMode="numeric"
                   placeholder="01012345678"
@@ -356,9 +365,10 @@ const ViewAccounts: React.FC = () => {
               {/* 계좌 유형 + 초기 잔액 */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-sm font-bold text-slate-700">계좌 유형</label>
+                  <label htmlFor="modalAccountType" className="mb-1.5 block text-sm font-bold text-slate-700">계좌 유형</label>
                   <div className="relative">
                     <select
+                      id="modalAccountType"
                       value={modalAccountType}
                       onChange={(e) => setModalAccountType(e.target.value)}
                       className="w-full appearance-none rounded-[14px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 transition focus:border-slate-400 focus:outline-none"
@@ -371,8 +381,9 @@ const ViewAccounts: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-bold text-slate-700">초기 잔액</label>
+                  <label htmlFor="modalBalance" className="mb-1.5 block text-sm font-bold text-slate-700">초기 잔액</label>
                   <input
+                    id="modalBalance"
                     type="number"
                     min="0"
                     value={modalBalance}

@@ -833,7 +833,7 @@ const Home: React.FC = () => {
 
   const goLogin = () => navigate("/login");
   const goSignup = () => navigate("/signup");
-  const goTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+  const _goTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
     <div

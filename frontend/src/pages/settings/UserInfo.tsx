@@ -27,7 +27,6 @@ const UserInfo: React.FC = () => {
                     email: userRes.email,
                 };
                 const logsRes = await getLoginHistory(userData.userId);
-                console.log("logsRes :", logsRes);
                 setUser(userData);
                 setLogs(logsRes);
             } catch (err) {

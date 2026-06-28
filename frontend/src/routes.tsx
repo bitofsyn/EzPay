@@ -23,23 +23,22 @@ const AIAssistant = lazy(() => import("./pages/AIAssistant"));
 const Friends = lazy(() => import("./pages/Friends"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 
-// Settings pages
-const LayoutSettings = lazy(() => import("./pages/settings/LayoutSettings"));
-const Settings = lazy(() => import("./pages/settings/Settings"));
-const PasswordChange = lazy(() => import("./pages/settings/PasswordChange"));
-const Notification = lazy(() => import("./pages/settings/Notification"));
-const TransferLimit = lazy(() => import("./pages/settings/TransferLimit"));
-const Withdraw = lazy(() => import("./pages/settings/Withdraw"));
-const LoginHistory = lazy(() => import("./pages/settings/LoginHistory"));
-const MainAccountSettings = lazy(() => import("./pages/settings/MainAccountSettings"));
+const LayoutSettings = lazy(() => import("./pages/settings/LayoutSettings.tsx"));
 
 // Admin pages
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
-const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
-const AdminErrorLogs = lazy(() => import("./pages/admin/AdminErrorLogs"));
-const AdminTransactions = lazy(() => import("./pages/admin/AdminTransactions"));
-const AdminTransferLimits = lazy(() => import("./pages/admin/AdminTransferLimits"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard.tsx"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers.tsx"));
+const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail.tsx"));
+const AdminErrorLogs = lazy(() => import("./pages/admin/AdminErrorLogs.tsx"));
+const AdminTransactions = lazy(() => import("./pages/admin/AdminTransactions.tsx"));
+const AdminTransferLimits = lazy(() => import("./pages/admin/AdminTransferLimits.tsx"));
+// New admin pages
+const AdminUserManagement = lazy(() => import("./pages/admin/AdminUserManagement"));
+const AdminTransactionManagement = lazy(() => import("./pages/admin/AdminTransactionManagement"));
+const AdminRiskTransactions = lazy(() => import("./pages/admin/AdminRiskTransactions"));
+const AdminPolicy = lazy(() => import("./pages/admin/AdminPolicy"));
+const AdminSystemLogs = lazy(() => import("./pages/admin/AdminSystemLogs"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 
 // Loading component
 const LoadingFallback = () => (
@@ -79,23 +78,23 @@ const AppRoutes = () => {
           <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
 
           {/* 환경설정 */}
-          <Route path="/settings/*" element={<PrivateRoute><LayoutSettings /></PrivateRoute>}>
-            <Route index element={<Settings />} />
-            <Route path="password" element={<PasswordChange />} />
-            <Route path="notification" element={<Notification />} />
-            <Route path="transfer-limit" element={<TransferLimit />} />
-            <Route path="withdraw" element={<Withdraw />} />
-            <Route path="login-history" element={<LoginHistory />} />
-            <Route path="main-account" element={<MainAccountSettings />} />
-          </Route>
+          <Route path="/settings/*" element={<PrivateRoute><LayoutSettings /></PrivateRoute>} />
 
           {/* 관리자 페이지 - AdminRoute로 보호 (관리자만 접근 가능) */}
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+          {/* 사용자 관리 (새 디자인) */}
+          <Route path="/admin/users" element={<AdminRoute><AdminUserManagement /></AdminRoute>} />
           <Route path="/admin/users/:userId" element={<AdminRoute><AdminUserDetail /></AdminRoute>} />
-          <Route path="/admin/transactions" element={<AdminRoute><AdminTransactions /></AdminRoute>} />
+          {/* 거래 관리 (새 디자인) */}
+          <Route path="/admin/transactions" element={<AdminRoute><AdminTransactionManagement /></AdminRoute>} />
+          {/* 레거시 라우트 유지 */}
           <Route path="/admin/transfer-limits" element={<AdminRoute><AdminTransferLimits /></AdminRoute>} />
           <Route path="/admin/error-logs" element={<AdminRoute><AdminErrorLogs /></AdminRoute>} />
+          {/* 신규 페이지 */}
+          <Route path="/admin/risk" element={<AdminRoute><AdminRiskTransactions /></AdminRoute>} />
+          <Route path="/admin/policy" element={<AdminRoute><AdminPolicy /></AdminRoute>} />
+          <Route path="/admin/system-logs" element={<AdminRoute><AdminSystemLogs /></AdminRoute>} />
+          <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
