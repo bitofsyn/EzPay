@@ -146,114 +146,94 @@ Week 3: 통합 및 테스트
 
 ### 2. 애플리케이션 설정 (application.yml)
 
+> 실제 구현 기준: 애플리케이션 이름은 `EzPay`, 포트는 **8081**이며, **context-path는 사용하지 않습니다** (엔드포인트는 루트 경로: 예 `/admin/stream/system-logs`).
+
 ```yaml
+server:
+  port: ${PORT:${SERVER_PORT:8081}}
+
 spring:
   application:
-    name: ezpay-admin-dashboard
+    name: EzPay
 
   # Database
   datasource:
-    url: jdbc:postgresql://localhost:5432/ezpay
-    username: ezpay_user
-    password: ${DB_PASSWORD}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/ezpay}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
 
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: validate   # prod 프로파일 기준 (local 프로파일은 update)
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQL10Dialect
-        format_sql: true
         jdbc:
-          batch_size: 20
+          time_zone: Asia/Seoul
 
-  # Redis
-  redis:
-    host: localhost
-    port: 6379
-    password: ${REDIS_PASSWORD}
-
-  # Kafka
+  # Kafka (기본 비활성화, EZPAY_KAFKA_ENABLED 로 제어)
   kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      group-id: admin-dashboard-consumer
-      auto-offset-reset: earliest
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring:
-          json:
-            trusted:
-              packages: "*"
-    producer:
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    listener:
+      auto-startup: ${SPRING_KAFKA_LISTENER_AUTO_STARTUP:false}
 
-  # WebSocket
-  websocket:
-    allowed-origins: http://localhost:3000,http://localhost:5173
+# CORS 허용 오리진 (WebSocket/SSE 공용)
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
 
-server:
-  port: 8080
-  servlet:
-    context-path: /api/v1
+ezpay:
+  kafka:
+    enabled: ${EZPAY_KAFKA_ENABLED:false}
+  internal-api:
+    secret-key: ${EZPAY_INTERNAL_API_SECRET_KEY:change-me-in-production}
 
 logging:
   level:
-    root: INFO
-    com.ezpay: DEBUG
-    org.springframework.kafka: DEBUG
+    org.hibernate.SQL: INFO
+    org.springframework.security: INFO
 ```
 
 ---
 
 ## 프로젝트 구조
 
+> 실제 패키지 루트는 `com.example.ezpay` 이며, 모듈 기반 아키텍처를 따릅니다. Admin 컨트롤러는 `controller/admin/` 에, 실시간(SSE/WebSocket/스케줄러) 처리는 `modules/realtime/` 에, 도메인 로직은 `modules/*` 에 위치합니다.
+
 ```
-src/main/java/com/ezpay/admin/
-├── config/
-│   ├── WebSocketConfig.java
-│   ├── KafkaConfig.java
-│   ├── SecurityConfig.java
-│   └── RedisConfig.java
+src/main/java/com/example/ezpay/
+├── EzPayApplication.java            # @SpringBootApplication + @EnableJpaAuditing
 ├── controller/
-│   ├── RiskTransactionController.java
-│   ├── SystemLogController.java
-│   ├── DashboardController.java
-│   └── AdminUserController.java
-├── service/
-│   ├── RiskTransactionService.java
-│   ├── SystemLogService.java
-│   ├── DashboardService.java
-│   └── AdminUserService.java
-├── repository/
-│   ├── RiskTransactionRepository.java
-│   ├── SystemLogRepository.java
-│   ├── AdminUserRepository.java
-│   └── TransactionRepository.java
-├── entity/
-│   ├── RiskTransaction.java
-│   ├── SystemLog.java
-│   ├── AdminUser.java
-│   └── Transaction.java
-├── consumer/
-│   ├── TransactionEventConsumer.java
-│   ├── RiskEventConsumer.java
-│   └── LogEventConsumer.java
-├── websocket/
-│   ├── AdminWebSocketHandler.java
-│   ├── TransactionStreamHandler.java
-│   └── ConnectionManager.java
-├── dto/
-│   ├── RiskTransactionDto.java
-│   ├── SystemLogDto.java
-│   ├── DashboardMetricsDto.java
-│   └── ApiResponse.java
-├── exception/
-│   ├── ResourceNotFoundException.java
-│   ├── UnauthorizedException.java
-│   └── GlobalExceptionHandler.java
-└── EzPayAdminApplication.java
+│   └── admin/
+│       ├── AdminRiskTransactionController.java   # /admin/risk-transactions
+│       ├── AdminDashboardController.java         # /admin/dashboard
+│       ├── AdminStreamController.java            # /admin/stream (SSE)
+│       ├── AdminSystemLogController.java         # /admin/system-logs
+│       ├── AdminTransactionController.java
+│       ├── AdminUserController.java
+│       ├── AdminErrorLogController.java
+│       └── AdminTransferLimitController.java
+├── modules/
+│   ├── realtime/
+│   │   ├── EventBroadcaster.java                 # SSE 브로드캐스트 진입점
+│   │   ├── sse/
+│   │   │   └── SseEmitterRegistry.java           # SseEmitter 연결 레지스트리
+│   │   ├── websocket/
+│   │   │   ├── WebSocketConfig.java              # /ws/admin-events 등록
+│   │   │   └── AdminWebSocketHandler.java        # TextWebSocketHandler
+│   │   ├── scheduler/
+│   │   │   └── DashboardStreamScheduler.java     # 주기적 대시보드 스트림
+│   │   └── config/
+│   │       └── SchedulingConfig.java             # @EnableScheduling
+│   ├── risk/         # dto, entity, repository, service
+│   ├── systemlog/    # dto, entity, repository, service
+│   ├── kafka/        # entity, repository, service
+│   ├── account/  auth/  analytics/  payment/
+│   ├── notification/  errorlog/  admin/  user/  # 각 모듈: api / config / internal
 ```
 
 ---
@@ -282,7 +262,7 @@ src/main/java/com/ezpay/admin/
 @RestController
 @RequestMapping("/admin/risk-transactions")
 @RequiredArgsConstructor
-public class RiskTransactionController {
+public class AdminRiskTransactionController {
 
   private final RiskTransactionService riskTransactionService;
 
@@ -321,7 +301,7 @@ public class RiskTransactionController {
 @RestController
 @RequestMapping("/admin/dashboard")
 @RequiredArgsConstructor
-public class DashboardController {
+public class AdminDashboardController {
 
   private final DashboardService dashboardService;
 
@@ -389,7 +369,7 @@ public class TransactionEventConsumer {
 @RestController
 @RequestMapping("/admin/stream")
 @RequiredArgsConstructor
-public class StreamController {
+public class AdminStreamController {
 
   private final SystemLogService systemLogService;
   private final DashboardService dashboardService;
@@ -447,24 +427,27 @@ public class StreamController {
 ### STEP 5: WebSocket 엔드포인트 구현
 
 ```java
+// package com.example.ezpay.modules.realtime.websocket;
 @Configuration
 @EnableWebSocket
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketConfigurer {
+
+  private final AdminWebSocketHandler adminWebSocketHandler;
+
+  // app.cors.allowed-origins 값을 주입받아 사용
+  @Value("${app.cors.allowed-origins}")
+  private String allowedOrigins;
 
   @Override
   public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-    registry.addHandler(transactionStreamHandler(), "/ws/admin-events")
-        .setAllowedOrigins("*");
-  }
-
-  @Bean
-  public WebSocketHandler transactionStreamHandler() {
-    return new TransactionStreamHandler();
+    registry.addHandler(adminWebSocketHandler, "/ws/admin-events")
+        .setAllowedOrigins(allowedOrigins.split(","));
   }
 }
 
 @Component
-public class TransactionStreamHandler extends TextWebSocketHandler {
+public class AdminWebSocketHandler extends TextWebSocketHandler {
 
   private static final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
 
@@ -537,16 +520,16 @@ public class AdminAuthorizationFilter {
 ```bash
 # Risk Transaction 조회
 curl -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8080/api/v1/admin/risk-transactions
+  http://localhost:8081/admin/risk-transactions
 
 # Risk Transaction 승인
 curl -X POST \
   -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8080/api/v1/admin/risk-transactions/TX001/approve
+  http://localhost:8081/admin/risk-transactions/TX001/approve
 
 # Dashboard 메트릭
 curl -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8080/api/v1/admin/dashboard/metrics
+  http://localhost:8081/admin/dashboard/metrics
 ```
 
 ### 2. SSE 테스트
@@ -554,18 +537,22 @@ curl -H "Authorization: Bearer $TOKEN" \
 ```bash
 # System Logs 스트림
 curl -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8080/api/v1/admin/stream/system-logs
+  http://localhost:8081/admin/stream/system-logs
 
 # TPS Metrics 스트림
 curl -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8080/api/v1/admin/stream/tps-metrics
+  http://localhost:8081/admin/stream/tps-metrics
+
+# 실시간 활동 스트림
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8081/admin/stream/activities
 ```
 
 ### 3. WebSocket 테스트
 
 ```bash
 # WebSocket 연결
-wscat -c ws://localhost:8080/ws/admin-events
+wscat -c ws://localhost:8081/ws/admin-events
 ```
 
 ### 4. Kafka Consumer 테스트
@@ -621,5 +608,5 @@ EOF
 
 ---
 
-**마지막 업데이트:** 2026-06-28  
+**마지막 업데이트:** 2026-07-01  
 **담당자:** Backend Architecture Team

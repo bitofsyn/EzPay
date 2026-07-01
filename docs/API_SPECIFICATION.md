@@ -2,7 +2,7 @@
 
 **버전:** 1.0  
 **작성일:** 2026-06-28  
-**Base URL:** `http://localhost:8080/api/v1`
+**Base URL:** `http://localhost:8081` (context-path 없음, 엔드포인트는 루트 경로)
 
 ---
 
@@ -470,7 +470,7 @@ data: {"type":"TRANSFER","description":"...","timestamp":"...","status":"SUCCESS
 
 ### 1. 거래 실시간 스트림 (WebSocket)
 
-**Endpoint:** `ws://localhost:8080/ws/admin-events`
+**Endpoint:** `ws://localhost:8081/ws/admin-events`
 
 **연결 후:**
 ```javascript
