@@ -10,6 +10,5 @@ import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long>, TransactionRepositoryCustom {
     Page<Transaction> findBySenderAccount_AccountIdOrReceiverAccount_AccountId(Long senderId, Long receiverId, Pageable pageable);
-    boolean existsByRequestId(String requestId);
     Optional<Transaction> findByRequestId(String requestId);
 }

@@ -82,45 +82,4 @@ public class NotificationServiceImpl implements NotificationService {
         mailSender.send(message);
     }
 
-    @Override
-    public void sendTestEmail(String email) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("EzPay 테스트 이메일");
-        message.setText("테스트 이메일이 성공적으로 발송되었습니다.");
-        mailSender.send(message);
-    }
-
-    @Override
-    public boolean isNotificationEnabled(Long userId, NotificationType type) {
-        User user = userRepository.findById(userId)
-                .orElse(null);
-
-        if (user == null) {
-            return false;
-        }
-
-        return notificationRepository.findByUserAndNotificationType(user, type)
-                .map(Notification::getIsEnabled)
-                .orElse(false);
-    }
-
-    @Override
-    @Transactional
-    public void initializeNotificationSettings(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
-
-        // 기본 알림 설정 생성 (EMAIL, PUSH 등)
-        for (NotificationType type : NotificationType.values()) {
-            if (notificationRepository.findByUserAndNotificationType(user, type).isEmpty()) {
-                Notification notification = Notification.builder()
-                        .user(user)
-                        .notificationType(type)
-                        .isEnabled(type == NotificationType.EMAIL) // EMAIL만 기본 활성화
-                        .build();
-                notificationRepository.save(notification);
-            }
-        }
-    }
 }

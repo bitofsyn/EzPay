@@ -14,9 +14,6 @@ public interface AdminAlertRepository extends JpaRepository<AdminAlert, Long> {
     // 최신 알림 조회 (최근 순 정렬)
     List<AdminAlert> findAllByOrderByCreatedAtDesc();
 
-    // 읽지 않은 알림 조회
-    List<AdminAlert> findByIsReadFalseOrderByCreatedAtDesc();
-
     // 읽지 않은 알림 개수
     long countByIsReadFalse();
 
@@ -24,8 +21,4 @@ public interface AdminAlertRepository extends JpaRepository<AdminAlert, Long> {
     @Modifying
     @Query("UPDATE AdminAlert a SET a.isRead = true WHERE a.isRead = false")
     void markAllAsRead();
-
-    // 최근 N개 알림 조회
-    @Query(value = "SELECT * FROM admin_alerts a ORDER BY a.created_at DESC LIMIT :limit", nativeQuery = true)
-    List<AdminAlert> findRecentAlerts(int limit);
 }

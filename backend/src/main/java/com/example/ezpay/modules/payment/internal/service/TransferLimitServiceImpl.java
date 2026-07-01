@@ -60,25 +60,6 @@ public class TransferLimitServiceImpl implements TransferLimitService {
     }
 
     @Override
-    public boolean canTransfer(Long userId, BigDecimal amount) {
-        TransferLimit transferLimit = transferLimitRepository.findByUserId(userId)
-                .orElse(null);
-
-        if (transferLimit == null) {
-            return false;
-        }
-
-        // 1회 한도 체크
-        if (amount.compareTo(transferLimit.getPerTransactionLimit()) > 0) {
-            return false;
-        }
-
-        // 일일 한도 체크
-        BigDecimal remainingLimit = getRemainingDailyLimit(userId);
-        return amount.compareTo(remainingLimit) <= 0;
-    }
-
-    @Override
     public BigDecimal getRemainingDailyLimit(Long userId) {
         TransferLimit transferLimit = transferLimitRepository.findByUserId(userId)
                 .orElse(null);
@@ -108,21 +89,6 @@ public class TransferLimitServiceImpl implements TransferLimitService {
 
         BigDecimal remaining = transferLimit.getDailyLimit().subtract(todayTotal);
         return remaining.compareTo(BigDecimal.ZERO) > 0 ? remaining : BigDecimal.ZERO;
-    }
-
-    @Override
-    @Transactional
-    public void initializeDefaultLimit(Long userId, BigDecimal dailyLimit, BigDecimal perTransactionLimit) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomNotFoundException("사용자를 찾을 수 없습니다."));
-
-        TransferLimit newLimit = TransferLimit.builder()
-                .user(user)
-                .dailyLimit(dailyLimit != null ? dailyLimit : DEFAULT_DAILY_LIMIT)
-                .perTransactionLimit(perTransactionLimit != null ? perTransactionLimit : DEFAULT_TRANSACTION_LIMIT)
-                .build();
-
-        transferLimitRepository.save(newLimit);
     }
 
     private TransferLimit createDefaultTransferLimit(Long userId) {
