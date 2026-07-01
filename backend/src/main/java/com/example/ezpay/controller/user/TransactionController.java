@@ -4,8 +4,9 @@ import com.example.ezpay.shared.exception.CustomNotFoundException;
 import com.example.ezpay.shared.exception.TransferLimitExceededException;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.modules.payment.internal.service.TransactionService;
-import com.example.ezpay.request.TransferRequest;
+import com.example.ezpay.modules.payment.api.dto.TransferRequest;
 import com.example.ezpay.shared.common.dto.CommonResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class TransactionController {
 
     // 송금 요청
     @PostMapping("/transfer")
-    public ResponseEntity<CommonResponse<String>> transfer(@RequestBody TransferRequest transferRequest) {
+    public ResponseEntity<CommonResponse<String>> transfer(@Valid @RequestBody TransferRequest transferRequest) {
         try {
             String requestId = transactionService.transferMoney(transferRequest);
             return ResponseEntity.status(HttpStatus.ACCEPTED)

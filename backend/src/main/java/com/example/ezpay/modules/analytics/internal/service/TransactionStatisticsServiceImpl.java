@@ -1,10 +1,10 @@
 package com.example.ezpay.modules.analytics.internal.service;
 
 import com.example.ezpay.model.user.Transaction;
+import com.example.ezpay.modules.analytics.api.dto.CategoryAmountInfo;
+import com.example.ezpay.modules.analytics.api.dto.DailyDetailInfo;
+import com.example.ezpay.modules.analytics.api.dto.DailySummaryInfo;
 import com.example.ezpay.repository.user.TransactionStatisticsRepository;
-import com.example.ezpay.response.CategoryAmountResponse;
-import com.example.ezpay.response.DailyDetailResponse;
-import com.example.ezpay.response.DailySummaryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +24,7 @@ public class TransactionStatisticsServiceImpl implements TransactionStatisticsSe
     private final TransactionStatisticsRepository transactionStatisticsRepository;
 
     @Override
-    public List<DailySummaryResponse> getMonthStatistics(Long userId, int year, int month) {
+    public List<DailySummaryInfo> getMonthStatistics(Long userId, int year, int month) {
         YearMonth yearMonth = YearMonth.of(year, month);
 
         // 변환(LocalDate -> LocalDateTime -> Timestamp
@@ -37,7 +37,7 @@ public class TransactionStatisticsServiceImpl implements TransactionStatisticsSe
                 .collect(Collectors.groupingBy(t -> t.getTransactionDate().toInstant()
                         .atZone(ZoneId.of("Asia/Seoul")).toLocalDate()));
 
-        List<DailySummaryResponse> summary = new ArrayList<>();
+        List<DailySummaryInfo> summary = new ArrayList<>();
         for(LocalDate date : groupedByDate.keySet()) {
             List<Transaction> dailyTransactions = groupedByDate.get(date);
 
@@ -51,8 +51,8 @@ public class TransactionStatisticsServiceImpl implements TransactionStatisticsSe
                     .map(t -> t.getAmount().abs().longValue())
                     .reduce(0L, Long::sum);
 
-            List<DailyDetailResponse> details = dailyTransactions.stream()
-                    .map(x -> new DailyDetailResponse(
+            List<DailyDetailInfo> details = dailyTransactions.stream()
+                    .map(x -> new DailyDetailInfo(
                             x.getTransactionId(),
                             x.getStatus().name(),
                             x.getSenderAccount().getBankName(),
@@ -67,14 +67,14 @@ public class TransactionStatisticsServiceImpl implements TransactionStatisticsSe
                             Collectors.summingLong(x -> x.getAmount().longValue())
                     ));
 
-            List<CategoryAmountResponse> categories = categoryMap.entrySet().stream()
-                    .map(x -> new CategoryAmountResponse(x.getKey(), x.getValue()))
+            List<CategoryAmountInfo> categories = categoryMap.entrySet().stream()
+                    .map(x -> new CategoryAmountInfo(x.getKey(), x.getValue()))
                     .toList();
 
-            summary.add(new DailySummaryResponse(date, income, expense, details, categories));
+            summary.add(new DailySummaryInfo(date, income, expense, details, categories));
         }
 
-        summary.sort(Comparator.comparing(DailySummaryResponse::getDate));
+        summary.sort(Comparator.comparing(DailySummaryInfo::getDate));
         return summary;
     }
 }

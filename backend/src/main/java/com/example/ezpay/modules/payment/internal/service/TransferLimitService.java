@@ -1,7 +1,7 @@
 package com.example.ezpay.modules.payment.internal.service;
 
 import com.example.ezpay.model.user.TransferLimit;
-import com.example.ezpay.request.TransferLimitRequest;
+import com.example.ezpay.modules.payment.api.dto.TransferLimitRequest;
 
 import java.math.BigDecimal;
 import java.util.List;

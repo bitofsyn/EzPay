@@ -9,8 +9,8 @@ import com.example.ezpay.shared.common.enums.ErrorLogStatus;
 import com.example.ezpay.shared.common.enums.TransactionStatus;
 import com.example.ezpay.shared.messaging.events.TransferEvent;
 import com.example.ezpay.repository.user.*;
-import com.example.ezpay.request.TransferRequest;
-import com.example.ezpay.response.AccountOwnerResponse;
+import com.example.ezpay.modules.payment.api.dto.AccountOwnerInfo;
+import com.example.ezpay.modules.payment.api.dto.TransferRequest;
 import com.example.ezpay.modules.notification.internal.service.NotificationService;
 import com.example.ezpay.service.user.ErrorLogService;
 import lombok.RequiredArgsConstructor;
@@ -255,12 +255,12 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public AccountOwnerResponse getOwnerNameByAccountNumber(String accountNumber) {
+    public AccountOwnerInfo getOwnerNameByAccountNumber(String accountNumber) {
         Accounts account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다."));
 
 
-        return new AccountOwnerResponse(
+        return new AccountOwnerInfo(
                 account.getAccountNumber(),
                 account.getUser().getName(),
                 account.getAccountId(),

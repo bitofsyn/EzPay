@@ -2,8 +2,9 @@ package com.example.ezpay.controller.admin;
 
 import com.example.ezpay.modules.admin.internal.service.AdminService;
 import com.example.ezpay.modules.payment.api.dto.TransferLimitInfo;
-import com.example.ezpay.request.TransferLimitRequest;
+import com.example.ezpay.modules.payment.api.dto.TransferLimitRequest;
 import com.example.ezpay.shared.common.dto.CommonResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class AdminTransferLimitController {
     // 특정 사용자 송금 한도 수정
     @PutMapping("/{userId}")
     public ResponseEntity<CommonResponse<String>> updateUserTransferLimit(@PathVariable Long userId,
-                                                                          @RequestBody TransferLimitRequest transferLimitRequest) {
+                                                                          @Valid @RequestBody TransferLimitRequest transferLimitRequest) {
         adminService.updateUserTransferLimit(userId, transferLimitRequest);
         return ResponseEntity.ok(new CommonResponse<>("success", "사용자 송금 한도 수정 완료", "USER TRANSFER LIMIT UPDATED"));
     }

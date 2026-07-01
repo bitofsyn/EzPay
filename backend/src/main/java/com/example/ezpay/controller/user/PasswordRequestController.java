@@ -3,6 +3,7 @@ package com.example.ezpay.controller.user;
 import com.example.ezpay.modules.auth.api.dto.PasswordResetRequest;
 import com.example.ezpay.modules.auth.api.facade.AuthFacade;
 import com.example.ezpay.shared.common.dto.CommonResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +16,7 @@ public class PasswordRequestController {
 
     // 비밀번호 재설정 요청 생성
     @PostMapping("/request")
-    public ResponseEntity<CommonResponse<String>> requestPasswordReset(@RequestBody PasswordResetRequest passwordResetRequest) {
+    public ResponseEntity<CommonResponse<String>> requestPasswordReset(@Valid @RequestBody PasswordResetRequest passwordResetRequest) {
         authFacade.initiatePasswordReset(passwordResetRequest.getEmail());
         return ResponseEntity.ok(new CommonResponse<>("success", null, "비밀번호 재설정 요청이 완료되었습니다. 30분 내에 비밀번호를 변경해주세요."));
     }

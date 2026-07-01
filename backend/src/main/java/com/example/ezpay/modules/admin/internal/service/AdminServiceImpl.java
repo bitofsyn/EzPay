@@ -21,7 +21,7 @@ import com.example.ezpay.repository.user.AccountRepository;
 import com.example.ezpay.repository.user.ErrorLogRepository;
 import com.example.ezpay.repository.user.TransactionRepository;
 import com.example.ezpay.repository.user.UserRepository;
-import com.example.ezpay.request.TransferLimitRequest;
+import com.example.ezpay.modules.payment.api.dto.TransferLimitRequest;
 import com.example.ezpay.service.user.ErrorLogService;
 import com.example.ezpay.shared.common.enums.ErrorLogStatus;
 import com.example.ezpay.shared.common.enums.Status;
@@ -62,7 +62,6 @@ public class AdminServiceImpl implements AdminService {
     public AdminDashboardInfo getDashboardStats() {
         // 사용자 통계
         List<User> allUsers = userRepository.findAll();
-        System.out.println("allUsers = " + allUsers);
         long totalUsers = allUsers.size();
         long activeUsers = allUsers.stream().filter(u -> u.getStatus() == Status.ACTIVE).count();
         long inactiveUsers = allUsers.stream().filter(u -> u.getStatus() == Status.INACTIVE).count();
@@ -103,6 +102,93 @@ public class AdminServiceImpl implements AdminService {
                 .totalTransactionVolume(totalVolume)
                 .totalAccounts(totalAccounts)
                 .recentErrors(recentErrors)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DashboardMetricsInfo getDashboardMetrics() {
+        List<User> allUsers = userRepository.findAll();
+        long totalUsers = allUsers.size();
+        long activeUsers = allUsers.stream().filter(u -> u.getStatus() == Status.ACTIVE).count();
+        long inactiveUsers = allUsers.stream().filter(u -> u.getStatus() == Status.INACTIVE).count();
+        long lockedUsers = allUsers.stream().filter(u -> u.getStatus() == Status.LOCKED).count();
+
+        List<Transaction> allTransactions = transactionRepository.findAll();
+        long totalTransactions = allTransactions.size();
+        BigDecimal totalVolume = allTransactions.stream()
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        LocalDate today = LocalDate.now();
+        List<Transaction> todayTransactionsList = allTransactions.stream()
+                .filter(t -> t.getTransactionDate().toLocalDateTime().toLocalDate().equals(today))
+                .toList();
+        long dailyTransactionCount = todayTransactionsList.size();
+        BigDecimal dailyTransactionVolume = todayTransactionsList.stream()
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long totalAccounts = accountRepository.count();
+        long recentErrors = errorLogRepository.findByStatus(ErrorLogStatus.UNRESOLVED).size();
+
+        return DashboardMetricsInfo.builder()
+                .totalUsers(totalUsers)
+                .activeUsers(activeUsers)
+                .inactiveUsers(inactiveUsers)
+                .lockedUsers(lockedUsers)
+                .totalTransactions(totalTransactions)
+                .totalVolume(totalVolume)
+                .dailyTransactionCount(dailyTransactionCount)
+                .dailyTransactionVolume(dailyTransactionVolume)
+                .totalAccounts(totalAccounts)
+                .recentErrors(recentErrors)
+                .lastUpdated(LocalDateTime.now())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TPSMetricsInfo getTPSMetrics() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+
+        List<Transaction> todayTransactions = transactionRepository.findAll().stream()
+                .filter(t -> !t.getTransactionDate().toLocalDateTime().isBefore(startOfDay))
+                .toList();
+
+        long secondsElapsedToday = Math.max(1, java.time.Duration.between(startOfDay, now).getSeconds());
+        double avgTPS = todayTransactions.size() / (double) secondsElapsedToday;
+
+        long currentSecondCount = todayTransactions.stream()
+                .filter(t -> !t.getTransactionDate().toLocalDateTime().isBefore(now.minusSeconds(1)))
+                .count();
+
+        Map<Long, Long> perSecondCounts = todayTransactions.stream()
+                .collect(Collectors.groupingBy(
+                        t -> t.getTransactionDate().toLocalDateTime().toEpochSecond(ZoneId.systemDefault().getRules().getOffset(now)),
+                        Collectors.counting()
+                ));
+        long peakSecondCount = perSecondCounts.values().stream().mapToLong(Long::longValue).max().orElse(0L);
+
+        long successCount = todayTransactions.stream()
+                .filter(t -> t.getStatus() == TransactionStatus.SUCCESS)
+                .count();
+        long failedCount = todayTransactions.stream()
+                .filter(t -> t.getStatus() == TransactionStatus.FAILED)
+                .count();
+        long totalCount = todayTransactions.size();
+
+        double successRate = totalCount == 0 ? 100.0 : (successCount * 100.0) / totalCount;
+        double failureRate = totalCount == 0 ? 0.0 : (failedCount * 100.0) / totalCount;
+
+        return TPSMetricsInfo.builder()
+                .currentTPS(currentSecondCount)
+                .peakTPS(peakSecondCount)
+                .avgTPS(Math.round(avgTPS * 100.0) / 100.0)
+                .successRate(Math.round(successRate * 100.0) / 100.0)
+                .failureRate(Math.round(failureRate * 100.0) / 100.0)
+                .timestamp(now)
                 .build();
     }
 

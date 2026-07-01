@@ -1,16 +1,11 @@
 package com.example.ezpay.repository.user;
 
 import com.example.ezpay.model.user.Transaction;
-import com.example.ezpay.response.CategoryAmount;
-import com.example.ezpay.response.DailyDetail;
-import com.example.ezpay.response.DailySummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 public interface TransactionStatisticsRepository extends JpaRepository<Transaction, Long> {

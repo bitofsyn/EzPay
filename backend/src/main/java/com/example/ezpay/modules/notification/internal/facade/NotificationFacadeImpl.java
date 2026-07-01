@@ -1,5 +1,6 @@
 package com.example.ezpay.modules.notification.internal.facade;
 
+import com.example.ezpay.modules.notification.api.dto.NotificationSettingRequest;
 import com.example.ezpay.modules.notification.api.dto.TransferNotificationData;
 import com.example.ezpay.modules.notification.api.facade.NotificationFacade;
 import com.example.ezpay.modules.notification.internal.service.NotificationService;
@@ -36,11 +37,7 @@ public class NotificationFacadeImpl implements NotificationFacade {
 
     @Override
     public void updateNotificationSettings(Long userId, NotificationType type, boolean enabled) {
-        // NotificationRequest를 사용하는 기존 메서드를 활용
-        // 또는 새로운 메서드 추가 필요
-        // 일단 간단히 구현
-        com.example.ezpay.request.NotificationRequest request =
-                new com.example.ezpay.request.NotificationRequest();
+        NotificationSettingRequest request = new NotificationSettingRequest();
         request.setNotificationType(type);
         request.setIsEnabled(enabled);
         notificationService.updateNotification(userId, request);

@@ -5,9 +5,8 @@ import com.example.ezpay.modules.analytics.api.dto.MonthlyStatistics;
 import com.example.ezpay.modules.analytics.api.facade.AnalyticsFacade;
 import com.example.ezpay.modules.analytics.internal.service.DashboardService;
 import com.example.ezpay.modules.analytics.internal.service.TransactionStatisticsService;
+import com.example.ezpay.modules.analytics.api.dto.DailySummaryInfo;
 import com.example.ezpay.modules.user.api.facade.UserFacade;
-import com.example.ezpay.response.DailySummaryResponse;
-import com.example.ezpay.response.DashboardResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -45,7 +44,7 @@ public class AnalyticsFacadeImpl implements AnalyticsFacade {
     public MonthlyStatistics getMonthlyStatistics(Long accountId, int year, int month) {
         // accountId를 userId로 변환해야 할 수도 있음
         // 일단 accountId를 userId로 간주
-        List<DailySummaryResponse> summaries = transactionStatisticsService.getMonthStatistics(accountId, year, month);
+        List<DailySummaryInfo> summaries = transactionStatisticsService.getMonthStatistics(accountId, year, month);
 
         // 총 수입/지출 계산
         BigDecimal totalIncome = summaries.stream()

@@ -1,7 +1,7 @@
 package com.example.ezpay.modules.notification.internal.service;
 
-import com.example.ezpay.request.NotificationRequest;
-import com.example.ezpay.response.NotificationResponse;
+import com.example.ezpay.modules.notification.api.dto.NotificationInfo;
+import com.example.ezpay.modules.notification.api.dto.NotificationSettingRequest;
 import com.example.ezpay.shared.common.enums.NotificationType;
 
 import java.util.List;
@@ -11,10 +11,10 @@ import java.util.List;
  */
 public interface NotificationService {
     // 사용자 알림 조회
-    List<NotificationResponse> getUserNotifications(Long userId);
+    List<NotificationInfo> getUserNotifications(Long userId);
 
     // 알림 업데이트
-    NotificationResponse updateNotification(Long userId, NotificationRequest notificationRequest);
+    NotificationInfo updateNotification(Long userId, NotificationSettingRequest notificationRequest);
 
     // 알림 삭제
     void deleteNotification(Long notificationId);

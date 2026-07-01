@@ -3,10 +3,10 @@ package com.example.ezpay.modules.analytics.internal.service;
 import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.modules.account.internal.service.AccountService;
+import com.example.ezpay.modules.analytics.api.dto.DashboardInfo;
 import com.example.ezpay.modules.payment.internal.service.TransactionService;
 import com.example.ezpay.modules.user.api.dto.UserInfo;
 import com.example.ezpay.modules.user.api.facade.UserFacade;
-import com.example.ezpay.response.DashboardResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final TransactionService transactionService;
 
     @Override
-    public DashboardResponse getDashboardInfo(Authentication authentication) {
+    public DashboardInfo getDashboardInfo(Authentication authentication) {
         String email = authentication.getName();
 
         // 유저 정보 가져오기
@@ -42,7 +42,7 @@ public class DashboardServiceImpl implements DashboardService {
             transactions = transactionService.getRecentTransactionByAccount(mainAccount.getAccountId(), "DESC", 5);
         }
 
-        return DashboardResponse.builder()
+        return DashboardInfo.builder()
                 .user(user)
                 .account(accounts)
                 .transactions(transactions)

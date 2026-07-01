@@ -1,11 +1,13 @@
 package com.example.ezpay.modules.admin.internal.service;
 
 import com.example.ezpay.modules.admin.api.dto.AdminDashboardInfo;
+import com.example.ezpay.modules.admin.api.dto.DashboardMetricsInfo;
+import com.example.ezpay.modules.admin.api.dto.TPSMetricsInfo;
 import com.example.ezpay.modules.user.api.dto.UserInfo;
 import com.example.ezpay.modules.payment.api.dto.TransactionInfo;
 import com.example.ezpay.modules.payment.api.dto.TransferLimitInfo;
 import com.example.ezpay.modules.account.api.dto.AccountInfo;
-import com.example.ezpay.request.TransferLimitRequest;
+import com.example.ezpay.modules.payment.api.dto.TransferLimitRequest;
 import com.example.ezpay.shared.common.enums.Status;
 import java.util.List;
 
@@ -18,6 +20,12 @@ public interface AdminService {
     // ========== 대시보드 ==========
     // Admin 대시보드 통계 조회
     AdminDashboardInfo getDashboardStats();
+
+    // 대시보드 메트릭 조회 (metricsApi.ts 전용 응답 형태)
+    DashboardMetricsInfo getDashboardMetrics();
+
+    // 실시간 TPS 메트릭 조회
+    TPSMetricsInfo getTPSMetrics();
 
     // 주간 거래 추이 (최근 7일)
     List<com.example.ezpay.modules.admin.api.dto.DailyTransactionStats> getWeeklyTransactionTrend();

@@ -23,6 +23,20 @@ public class AdminDashboardController {
         return ResponseEntity.ok(new CommonResponse<>("success", stats, "대시보드 통계 조회 성공"));
     }
 
+    // 대시보드 메트릭 조회 (관리자 대시보드 실시간 카드용)
+    @GetMapping("/metrics")
+    public ResponseEntity<CommonResponse<DashboardMetricsInfo>> getDashboardMetrics() {
+        DashboardMetricsInfo metrics = adminService.getDashboardMetrics();
+        return ResponseEntity.ok(new CommonResponse<>("success", metrics, "대시보드 메트릭 조회 성공"));
+    }
+
+    // TPS 메트릭 조회
+    @GetMapping("/tps-metrics")
+    public ResponseEntity<CommonResponse<TPSMetricsInfo>> getTPSMetrics() {
+        TPSMetricsInfo metrics = adminService.getTPSMetrics();
+        return ResponseEntity.ok(new CommonResponse<>("success", metrics, "TPS 메트릭 조회 성공"));
+    }
+
     // 주간 거래 추이 (최근 7일)
     @GetMapping("/weekly-trend")
     public ResponseEntity<CommonResponse<List<DailyTransactionStats>>> getWeeklyTransactionTrend() {

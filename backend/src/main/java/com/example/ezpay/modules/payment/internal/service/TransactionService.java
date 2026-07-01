@@ -2,8 +2,8 @@ package com.example.ezpay.modules.payment.internal.service;
 
 import com.example.ezpay.shared.messaging.events.TransferEvent;
 import com.example.ezpay.model.user.Transaction;
-import com.example.ezpay.request.TransferRequest;
-import com.example.ezpay.response.AccountOwnerResponse;
+import com.example.ezpay.modules.payment.api.dto.AccountOwnerInfo;
+import com.example.ezpay.modules.payment.api.dto.TransferRequest;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ public interface TransactionService {
     List<Transaction> getReceivedTransactions(Long receiverAccountId);
 
     // 계좌번호로 소유자 조회
-    AccountOwnerResponse getOwnerNameByAccountNumber(String accountNumber);
+    AccountOwnerInfo getOwnerNameByAccountNumber(String accountNumber);
 
     // 대시보드 (최근 거래 내역)
     List<Transaction> getRecentTransactionByAccount(Long accountId, String sort, int limit);

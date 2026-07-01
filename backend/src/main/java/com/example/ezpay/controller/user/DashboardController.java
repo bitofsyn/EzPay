@@ -1,9 +1,9 @@
 package com.example.ezpay.controller.user;
 
 import com.example.ezpay.model.user.Transaction;
+import com.example.ezpay.modules.analytics.api.dto.DashboardInfo;
 import com.example.ezpay.modules.analytics.internal.service.DashboardService;
 import com.example.ezpay.shared.common.dto.CommonResponse;
-import com.example.ezpay.response.DashboardResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,8 +20,8 @@ public class DashboardController {
 
     // 대시보드
     @GetMapping
-    public ResponseEntity<CommonResponse<DashboardResponse>> getDashboardInfo(Authentication authentication) {
-        DashboardResponse response = dashboardService.getDashboardInfo(authentication);
+    public ResponseEntity<CommonResponse<DashboardInfo>> getDashboardInfo(Authentication authentication) {
+        DashboardInfo response = dashboardService.getDashboardInfo(authentication);
         return ResponseEntity.ok(new CommonResponse<>("success", response, "사용자 정보 조회 성공 "));
     }
 

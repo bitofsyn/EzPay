@@ -3,9 +3,9 @@ package com.example.ezpay.modules.account.internal.service;
 import com.example.ezpay.shared.exception.CustomNotFoundException;
 import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.model.user.User;
+import com.example.ezpay.modules.account.api.dto.AccountCreateRequest;
 import com.example.ezpay.repository.user.AccountRepository;
 import com.example.ezpay.repository.user.UserRepository;
-import com.example.ezpay.request.AccountRequest;
 import com.example.ezpay.shared.util.AccountNumberGenerator;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -25,7 +25,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Accounts createAccount(AccountRequest accountRequest) {
+    public Accounts createAccount(AccountCreateRequest accountRequest) {
         User user = userRepository.findById(accountRequest.getUserId())
                 .orElseThrow(() -> new CustomNotFoundException("사용자를 찾을 수 없습니다." + accountRequest.getUserId()));
 

@@ -37,6 +37,10 @@ public class KafkaConfig {
     public static final String TRANSFER_EVENTS_TOPIC = "transfer-events";
     public static final String TRANSFER_EVENTS_DLT = TRANSFER_EVENTS_TOPIC + ".DLT";
 
+    public static final String TRANSACTION_EVENTS_TOPIC = "transaction-events";
+    public static final String RISK_DETECTION_EVENTS_TOPIC = "risk-detection-events";
+    public static final String SYSTEM_LOG_EVENTS_TOPIC = "system-log-events";
+
     // == Topic 정의 ==
     @Bean
     public NewTopic transferEventsTopic() {
@@ -46,6 +50,21 @@ public class KafkaConfig {
     @Bean
     public NewTopic transferEventsDltTopic() {
         return new NewTopic(TRANSFER_EVENTS_DLT, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic transactionEventsTopic() {
+        return new NewTopic(TRANSACTION_EVENTS_TOPIC, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic riskDetectionEventsTopic() {
+        return new NewTopic(RISK_DETECTION_EVENTS_TOPIC, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic systemLogEventsTopic() {
+        return new NewTopic(SYSTEM_LOG_EVENTS_TOPIC, 1, (short) 1);
     }
 
 

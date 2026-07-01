@@ -5,6 +5,7 @@ import com.example.ezpay.modules.user.api.dto.UserInfo;
 import com.example.ezpay.modules.user.api.dto.UserUpdateRequest;
 import com.example.ezpay.modules.user.api.facade.UserFacade;
 import com.example.ezpay.shared.common.dto.CommonResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -40,14 +41,14 @@ public class UserController {
 
     // 특정 회원 조회
     @GetMapping("/{id}")
-    public ResponseEntity<UserInfo> getUserById(@PathVariable Long id) {
+    public ResponseEntity<CommonResponse<UserInfo>> getUserById(@PathVariable Long id) {
         UserInfo userInfo = userFacade.getUserById(id);
-        return ResponseEntity.ok(userInfo);
+        return ResponseEntity.ok(new CommonResponse<>("success", userInfo, "회원 조회 성공"));
     }
 
     // 회원 수정
     @PutMapping("/{id}")
-    public ResponseEntity<CommonResponse<UserInfo>> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequest request) {
+    public ResponseEntity<CommonResponse<UserInfo>> updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
         UserInfo userInfo = userFacade.updateUser(id, request);
         CommonResponse<UserInfo> response = new CommonResponse<>(
                 "success", userInfo, "User updated successfully"
