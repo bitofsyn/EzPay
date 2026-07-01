@@ -54,7 +54,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         User savedUser = userRepository.save(user);
 
         // 기본 송금 한도 설정
-        // TODO: Phase 4 이후 PaymentFacade.initializeTransferLimit()로 변경 예정
         TransferLimit transferLimit = TransferLimit.builder()
                 .user(savedUser)
                 .dailyLimit(new BigDecimal("1000000.00"))
@@ -63,7 +62,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         transferLimitRepository.save(transferLimit);
 
         // 기본 알림 설정
-        // TODO: Phase 4 이후 NotificationFacade.initializeNotificationSettings()로 변경 예정
         Notification emailNotification = Notification.builder()
                 .user(savedUser)
                 .notificationType(NotificationType.EMAIL)
