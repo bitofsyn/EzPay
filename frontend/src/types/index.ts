@@ -186,13 +186,13 @@ export interface AdminUser {
   totalBalance?: number;
 }
 
+// 백엔드 ErrorLogInfo DTO와 정합 (logId, serviceName, errorMessage, occurredAt, status)
 export interface ErrorLog {
-  id: number;
-  eventId: string;
-  topic: string;
+  logId: number;
+  serviceName: string;
   errorMessage: string;
-  stackTrace?: string;
-  failedAt: string;
+  occurredAt: string;
+  status: "RESOLVED" | "UNRESOLVED";
 }
 
 // Admin Transfer Limit Types

@@ -3,14 +3,7 @@ import { FiAlertCircle, FiCheckCircle, FiFilter, FiRefreshCw, FiTrash2 } from "r
 import toast from "react-hot-toast";
 import { deleteErrorLog, getAllErrorLogs, getErrorLogsByStatus, resolveErrorLog } from "../../api/AdminAPI";
 import AdminShell from "../../components/admin/AdminShell";
-
-interface ErrorLog {
-  logId: number;
-  serviceName: string;
-  errorMessage: string;
-  occurredAt: string;
-  status: "RESOLVED" | "UNRESOLVED";
-}
+import type { ErrorLog } from "../../types";
 
 type StatusFilter = "ALL" | "RESOLVED" | "UNRESOLVED";
 

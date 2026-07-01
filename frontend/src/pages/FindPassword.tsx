@@ -125,7 +125,7 @@ function FindPasswordForm() {
 
     try {
       const res = await requestPasswordReset(email.trim());
-      const token = res.data;
+      const token = res.data as string;
       sessionStorage.setItem("resetToken", token);
       navigate("/reset-password");
     } catch (err: unknown) {

@@ -2,7 +2,16 @@
 // Organized by domain and functionality
 
 // Dashboard Hooks
-export { useAdminDashboard } from "./useAdminDashboard";
+export {
+  useAdminStats,
+  useRealtimeActivities,
+  useHourlyTransactions,
+  useWeeklyTrend,
+  useAdminAlerts,
+  useAdminMessages,
+  useRealtimeTransactions,
+  useRealtimeTPS,
+} from "./useAdminDashboard";
 
 // Realtime Data Hooks (NEW)
 export { useRealtimeRiskTransactions } from "./useRealtimeRiskTransactions";
