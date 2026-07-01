@@ -468,7 +468,7 @@ management:
         include: health,metrics,prometheus
   metrics:
     tags:
-      application: ezpay-admin-dashboard
+      application: EzPay
     distribution:
       percentiles-histogram:
         kafka.consumer.record.lag: true

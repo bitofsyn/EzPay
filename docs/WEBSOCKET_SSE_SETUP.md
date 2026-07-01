@@ -556,7 +556,7 @@ logging:
   level:
     org.springframework.web.socket: DEBUG
     org.springframework.messaging: DEBUG
-    com.ezpay.websocket: DEBUG
+    com.example.ezpay.modules.realtime: DEBUG
 ```
 
 ---
