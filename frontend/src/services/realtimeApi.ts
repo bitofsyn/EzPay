@@ -1,4 +1,5 @@
 import type { RealtimeTransaction } from '../types';
+import { withAuthToken } from './streamAuth';
 
 export interface WebSocketSubscription {
   unsubscribe: () => void;
@@ -59,7 +60,7 @@ class WebSocketManager {
   subscribe(
     topic: string,
     callback: (data: any) => void
-  ): (() => void) => {
+  ): () => void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       this.connect();
       // 재귀 호출로 연결 완료 후 구독
@@ -104,7 +105,9 @@ let wsManager: WebSocketManager | null = null;
  */
 const getWebSocketManager = (): WebSocketManager => {
   if (!wsManager) {
-    const wsUrl = `${process.env.REACT_APP_WS_URL || 'ws://localhost:8080'}/ws/admin-events`;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+    const wsBase = import.meta.env.VITE_WS_URL || apiBase.replace(/^http/, 'ws');
+    const wsUrl = withAuthToken(`${wsBase}/ws/admin-events`);
     wsManager = new WebSocketManager(wsUrl);
   }
   return wsManager;

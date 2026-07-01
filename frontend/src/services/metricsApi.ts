@@ -1,5 +1,6 @@
 import api from '../api/api';
 import type { AdminDashboardStats, ApiResponse } from '../types';
+import { withAuthToken } from './streamAuth';
 
 export interface TPSMetrics {
   currentTPS: number;
@@ -53,7 +54,7 @@ export const subscribeTPSMetrics = (
   callback: (metrics: TPSMetrics) => void
 ): (() => void) => {
   const eventSource = new EventSource(
-    `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/v1/admin/stream/tps-metrics`
+    withAuthToken(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/admin/stream/tps-metrics`)
   );
 
   eventSource.onmessage = (event) => {
@@ -85,7 +86,7 @@ export const subscribeActivities = (
   callback: (activity: any) => void
 ): (() => void) => {
   const eventSource = new EventSource(
-    `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/v1/admin/stream/activities`
+    withAuthToken(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/admin/stream/activities`)
   );
 
   eventSource.onmessage = (event) => {

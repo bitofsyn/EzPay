@@ -53,8 +53,9 @@ public class SecurityConfig {
                                 "/password-reset/reset-password",
                                 "/api/statistics/**"
                         ).permitAll()
-                        // SSE(EventSource)/WebSocket은 브라우저 제약으로 Authorization 헤더를 실을 수 없어 별도로 허용
-                        .requestMatchers("/admin/stream/**", "/ws/**").permitAll()
+                        // SSE(EventSource)/WebSocket은 헤더 대신 쿼리 파라미터(?token=)로 JWT를 전달받아 인증한다.
+                        // (JwtAuthenticationFilter가 token 파라미터를 인식) → 관리자만 실시간 스트림 구독 가능.
+                        .requestMatchers("/ws/**").hasRole("ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
