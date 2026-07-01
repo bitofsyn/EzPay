@@ -27,10 +27,8 @@ const LayoutSettings = lazy(() => import("./pages/settings/LayoutSettings"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 const AdminErrorLogs = lazy(() => import("./pages/admin/AdminErrorLogs"));
-const AdminTransactions = lazy(() => import("./pages/admin/AdminTransactions"));
 const AdminTransferLimits = lazy(() => import("./pages/admin/AdminTransferLimits"));
 // New admin pages
 const AdminUserManagement = lazy(() => import("./pages/admin/AdminUserManagement"));
