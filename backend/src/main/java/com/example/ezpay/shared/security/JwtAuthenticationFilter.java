@@ -67,6 +67,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return bearerToken.substring(7);
         }
 
+        // 3. SSE(EventSource)/WebSocket은 브라우저 제약으로 헤더를 실을 수 없어 쿼리 파라미터(?token=)로 전달받는다.
+        String paramToken = request.getParameter("token");
+        if (paramToken != null && !paramToken.isBlank()) {
+            return paramToken;
+        }
+
         return null;
     }
 }

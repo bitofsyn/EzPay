@@ -1,5 +1,6 @@
 import api from '../api/api';
 import type { LogEntry, ApiResponse } from '../types';
+import { withAuthToken } from './streamAuth';
 
 export interface GetSystemLogsResponse extends ApiResponse {
   data?: LogEntry[];
@@ -27,7 +28,7 @@ export const subscribeSystemLogs = (
   callback: (log: LogEntry) => void
 ): (() => void) => {
   const eventSource = new EventSource(
-    `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/api/v1/admin/stream/system-logs`
+    withAuthToken(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/admin/stream/system-logs`)
   );
 
   eventSource.onmessage = (event) => {

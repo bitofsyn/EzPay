@@ -15,7 +15,9 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     private final AdminWebSocketHandler adminWebSocketHandler;
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000}")
+    // 기본값을 application.yml의 app.cors.allowed-origins 및 SecurityConfig와 동일하게 유지(Vite 5173 포함).
+    // 프로퍼티 미로드 시에도 REST/SSE와 WebSocket 간 CORS 허용 오리진이 비대칭이 되지 않도록 정합.
+    @Value("${app.cors.allowed-origins:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}")
     private String allowedOrigins;
 
     @Override
