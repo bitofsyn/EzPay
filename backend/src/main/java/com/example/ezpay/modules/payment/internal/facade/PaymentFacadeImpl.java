@@ -8,7 +8,7 @@ import com.example.ezpay.modules.payment.api.dto.TransferLimitInfo;
 import com.example.ezpay.modules.payment.api.facade.PaymentFacade;
 import com.example.ezpay.modules.payment.internal.service.TransactionService;
 import com.example.ezpay.modules.payment.internal.service.TransferLimitService;
-import com.example.ezpay.request.TransferRequest;
+import com.example.ezpay.modules.payment.api.dto.TransferRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

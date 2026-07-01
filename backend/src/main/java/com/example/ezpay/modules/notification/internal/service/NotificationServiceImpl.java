@@ -3,10 +3,10 @@ package com.example.ezpay.modules.notification.internal.service;
 import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.model.user.Notification;
 import com.example.ezpay.model.user.User;
+import com.example.ezpay.modules.notification.api.dto.NotificationInfo;
+import com.example.ezpay.modules.notification.api.dto.NotificationSettingRequest;
 import com.example.ezpay.repository.user.NotificationRepository;
 import com.example.ezpay.repository.user.UserRepository;
-import com.example.ezpay.request.NotificationRequest;
-import com.example.ezpay.response.NotificationResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
@@ -27,17 +27,17 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<NotificationResponse> getUserNotifications(Long userId) {
+    public List<NotificationInfo> getUserNotifications(Long userId) {
         List<Notification> notifications = notificationRepository.findByUserId(userId);
 
         return notifications.stream()
-                .map(n -> new NotificationResponse(n.getNotificationId(), n.getNotificationType(), n.getIsEnabled(), n.getCreatedAt()))
+                .map(n -> new NotificationInfo(n.getNotificationId(), n.getNotificationType(), n.getIsEnabled(), n.getCreatedAt()))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public NotificationResponse updateNotification(Long userId, NotificationRequest notificationRequest) {
+    public NotificationInfo updateNotification(Long userId, NotificationSettingRequest notificationRequest) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
@@ -53,7 +53,7 @@ public class NotificationServiceImpl implements NotificationService {
             initEmail(user.getEmail());
         }
 
-        return new NotificationResponse(notification.getNotificationId(), notification.getNotificationType(), notification.getIsEnabled(), notification.getCreatedAt());
+        return new NotificationInfo(notification.getNotificationId(), notification.getNotificationType(), notification.getIsEnabled(), notification.getCreatedAt());
     }
 
     @Override

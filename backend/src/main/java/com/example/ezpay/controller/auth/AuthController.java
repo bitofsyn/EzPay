@@ -6,6 +6,7 @@ import com.example.ezpay.shared.common.dto.CommonResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class AuthController {
      * 회원가입
      */
     @PostMapping("/signup")
-    public ResponseEntity<CommonResponse<RegisterResponse>> signup(@RequestBody RegisterRequest request) {
+    public ResponseEntity<CommonResponse<RegisterResponse>> signup(@Valid @RequestBody RegisterRequest request) {
         RegisterResponse response = authFacade.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new CommonResponse<>("success", response, "회원가입이 완료되었습니다."));
@@ -33,7 +34,7 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<CommonResponse<LoginResponse>> login(
-            @RequestBody LoginRequest request,
+            @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
 

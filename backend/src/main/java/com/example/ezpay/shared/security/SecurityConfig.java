@@ -53,6 +53,8 @@ public class SecurityConfig {
                                 "/password-reset/reset-password",
                                 "/api/statistics/**"
                         ).permitAll()
+                        // SSE(EventSource)/WebSocket은 브라우저 제약으로 Authorization 헤더를 실을 수 없어 별도로 허용
+                        .requestMatchers("/admin/stream/**", "/ws/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

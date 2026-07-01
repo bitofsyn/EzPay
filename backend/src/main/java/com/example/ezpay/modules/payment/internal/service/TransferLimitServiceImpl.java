@@ -7,7 +7,7 @@ import com.example.ezpay.model.user.User;
 import com.example.ezpay.repository.user.TransactionRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
 import com.example.ezpay.repository.user.UserRepository;
-import com.example.ezpay.request.TransferLimitRequest;
+import com.example.ezpay.modules.payment.api.dto.TransferLimitRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

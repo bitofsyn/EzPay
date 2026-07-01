@@ -1,8 +1,8 @@
 package com.example.ezpay.controller.user;
 
 
+import com.example.ezpay.modules.analytics.api.dto.DailySummaryInfo;
 import com.example.ezpay.modules.analytics.internal.service.TransactionStatisticsService;
-import com.example.ezpay.response.DailySummaryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,10 +20,10 @@ public class TransactionStatisticsController {
     private final TransactionStatisticsService transactionStatisticsService;
 
     @GetMapping("/monthly")
-    public ResponseEntity<List<DailySummaryResponse>> monthly(@RequestParam Long userId,
+    public ResponseEntity<List<DailySummaryInfo>> monthly(@RequestParam Long userId,
                                                               @RequestParam int year,
                                                               @RequestParam int month) {
-        List<DailySummaryResponse> result = transactionStatisticsService.getMonthStatistics(userId, year, month);
+        List<DailySummaryInfo> result = transactionStatisticsService.getMonthStatistics(userId, year, month);
         return ResponseEntity.ok(result);
     }
 }

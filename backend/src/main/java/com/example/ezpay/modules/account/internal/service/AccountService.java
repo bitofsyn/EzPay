@@ -1,7 +1,7 @@
 package com.example.ezpay.modules.account.internal.service;
 
 import com.example.ezpay.model.user.Accounts;
-import com.example.ezpay.request.AccountRequest;
+import com.example.ezpay.modules.account.api.dto.AccountCreateRequest;
 import org.springframework.security.core.Authentication;
 
 import java.math.BigDecimal;
@@ -12,7 +12,7 @@ import java.util.List;
  */
 public interface AccountService {
     // 계좌 생성
-    Accounts createAccount(AccountRequest accountRequest);
+    Accounts createAccount(AccountCreateRequest accountRequest);
 
     // 모든 계좌 조회
     List<Accounts> getAllAccounts();
