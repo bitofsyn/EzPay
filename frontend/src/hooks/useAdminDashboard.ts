@@ -14,6 +14,7 @@ import {
 } from "../api/AdminAPI";
 import toast from "react-hot-toast";
 import { getRelativeTime, getActivityColor, formatActivityDescription } from "../utils/formatters";
+import { isAdminPreviewForbiddenError } from "../utils/adminView";
 import {
   AdminDashboardStats,
   Activity,

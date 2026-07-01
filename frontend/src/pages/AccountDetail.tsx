@@ -28,7 +28,6 @@ import {
   formatDateFull,
   formatAccountNumber,
   formatAmount,
-  _formatCurrency,
 } from "../utils/formatters";
 import { AccountCardSkeleton, TransactionListSkeleton, Skeleton } from "../components/Skeleton";
 import UserSidebar from "../components/UserSidebar";

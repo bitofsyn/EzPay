@@ -59,7 +59,6 @@ const StepIdentity: React.FC<StepIdentityProps> = ({
     register,
     handleSubmit,
     control,
-    _setValue,
     formState: { errors },
   } = useForm<IdentityValues>({
     resolver: yupResolver(identitySchema),

@@ -15,7 +15,7 @@ const AdminSystemLogs: React.FC = () => {
             <h2 className="text-lg font-bold text-slate-800">시스템 로그</h2>
             <p className="text-sm text-slate-400 mt-0.5">{totalCount}건 표시</p>
           </div>
-          <FilterTab tabs={SYSTEM_LOG_FILTER_TABS as string[]} activeTab={filter} onChange={setFilter} />
+          <FilterTab tabs={SYSTEM_LOG_FILTER_TABS as string[]} activeTab={filter} onChange={(tab) => setFilter(tab as typeof filter)} />
         </div>
 
         {/* Log Viewer Component */}
