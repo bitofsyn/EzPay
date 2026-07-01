@@ -120,7 +120,10 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      # 마이그레이션 도구(Flyway/Liquibase) 부재로 스키마를 Hibernate가 관리한다.
+      # update: 누락 테이블/컬럼을 자동 생성(추가만, 삭제 없음). 신규 엔티티 테이블
+      # (risk_transactions, system_logs, failed_event_log)이 prod DB에 없어 validate가 실패하던 문제 복구.
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:

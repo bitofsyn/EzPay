@@ -1,8 +1,6 @@
 package com.example.ezpay.modules.admin.internal.service;
 
-import com.example.ezpay.modules.admin.api.dto.AdminDashboardInfo;
-import com.example.ezpay.modules.admin.api.dto.DashboardMetricsInfo;
-import com.example.ezpay.modules.admin.api.dto.TPSMetricsInfo;
+import com.example.ezpay.modules.admin.api.dto.*;
 import com.example.ezpay.modules.user.api.dto.UserInfo;
 import com.example.ezpay.modules.payment.api.dto.TransactionInfo;
 import com.example.ezpay.modules.payment.api.dto.TransferLimitInfo;
@@ -28,13 +26,13 @@ public interface AdminService {
     TPSMetricsInfo getTPSMetrics();
 
     // 주간 거래 추이 (최근 7일)
-    List<com.example.ezpay.modules.admin.api.dto.DailyTransactionStats> getWeeklyTransactionTrend();
+    List<DailyTransactionStats> getWeeklyTransactionTrend();
 
     // 시간대별 거래량 (오늘)
-    List<com.example.ezpay.modules.admin.api.dto.HourlyTransactionStats> getTodayHourlyTransactions();
+    List<HourlyTransactionStats> getTodayHourlyTransactions();
 
     // 최근 활동 로그 (최근 50개)
-    List<com.example.ezpay.modules.admin.api.dto.RecentActivityLog> getRecentActivities(int limit);
+    List<RecentActivityLog> getRecentActivities(int limit);
 
     // ========== 사용자 관리 ==========
     // 모든 사용자 조회
@@ -74,10 +72,10 @@ public interface AdminService {
 
     // ========== 에러 로그 관리 ==========
     // 모든 에러 로그 조회
-    List<com.example.ezpay.modules.admin.api.dto.ErrorLogInfo> getAllErrorLogs();
+    List<ErrorLogInfo> getAllErrorLogs();
 
     // 특정 상태의 에러 로그 조회
-    List<com.example.ezpay.modules.admin.api.dto.ErrorLogInfo> getErrorLogsByStatus(com.example.ezpay.shared.common.enums.ErrorLogStatus status);
+    List<ErrorLogInfo> getErrorLogsByStatus(com.example.ezpay.shared.common.enums.ErrorLogStatus status);
 
     // 에러 로그 해결 처리
     void resolveErrorLog(Long logId);
@@ -87,7 +85,7 @@ public interface AdminService {
 
     // ========== 관리자 알림 ==========
     // 모든 알림 조회
-    List<com.example.ezpay.modules.admin.api.dto.AdminAlertInfo> getAllAlerts();
+    List<AdminAlertInfo> getAllAlerts();
 
     // 읽지 않은 알림 개수
     long getUnreadAlertCount();
@@ -100,7 +98,7 @@ public interface AdminService {
 
     // ========== 관리자 메시지 ==========
     // 모든 메시지 조회
-    List<com.example.ezpay.modules.admin.api.dto.AdminMessageInfo> getAllMessages();
+    List<AdminMessageInfo> getAllMessages();
 
     // 읽지 않은 메시지 개수
     long getUnreadMessageCount();

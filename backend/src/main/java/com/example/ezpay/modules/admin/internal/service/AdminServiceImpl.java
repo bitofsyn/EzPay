@@ -211,7 +211,7 @@ public class AdminServiceImpl implements AdminService {
                         return !transactionTime.isBefore(startOfDay) && !transactionTime.isAfter(endOfDay);
                     })
                     .filter(t -> t.getStatus() == TransactionStatus.SUCCESS)
-                    .collect(Collectors.toList());
+                    .toList();
 
             long count = dayTransactions.size();
             BigDecimal volume = dayTransactions.stream()
@@ -276,7 +276,7 @@ public class AdminServiceImpl implements AdminService {
         List<Transaction> recentTransactions = transactionRepository.findAll().stream()
                 .sorted((a, b) -> b.getTransactionDate().compareTo(a.getTransactionDate()))
                 .limit(limit / 2)
-                .collect(Collectors.toList());
+                .toList();
 
         for (Transaction tx : recentTransactions) {
             activities.add(RecentActivityLog.builder()
@@ -292,7 +292,7 @@ public class AdminServiceImpl implements AdminService {
         List<ErrorLog> recentErrors = errorLogRepository.findAll().stream()
                 .sorted((a, b) -> b.getOccurredAt().compareTo(a.getOccurredAt()))
                 .limit(limit / 4)
-                .collect(Collectors.toList());
+                .toList();
 
         for (ErrorLog error : recentErrors) {
             activities.add(RecentActivityLog.builder()
