@@ -113,9 +113,7 @@ sourceSets {
     }
 }
 
-tasks.withType(Test).configureEach {
-    enabled = false
-}
+// 테스트는 test 프로파일(H2 인메모리)로 실행되므로 활성화 유지
 tasks.named('bootJar') {
     archiveFileName = 'app.jar'
     mainClass = 'com.example.ezpay.EzPayApplication' // ✅ 실제 Application 클래스 경로로 수정
