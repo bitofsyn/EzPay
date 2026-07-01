@@ -12,7 +12,6 @@ import {
   ErrorLog,
   AdminTransferLimitInfo,
 } from "../types";
-import type { AdminAlert, AdminMessage } from "../hooks/useAdminDashboard";
 
 // ========== Dashboard API ==========
 // Admin 대시보드 통계 조회
@@ -137,55 +136,5 @@ export const updateUserTransferLimit = async (
 // 특정 사용자 송금 한도 초기화
 export const resetUserTransferLimit = async (userId: number): Promise<ApiResponse> => {
     const res = await api.put(`/admin/transfer-limits/reset/${userId}`);
-    return res.data;
-};
-
-// ========== Admin Alerts API ==========
-// 모든 알림 조회
-export const getAdminAlerts = async (): Promise<ApiResponse<AdminAlert[]>> => {
-    const res = await api.get("/admin/dashboard/alerts");
-    return res.data;
-};
-
-// 읽지 않은 알림 개수 조회
-export const getUnreadAlertCount = async (): Promise<ApiResponse> => {
-    const res = await api.get("/admin/dashboard/alerts/unread-count");
-    return res.data;
-};
-
-// 특정 알림 읽음 처리
-export const markAlertAsRead = async (alertId: number): Promise<ApiResponse> => {
-    const res = await api.put(`/admin/dashboard/alerts/${alertId}/read`);
-    return res.data;
-};
-
-// 모든 알림 읽음 처리
-export const markAllAlertsAsRead = async (): Promise<ApiResponse> => {
-    const res = await api.put("/admin/dashboard/alerts/read-all");
-    return res.data;
-};
-
-// ========== Admin Messages API ==========
-// 모든 메시지 조회
-export const getAdminMessages = async (): Promise<ApiResponse<AdminMessage[]>> => {
-    const res = await api.get("/admin/dashboard/messages");
-    return res.data;
-};
-
-// 읽지 않은 메시지 개수 조회
-export const getUnreadMessageCount = async (): Promise<ApiResponse> => {
-    const res = await api.get("/admin/dashboard/messages/unread-count");
-    return res.data;
-};
-
-// 특정 메시지 읽음 처리
-export const markMessageAsRead = async (messageId: number): Promise<ApiResponse> => {
-    const res = await api.put(`/admin/dashboard/messages/${messageId}/read`);
-    return res.data;
-};
-
-// 모든 메시지 읽음 처리
-export const markAllMessagesAsRead = async (): Promise<ApiResponse> => {
-    const res = await api.put("/admin/dashboard/messages/read-all");
     return res.data;
 };

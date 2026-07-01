@@ -101,13 +101,6 @@ export interface AdminAccount {
   lastLogin: string;
 }
 
-export interface NotificationSettings {
-  emailNotifications: boolean;
-  riskAlerts: boolean;
-  systemAlerts: boolean;
-  dailyReports: boolean;
-}
-
 export interface AdminActivityLog {
   id: number;
   timestamp: string;
