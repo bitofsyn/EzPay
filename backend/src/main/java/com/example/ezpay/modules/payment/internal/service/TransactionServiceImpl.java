@@ -13,6 +13,10 @@ import com.example.ezpay.modules.payment.api.dto.AccountOwnerInfo;
 import com.example.ezpay.modules.payment.api.dto.TransferRequest;
 import com.example.ezpay.modules.notification.internal.service.NotificationService;
 import com.example.ezpay.modules.notification.internal.service.UserNotificationService;
+import com.example.ezpay.modules.realtime.EventBroadcaster;
+import com.example.ezpay.modules.realtime.dto.PipelineStage;
+import com.example.ezpay.modules.realtime.dto.PipelineStageStatus;
+import com.example.ezpay.modules.realtime.dto.TransactionPipelineEvent;
 import com.example.ezpay.shared.common.enums.UserNotificationCategory;
 import com.example.ezpay.service.user.ErrorLogService;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +44,25 @@ public class TransactionServiceImpl implements TransactionService {
     private final ErrorLogService errorLogService;
     private final NotificationService notificationService;
     private final UserNotificationService userNotificationService;
+    private final EventBroadcaster eventBroadcaster;
+
+    // 관리자 대시보드 실시간 트랜잭션 파이프라인 SSE 채널
+    private static final String PIPELINE_CHANNEL = "transaction-pipeline";
+
+    // 송금 처리 각 단계를 파이프라인 SSE 채널로 브로드캐스트한다.
+    // 송금 성공/실패를 절대 깨지 않도록 예외는 삼킨다.
+    private void broadcastPipeline(Long txId, Accounts from, Accounts to, BigDecimal amount,
+                                   long startedAtMs, PipelineStage stage, PipelineStageStatus status, String message) {
+        try {
+            eventBroadcaster.broadcastToSse(PIPELINE_CHANNEL, TransactionPipelineEvent.of(
+                    "TX" + txId, stage, status,
+                    "#" + from.getAccountId(), "#" + to.getAccountId(), amount,
+                    System.currentTimeMillis() - startedAtMs, message
+            ));
+        } catch (Exception ignore) {
+            // 파이프라인 표시는 부가 기능이므로 실패해도 송금 흐름에 영향 주지 않음
+        }
+    }
 
     // 송금 요청 (kafka 이벤트 발행)
     @Override
@@ -100,7 +123,16 @@ public class TransactionServiceImpl implements TransactionService {
                     .orElseThrow(() -> e);
         }
 
+        // 1단계: 송금 요청 접수
+        long pipelineStart = System.currentTimeMillis();
+        broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+                pipelineStart, PipelineStage.RECEIVED, PipelineStageStatus.PROCESSING, "송금 요청을 접수했습니다");
+
         try {
+            // 2단계: 이상거래/한도 검증
+            broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+                    pipelineStart, PipelineStage.RISK_CHECK, PipelineStageStatus.PROCESSING, "이상거래 및 한도를 검증하고 있습니다");
+
             TransferLimit transferLimit = transferLimitRepository.findByUserId(fromAccount.getUser().getUserId())
                     .orElseThrow(() -> new CustomNotFoundException("송금 한도 정보를 찾을 수 없습니다."));
 
@@ -128,6 +160,10 @@ public class TransactionServiceImpl implements TransactionService {
                 throw new TransferLimitExceededException("하루 송금 한도를 초과했습니다.");
             }
 
+            // 3단계: 분산 원장(잔액) 기록
+            broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+                    pipelineStart, PipelineStage.LEDGER, PipelineStageStatus.PROCESSING, "원장에 거래를 기록하고 있습니다");
+
             fromAccount.setBalance(fromAccount.getBalance().subtract(event.getAmount()));
             toAccount.setBalance(toAccount.getBalance().add(event.getAmount()));
 
@@ -137,6 +173,10 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setStatus(TransactionStatus.SUCCESS);
             transaction.setDescription("송금 완료");
             Transaction saved = transactionRepository.save(transaction);
+
+            // 4단계: 정산 및 완료
+            broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+                    pipelineStart, PipelineStage.SETTLEMENT, PipelineStageStatus.COMPLETED, "정산이 완료되어 거래가 종료되었습니다");
 
             // 알림/학습데이터 저장은 송금 성공을 깨지 않도록 분리(실패시 로그만 남김)
             try {
@@ -193,6 +233,9 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setStatus(TransactionStatus.FAILED);
             transaction.setDescription(e.getMessage());
             transactionRepository.save(transaction);
+            // 검증 단계에서 차단(실패) 처리
+            broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+                    pipelineStart, PipelineStage.RISK_CHECK, PipelineStageStatus.FAILED, e.getMessage());
             errorLogService.logError("Transaction Service", e.getMessage(), ErrorLogStatus.UNRESOLVED);
             return transaction;
         } catch (Exception e) {

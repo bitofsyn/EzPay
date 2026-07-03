@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
-import {
-  Inbox,
-  Search,
-  BookOpen,
-  Radio,
-  Circle,
-} from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 import toast from "react-hot-toast";
 import AdminShell from "../../components/admin/AdminShell";
+import TransactionPipeline from "../../components/admin/TransactionPipeline";
+import { useSseChannel } from "../../hooks";
 import { getAllTransactions, getDashboardMetrics, getTPSMetrics } from "../../api/AdminAPI";
-import type { AdminDashboardMetrics, AdminTPSMetrics, AdminTransactionStatusType } from "../../types";
+import type {
+  Activity,
+  AdminDashboardMetrics,
+  AdminTPSMetrics,
+  AdminTransactionInfo,
+  AdminTransactionStatusType,
+} from "../../types";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -116,70 +118,6 @@ const MetricCards: React.FC<MetricCardsProps> = ({ metrics, tps, tpsSpark }) => 
   );
 };
 
-// ─── Process Pipeline ─────────────────────────────────────────────────────────
-
-const PIPELINE_STEPS = [
-  { label: "요청 수신", sub: "API 엔드포인트 수신", Icon: Inbox },
-  { label: "잔액 검증", sub: "계좌 잔액 확인", Icon: Search },
-  { label: "원장 반영", sub: "이동 완료 업데이트", Icon: BookOpen },
-  { label: "이벤트 발행", sub: "Kafka 이벤트 게시", Icon: Radio },
-  { label: "완료", sub: "알림 전송", Icon: Circle },
-];
-
-const ProcessPipeline: React.FC<{ activeTx?: TxRow }> = ({ activeTx }) => (
-  <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-6 py-5">
-    <h2 className="text-sm font-bold text-gray-700 mb-6">프로세스 파이프라인</h2>
-
-    <div className="flex items-start">
-      {PIPELINE_STEPS.map((step, i) => {
-        const active = i < 4;
-        const Icon = step.Icon;
-        const isLast = i === PIPELINE_STEPS.length - 1;
-        return (
-          <React.Fragment key={step.label}>
-            <div className="flex flex-col items-center gap-2 min-w-[80px]">
-              <div
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-                  active
-                    ? "bg-gray-900 text-white shadow-md"
-                    : "border-2 border-gray-300 bg-white text-gray-300"
-                }`}
-              >
-                <Icon size={22} />
-              </div>
-              <p className="text-xs font-bold text-gray-700 text-center leading-tight">
-                {step.label}
-              </p>
-              <p className="text-[10px] text-gray-400 text-center leading-tight">{step.sub}</p>
-            </div>
-            {!isLast && (
-              <div className="flex-1 flex items-start pt-7">
-                <div
-                  className={`h-px w-full transition-colors ${
-                    i < 3 ? "bg-gray-800" : "bg-gray-200"
-                  }`}
-                />
-              </div>
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
-
-    {activeTx && (
-      <div className="mt-5 pt-4 border-t border-gray-100">
-        <span className="text-xs font-mono text-gray-500">
-          <span className="text-gray-800 font-bold">{activeTx.id}</span>
-          {" · "}
-          {activeTx.sender}→{activeTx.receiver}
-          {" · "}
-          <span className="font-bold">₩{activeTx.amount.toLocaleString()}</span>
-        </span>
-      </div>
-    )}
-  </div>
-);
-
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_DOT: Record<TxStatus, string> = {
@@ -196,6 +134,16 @@ const STATUS_LABEL: Record<TxStatus, { text: string; cls: string }> = {
 
 // ─── Realtime Transaction Log ─────────────────────────────────────────────────
 
+// 컬럼 정의: 헤더/셀 정렬을 한 곳에서 관리해 Th·Td 정렬을 항상 일치시킨다.
+const TX_COLUMNS: { label: string; align: "text-left" | "text-right" | "text-center" }[] = [
+  { label: "시각", align: "text-center" },
+  { label: "거래 ID", align: "text-center" },
+  { label: "송금 경로", align: "text-center" },
+  { label: "금액", align: "text-center" },
+  { label: "상태", align: "text-center" },
+  { label: "응답", align: "text-center" },
+];
+
 const TransactionLog: React.FC<{ txs: TxRow[] }> = ({ txs }) => {
   const colGrid =
     "grid grid-cols-[90px_110px_1fr_100px_160px_80px] items-center gap-2";
@@ -211,11 +159,11 @@ const TransactionLog: React.FC<{ txs: TxRow[] }> = ({ txs }) => {
         <span className="text-xs font-semibold text-gray-400">{txs.length}건</span>
       </div>
 
-      {/* Column headers */}
+      {/* Column headers — 각 컬럼의 align을 데이터 셀과 동일하게 맞춘다 */}
       <div className={`${colGrid} px-5 py-2.5 border-b border-gray-50`}>
-        {["시각", "거래 ID", "송금 경로", "금액", "상태", "응답"].map((h) => (
-          <p key={h} className="text-[11px] font-semibold text-gray-400">
-            {h}
+        {TX_COLUMNS.map((c) => (
+          <p key={c.label} className={`text-[11px] font-semibold text-gray-400 ${c.align}`}>
+            {c.label}
           </p>
         ))}
       </div>
@@ -243,7 +191,7 @@ const TransactionLog: React.FC<{ txs: TxRow[] }> = ({ txs }) => {
                 className={`${colGrid} px-5 py-3 border-b border-gray-50 hover:bg-gray-50/60 transition-colors`}
               >
                 {/* 시각 */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-center gap-1.5">
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: dot }}
@@ -252,20 +200,20 @@ const TransactionLog: React.FC<{ txs: TxRow[] }> = ({ txs }) => {
                 </div>
 
                 {/* 거래 ID */}
-                <span className="text-xs font-mono font-bold text-blue-600">{tx.id}</span>
+                <span className="text-xs font-mono font-bold text-blue-600 text-center">{tx.id}</span>
 
                 {/* 송금 경로 */}
-                <span className="text-xs text-gray-700 truncate">
+                <span className="text-xs text-gray-700 truncate text-center">
                   {tx.sender} – {tx.receiver}
                 </span>
 
                 {/* 금액 */}
-                <span className="text-xs font-bold text-gray-800 text-right">
+                <span className="text-xs font-bold text-gray-800 text-center">
                   ₩{tx.amount.toLocaleString()}
                 </span>
 
                 {/* 상태 */}
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex items-center justify-center gap-1.5 flex-wrap">
                   <span className={`text-xs ${lbl.cls}`}>{lbl.text}</span>
                   {tx.status === "FAILED" && (
                     <>
@@ -286,7 +234,7 @@ const TransactionLog: React.FC<{ txs: TxRow[] }> = ({ txs }) => {
 
                 {/* 응답 */}
                 <span
-                  className={`text-xs font-mono text-right ${
+                  className={`text-xs font-mono text-center ${
                     tx.responseMs > 700 ? "text-red-400" : "text-gray-500"
                   }`}
                 >
@@ -399,6 +347,34 @@ const TX_STATUS_MAP: Record<AdminTransactionStatusType, TxStatus> = {
   CANCELLED: "FAILED",
 };
 
+// 백엔드 거래 목록을 로그 테이블 행으로 변환한다.
+// 최신 거래가 항상 최상단(내림차순)이 되도록 정렬하며, 시각이 같으면 transactionId가 큰 쪽을 우선한다.
+const mapToTxRows = (txData: AdminTransactionInfo[]): TxRow[] =>
+  txData
+    .slice()
+    .sort((a, b) => {
+      const t = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return t !== 0 ? t : Number(b.transactionId) - Number(a.transactionId);
+    })
+    .slice(0, 30)
+    .map((tx) => ({
+      uid: String(tx.transactionId),
+      time: tx.createdAt
+        ? new Date(tx.createdAt).toLocaleTimeString("ko-KR", { hour12: false })
+        : "--:--",
+      id: `TX${tx.transactionId}`,
+      sender: `#${tx.senderAccountId}`,
+      receiver: `#${tx.receiverAccountId}`,
+      amount: Number(tx.amount),
+      status: TX_STATUS_MAP[tx.status] ?? "PENDING",
+      responseMs: 0,
+    }));
+
+// TPS 실시간 스파크라인에 유지할 최근 표본 개수
+const TPS_SPARK_LIMIT = 12;
+// 실시간 이벤트가 유실될 경우를 대비한 안전 폴링 주기(ms)
+const SAFETY_POLL_INTERVAL = 20000;
+
 const AdminDashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<AdminDashboardMetrics | null>(null);
   const [tps, setTps] = useState<AdminTPSMetrics | null>(null);
@@ -407,6 +383,22 @@ const AdminDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
+  // 지표 + 거래 로그를 다시 받아 화면 상태를 갱신한다(이벤트 수신/안전 폴링 시 재사용).
+  // 실패해도 기존 화면을 유지하도록 조용히 무시한다.
+  const refresh = useCallback(async () => {
+    try {
+      const [metricsData, txData] = await Promise.all([
+        getDashboardMetrics(),
+        getAllTransactions(),
+      ]);
+      setMetrics(metricsData);
+      setTxs(mapToTxRows(txData));
+    } catch (error) {
+      console.error("대시보드 실시간 갱신 실패:", error);
+    }
+  }, []);
+
+  // 최초 로드: 지표 + 첫 거래 스냅샷을 받아 로딩/에러 UX를 결정한다.
   useEffect(() => {
     let active = true;
 
@@ -423,29 +415,8 @@ const AdminDashboard: React.FC = () => {
 
         setMetrics(metricsData);
         setTps(tpsData);
-        setTpsSpark([
-          { v: tpsData.avgTPS },
-          { v: tpsData.currentTPS },
-          { v: tpsData.peakTPS },
-        ]);
-
-        const rows: TxRow[] = txData
-          .slice()
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 30)
-          .map((tx) => ({
-            uid: String(tx.transactionId),
-            time: tx.createdAt
-              ? new Date(tx.createdAt).toLocaleTimeString("ko-KR", { hour12: false })
-              : "--:--",
-            id: `TX${tx.transactionId}`,
-            sender: `#${tx.senderAccountId}`,
-            receiver: `#${tx.receiverAccountId}`,
-            amount: Number(tx.amount),
-            status: TX_STATUS_MAP[tx.status] ?? "PENDING",
-            responseMs: 0,
-          }));
-        setTxs(rows);
+        setTpsSpark([{ v: tpsData.avgTPS }, { v: tpsData.currentTPS }]);
+        setTxs(mapToTxRows(txData));
       } catch (error) {
         if (!active) return;
         console.error("대시보드 로드 실패:", error);
@@ -461,6 +432,33 @@ const AdminDashboard: React.FC = () => {
       active = false;
     };
   }, []);
+
+  const streamEnabled = !isLoading && !isError;
+
+  // (1) TPS 메트릭 실시간 구독 → 지표 카드 + 스파크라인이 새로고침 없이 갱신된다.
+  const { connected } = useSseChannel<AdminTPSMetrics>("tps-metrics", {
+    enabled: streamEnabled,
+    onEvent: (data) => {
+      setTps(data);
+      setTpsSpark((prev) => [...prev, { v: data.currentTPS }].slice(-TPS_SPARK_LIMIT));
+    },
+  });
+
+  // (2) 활동 이벤트 실시간 구독 → 사용자 액션(송금/상태 변경 등)이 발생하면
+  //     지표와 트랜잭션 로그를 즉시 재조회해 관리자 화면을 리렌더링한다.
+  useSseChannel<Activity>("activities", {
+    enabled: streamEnabled,
+    onEvent: () => {
+      refresh();
+    },
+  });
+
+  // 실시간 이벤트가 유실되는 경우를 대비한 안전 폴링(느린 주기).
+  useEffect(() => {
+    if (!streamEnabled) return;
+    const timer = window.setInterval(refresh, SAFETY_POLL_INTERVAL);
+    return () => window.clearInterval(timer);
+  }, [streamEnabled, refresh]);
 
   return (
     <AdminShell title="관리자 대시보드">
@@ -482,11 +480,26 @@ const AdminDashboard: React.FC = () => {
           </div>
         ) : (
           <>
+            {/* 실시간 연결 상태 표시 */}
+            <div className="flex items-center justify-end">
+              <span
+                className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                  connected ? "text-emerald-500" : "text-gray-400"
+                }`}
+              >
+                {connected ? <Wifi size={13} /> : <WifiOff size={13} />}
+                {connected ? "실시간 연결됨" : "재연결 중…"}
+                {connected && (
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                )}
+              </span>
+            </div>
+
             {/* 1. 핵심 지표 카드 */}
             <MetricCards metrics={metrics} tps={tps} tpsSpark={tpsSpark} />
 
-            {/* 2. 프로세스 파이프라인 */}
-            <ProcessPipeline activeTx={txs[0]} />
+            {/* 2. 실시간 트랜잭션 처리 파이프라인 (SSE 실시간 연동) */}
+            <TransactionPipeline />
 
             {/* 3. 트랜잭션 로그 + 정책 설정 */}
             <div className="grid gap-4 xl:grid-cols-[1fr_300px]">

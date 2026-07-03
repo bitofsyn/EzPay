@@ -29,4 +29,18 @@ public class AdminStreamController {
     public SseEmitter streamActivities() {
         return sseEmitterRegistry.register("activities");
     }
+
+    // 실시간 트랜잭션 처리 파이프라인(useTransactionPipeline 훅)이 구독하는 스트림.
+    // Kafka 거래 이벤트 및 파이프라인 시뮬레이터가 발행하는 단계 전이 이벤트를 전달한다.
+    @GetMapping("/transaction-pipeline")
+    public SseEmitter streamTransactionPipeline() {
+        return sseEmitterRegistry.register("transaction-pipeline");
+    }
+
+    // 사용자 상태 변경 등 사용자 도메인 실시간 이벤트 스트림.
+    // 관리자 사용자 관리 뷰(useSseChannel)가 구독해 해당 사용자 행을 즉시 갱신한다.
+    @GetMapping("/user-events")
+    public SseEmitter streamUserEvents() {
+        return sseEmitterRegistry.register("user-events");
+    }
 }

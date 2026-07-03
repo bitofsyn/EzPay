@@ -315,6 +315,16 @@ export interface AdminUserInfo {
   createdAt: string;
 }
 
+// 백엔드 RealtimeUserEvent (SSE 채널 "user-events")
+// 사용자 상태 변경 등 사용자 도메인 실시간 이벤트
+export interface RealtimeUserEvent {
+  userId: number;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
+  action: string;
+  occurredAt: string;
+}
+
 // 정책 관리 (신규 엔드포인트 계약: GET/PUT /admin/policies, GET /admin/policies/history)
 export interface AdminPolicyConfig {
   dailyLimit: number;
@@ -338,6 +348,28 @@ export interface AdminPolicyChange {
   before: string;
   after: string;
   reason: string;
+}
+
+// ─── Realtime Transaction Pipeline ─────────────────────────────────────────────
+
+// 백엔드 PipelineStage(enum)와 1:1 대응. 스텝 순서를 그대로 표현한다.
+export type PipelineStage = "RECEIVED" | "RISK_CHECK" | "LEDGER" | "SETTLEMENT";
+
+// 백엔드 PipelineStageStatus(enum)와 대응
+export type PipelineStageStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+
+// SSE 채널 "transaction-pipeline"로 수신하는 단계 전이 이벤트
+export interface TransactionPipelineEvent {
+  txId: string;
+  stage: PipelineStage;
+  stageIndex: number;
+  stageStatus: PipelineStageStatus;
+  sender: string;
+  receiver: string;
+  amount: number;
+  elapsedMs: number;
+  message: string;
+  occurredAt: string;
 }
 
 // Re-export admin types
