@@ -47,6 +47,11 @@ dependencies {
     // Spring Boot Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+    // 모니터링: Actuator + Micrometer Prometheus 레지스트리
+    // /actuator/prometheus 로 JVM/HikariCP/HTTP 메트릭을 노출해 Prometheus가 수집한다.
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
     // Password 암호화 (BCrypt)
     implementation 'org.springframework.security:spring-security-crypto:6.4.5'
 

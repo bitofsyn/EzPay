@@ -7,6 +7,7 @@ import com.example.ezpay.modules.systemlog.repository.SystemLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -30,7 +31,8 @@ public class SystemLogServiceImpl implements SystemLogService {
     }
 
     @Override
-    @Transactional
+    // 별도 트랜잭션: 호출측(송금)이 롤백돼도 로그는 남고, 로그 저장 실패가 송금을 오염시키지 않는다.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SystemLog save(SystemLog systemLog) {
         SystemLog saved = systemLogRepository.save(systemLog);
         eventBroadcaster.broadcastToSse(SSE_CHANNEL_SYSTEM_LOGS, SystemLogInfo.from(saved));

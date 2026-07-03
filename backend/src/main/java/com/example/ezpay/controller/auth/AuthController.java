@@ -2,6 +2,7 @@ package com.example.ezpay.controller.auth;
 
 import com.example.ezpay.modules.auth.api.dto.*;
 import com.example.ezpay.modules.auth.api.facade.AuthFacade;
+import com.example.ezpay.modules.systemlog.service.SystemLogger;
 import com.example.ezpay.shared.common.dto.CommonResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +11,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,7 +20,10 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final String LOG_SERVICE = "AuthService";
+
     private final AuthFacade authFacade;
+    private final SystemLogger systemLogger;
 
     /**
      * 회원가입
@@ -67,7 +73,19 @@ public class AuthController {
         jwtCookie.setMaxAge(0); // 즉시 만료
         httpResponse.addCookie(jwtCookie);
 
+        // 시스템 로그: 로그아웃(INFO). JWT 필터가 세팅한 인증 주체(email)를 읽어 기록한다.
+        systemLogger.info(LOG_SERVICE, "로그아웃: " + currentUser());
+
         return ResponseEntity.ok(new CommonResponse<>("success", null, "로그아웃 성공"));
+    }
+
+    // 현재 인증된 사용자 식별자(email)를 반환한다. 토큰이 없거나 익명이면 "알 수 없음".
+    private String currentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+            return "알 수 없음";
+        }
+        return auth.getName();
     }
 
     /**

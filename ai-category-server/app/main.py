@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from app.api import router  # 분리된 라우터 가져오기
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from app.logger import logger
 from app.kafka.pipeline import CategorizationPipeline
 from app.llm.service import get_categorization_service
@@ -44,6 +45,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Prometheus 계측: 기본 HTTP 지표(요청 수/지연/진행 중 요청)를 수집해 /metrics 로 노출.
+# Prometheus 가 http://<host>:8000/metrics 를 스크레이프한다.
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
 # 라우터 등록
 app.include_router(router)

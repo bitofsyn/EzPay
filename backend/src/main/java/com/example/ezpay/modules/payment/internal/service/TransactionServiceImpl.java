@@ -17,6 +17,11 @@ import com.example.ezpay.modules.realtime.EventBroadcaster;
 import com.example.ezpay.modules.realtime.dto.PipelineStage;
 import com.example.ezpay.modules.realtime.dto.PipelineStageStatus;
 import com.example.ezpay.modules.realtime.dto.TransactionPipelineEvent;
+import com.example.ezpay.modules.risk.entity.RiskLevel;
+import com.example.ezpay.modules.risk.entity.RiskTransaction;
+import com.example.ezpay.modules.risk.entity.RiskTransactionStatus;
+import com.example.ezpay.modules.risk.service.RiskTransactionService;
+import com.example.ezpay.modules.systemlog.service.SystemLogger;
 import com.example.ezpay.shared.common.enums.UserNotificationCategory;
 import com.example.ezpay.service.user.ErrorLogService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,9 +51,19 @@ public class TransactionServiceImpl implements TransactionService {
     private final NotificationService notificationService;
     private final UserNotificationService userNotificationService;
     private final EventBroadcaster eventBroadcaster;
+    private final RiskTransactionService riskTransactionService;
+    private final SystemLogger systemLogger;
 
     // 관리자 대시보드 실시간 트랜잭션 파이프라인 SSE 채널
     private static final String PIPELINE_CHANNEL = "transaction-pipeline";
+
+    // 시스템 로그 서비스 이름(관리자 시스템 로그 화면 표시용)
+    private static final String LOG_SERVICE = "TransferService";
+    private static final String LOG_SERVICE_RISK = "RiskDetection";
+
+    // AI 이상거래 탐지 임계값(원). 초과 송금은 관리자 검토 대기(PENDING_REVIEW) 위험 거래로 적재된다.
+    private static final BigDecimal RISK_DANGER_THRESHOLD = new BigDecimal("3000000");
+    private static final BigDecimal RISK_CAUTION_THRESHOLD = new BigDecimal("1000000");
 
     // 송금 처리 각 단계를 파이프라인 SSE 채널로 브로드캐스트한다.
     // 송금 성공/실패를 절대 깨지 않도록 예외는 삼킨다.
@@ -61,6 +77,46 @@ public class TransactionServiceImpl implements TransactionService {
             ));
         } catch (Exception ignore) {
             // 파이프라인 표시는 부가 기능이므로 실패해도 송금 흐름에 영향 주지 않음
+        }
+    }
+
+    // 송금 금액 기반 이상거래 탐지. 위험/주의 거래를 관리자 검토 큐(위험 거래)에 적재한다.
+    // 탐지는 부가 기능이므로 실패해도 송금 성공 흐름을 깨지 않는다.
+    private void detectRisk(Transaction transaction, Accounts fromAccount, Accounts toAccount, BigDecimal amount) {
+        try {
+            if (amount == null) return;
+
+            RiskLevel level;
+            String reason;
+            if (amount.compareTo(RISK_DANGER_THRESHOLD) >= 0) {
+                level = RiskLevel.DANGER;
+                reason = String.format("고액 송금 감지: ₩%,d. 이상 거래 패턴으로 의심되어 검토가 필요합니다.", amount.longValue());
+            } else if (amount.compareTo(RISK_CAUTION_THRESHOLD) >= 0) {
+                level = RiskLevel.CAUTION;
+                reason = String.format("평소보다 큰 금액(₩%,d)의 송금입니다. 확인이 필요합니다.", amount.longValue());
+            } else {
+                return; // 정상 거래는 적재하지 않음
+            }
+
+            RiskTransaction risk = RiskTransaction.builder()
+                    .transactionId("TX" + transaction.getTransactionId())
+                    .level(level)
+                    .sender(fromAccount.getUser().getName())
+                    .receiver(toAccount.getUser().getName())
+                    .amount(amount)
+                    .transactionDatetime(LocalDateTime.now())
+                    .category(transaction.getCategory())
+                    .reason(reason)
+                    .status(RiskTransactionStatus.PENDING_REVIEW)
+                    .build();
+            riskTransactionService.save(risk);
+
+            // 시스템 로그: 위험거래 감지(WARN). 레벨(DANGER/CAUTION)은 메시지로 구분한다.
+            systemLogger.warn(LOG_SERVICE_RISK, String.format(
+                    "위험거래 감지: TX%d [%s] ₩%,d - %s",
+                    transaction.getTransactionId(), level, amount.longValue(), reason));
+        } catch (Exception e) {
+            errorLogService.logError("Risk Detection", "위험 거래 탐지/저장 실패: " + e.getMessage(), ErrorLogStatus.UNRESOLVED);
         }
     }
 
@@ -228,6 +284,15 @@ public class TransactionServiceImpl implements TransactionService {
                 errorLogService.logError("TrainingData", "학습데이터 저장 실패: " + trainingError.getMessage(), ErrorLogStatus.UNRESOLVED);
             }
 
+            // AI 이상거래 탐지: 고액 송금을 관리자 검토 큐(위험 거래)에 적재한다.
+            detectRisk(saved, fromAccount, toAccount, event.getAmount());
+
+            // 시스템 로그: 송금 완료(INFO)
+            systemLogger.info(LOG_SERVICE, String.format(
+                    "송금 완료: TX%d #%d → #%d ₩%,d",
+                    saved.getTransactionId(), fromAccount.getAccountId(),
+                    toAccount.getAccountId(), event.getAmount().longValue()));
+
             return saved;
         } catch (CustomNotFoundException | TransferLimitExceededException | IllegalArgumentException e) {
             transaction.setStatus(TransactionStatus.FAILED);
@@ -237,9 +302,15 @@ public class TransactionServiceImpl implements TransactionService {
             broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
                     pipelineStart, PipelineStage.RISK_CHECK, PipelineStageStatus.FAILED, e.getMessage());
             errorLogService.logError("Transaction Service", e.getMessage(), ErrorLogStatus.UNRESOLVED);
+            // 시스템 로그: 검증 단계 차단(WARN)
+            systemLogger.warn(LOG_SERVICE, String.format(
+                    "송금 차단: TX%d - %s", transaction.getTransactionId(), e.getMessage()));
             return transaction;
         } catch (Exception e) {
             errorLogService.logError("Transaction Service", "알수 없는 오류 발생:" + e.getMessage(), ErrorLogStatus.UNRESOLVED);
+            // 시스템 로그: 알 수 없는 오류(ERROR)
+            systemLogger.error(LOG_SERVICE, String.format(
+                    "송금 처리 오류: TX%d - %s", transaction.getTransactionId(), e.getMessage()));
             throw e;
         }
     }
