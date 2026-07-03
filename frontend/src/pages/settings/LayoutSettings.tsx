@@ -19,7 +19,7 @@ import {
   UserRound,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import UserSidebar from "../../components/UserSidebar";
+import UserShell from "../../components/UserShell";
 import {
   deleteUser,
   getLoginHistory,
@@ -35,7 +35,6 @@ import {
 } from "../../api/UserAPI";
 import { Account, LoginHistoryItem, NotificationSettings, TransferLimit, User } from "../../types";
 import { clearUserData, updateStoredUserData } from "../../utils/storage";
-import { navigateToAdminDashboard } from "../../utils/adminView";
 
 type SettingsSection =
   | "profile"
@@ -64,12 +63,6 @@ type ToggleItem = {
   enabled: boolean;
   onToggle: () => void;
 };
-
-const todayLabel = new Date().toLocaleDateString("ko-KR", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-});
 
 const sectionRouteMap: Record<string, SettingsSection> = {
   "": "profile",
@@ -910,48 +903,8 @@ const LayoutSettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#eef4fb] text-slate-900">
-      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <UserSidebar unreadCount={unreadCount} />
-
-        <main className="flex min-h-screen flex-col">
-          <header className="border-b border-slate-200 bg-white px-5 py-3">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-              <div>
-                <h1 className="text-[22px] font-black tracking-tight text-slate-950">설정</h1>
-                <p className="mt-1 text-xs font-semibold text-slate-400">EzPay · {todayLabel}</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 text-sm font-semibold">
-                  <button type="button" className="rounded-full bg-slate-950 px-5 py-2 text-white shadow-sm">
-                    사용자 뷰
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-full px-5 py-2 text-slate-600 transition hover:text-slate-900"
-                    onClick={() => navigateToAdminDashboard(navigate)}
-                  >
-                    관리자 뷰
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate("/notifications")}
-                  className="relative flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
-                >
-                  <Bell size={18} />
-                  {unreadCount > 0 && (
-                    <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white shadow-lg shadow-rose-500/30">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </header>
-
-          <div className="flex-1 bg-[#eef4fb] px-6 py-5">
-            <div className="mx-auto grid w-full max-w-[980px] gap-4 xl:grid-cols-[164px_minmax(0,1fr)]">
+    <UserShell title="설정" showViewToggle unreadCount={unreadCount}>
+      <div className="mx-auto grid w-full max-w-[980px] gap-4 xl:grid-cols-[164px_minmax(0,1fr)]">
               <aside className="rounded-[18px] bg-white px-3 py-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
                 <div className="mb-3 px-2">
                   <p className="text-xs font-black tracking-tight text-slate-400">설정</p>
@@ -989,12 +942,9 @@ const LayoutSettings = () => {
                 </div>
               </aside>
 
-              <div className="pt-1">{renderContent()}</div>
-            </div>
-          </div>
-        </main>
+        <div className="pt-1">{renderContent()}</div>
       </div>
-    </div>
+    </UserShell>
   );
 };
 

@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
-  Bell,
   Building2,
   CheckCircle2,
   ChevronDown,
@@ -11,17 +9,18 @@ import {
 import { createAccount } from "../api/UserAPI";
 import { User } from "../types";
 import { getUserData } from "../utils/storage";
-import UserSidebar from "../components/UserSidebar";
+import UserShell from "../components/UserShell";
 
+// 백엔드 AccountNumberGenerator와 동일한 은행명이어야 지정번호(prefix)가 정상 적용된다.
+// (이름이 다르면 기본값 "99"로 계좌번호가 생성됨)
 const BANK_OPTIONS = [
-  { name: "국민은행", color: "bg-yellow-500" },
-  { name: "신한은행", color: "bg-blue-600" },
-  { name: "우리은행", color: "bg-sky-500" },
-  { name: "하나은행", color: "bg-emerald-500" },
-  { name: "기업은행", color: "bg-slate-700" },
-  { name: "농협은행", color: "bg-green-600" },
-  { name: "카카오뱅크", color: "bg-yellow-400" },
-  { name: "토스뱅크", color: "bg-blue-500" },
+  { name: "신한은행", prefix: "12", color: "bg-blue-600" },
+  { name: "우리은행", prefix: "34", color: "bg-sky-500" },
+  { name: "KB국민은행", prefix: "56", color: "bg-yellow-500" },
+  { name: "NH농협은행", prefix: "78", color: "bg-green-600" },
+  { name: "기업은행", prefix: "90", color: "bg-slate-700" },
+  { name: "카카오뱅크", prefix: "13", color: "bg-yellow-400" },
+  { name: "토스뱅크", prefix: "24", color: "bg-blue-500" },
 ];
 
 const formatInputAmount = (value: string): string => {
@@ -77,37 +76,7 @@ const CreateAccount: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
-      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <UserSidebar />
-
-        <main className="flex flex-col gap-5">
-          {/* Header */}
-          <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => navigate("/accounts")}
-                  className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-                >
-                  <ArrowLeft size={18} />
-                </button>
-                <div>
-                  <h1 className="text-[2rem] font-black tracking-tight text-slate-950">계좌 개설</h1>
-                  <p className="text-sm font-semibold text-slate-400">새 계좌를 개설합니다</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
-                onClick={() => navigate("/settings/notification")}
-              >
-                <Bell size={18} />
-              </button>
-            </div>
-          </header>
-
+    <UserShell title="계좌 개설" subtitle="새 계좌를 개설합니다" backTo="/accounts">
           <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
             {/* Form */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -163,7 +132,7 @@ const CreateAccount: React.FC = () => {
                     placeholder="0"
                     value={balance}
                     onChange={(e) => setBalance(formatInputAmount(e.target.value))}
-                    className="w-full rounded-[16px] border border-slate-200 bg-slate-50 py-4 pr-12 pl-4 text-right text-[1.8rem] font-black text-slate-950 placeholder-slate-300 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                    className="w-full rounded-[16px] border border-slate-200 bg-slate-50 py-4 pr-12 pl-4 text-right text-2xl font-black text-slate-950 placeholder-slate-300 transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-base font-bold text-slate-400">원</span>
                 </div>
@@ -232,7 +201,9 @@ const CreateAccount: React.FC = () => {
                 <div className="mt-4 flex items-start justify-between">
                   <div>
                     <p className="text-sm font-semibold text-white/70">{selectedBank.name}</p>
-                    <p className="mt-1 text-sm tracking-[0.12em] text-white/40">●●●● ●●●● ●●●●</p>
+                    <p className="mt-1 font-mono text-sm tracking-[0.12em] text-white/40">
+                      {selectedBank.prefix}●●-●●●●-●●●●
+                    </p>
                   </div>
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
                     <CreditCard size={18} />
@@ -240,7 +211,7 @@ const CreateAccount: React.FC = () => {
                 </div>
                 <div className="mt-6">
                   <p className="text-sm font-semibold text-white/60">초기 잔액</p>
-                  <p className="mt-1 text-[2rem] font-black">
+                  <p className="mt-1 text-2xl font-black">
                     {balance ? balance : "0"}
                     <span className="ml-1 text-base font-bold text-white/60">원</span>
                   </p>
@@ -267,9 +238,7 @@ const CreateAccount: React.FC = () => {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </UserShell>
   );
 };
 

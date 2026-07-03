@@ -8,7 +8,10 @@ import com.example.ezpay.modules.user.api.dto.UserInfo;
 import com.example.ezpay.modules.user.api.dto.UserUpdateRequest;
 import com.example.ezpay.repository.user.AccountRepository;
 import com.example.ezpay.repository.user.LoginHistoryRepository;
+import com.example.ezpay.modules.notification.internal.service.UserNotificationService;
+import com.example.ezpay.shared.common.enums.UserNotificationCategory;
 import com.example.ezpay.repository.user.NotificationRepository;
+import com.example.ezpay.repository.user.UserNotificationRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
 import com.example.ezpay.repository.user.UserRepository;
 import com.example.ezpay.shared.exception.CustomNotFoundException;
@@ -28,6 +31,8 @@ public class UserManagementServiceImpl implements UserManagementService {
     private final LoginHistoryRepository loginHistoryRepository;
     private final TransferLimitRepository transferLimitRepository;
     private final NotificationRepository notificationRepository;
+    private final UserNotificationRepository userNotificationRepository;
+    private final UserNotificationService userNotificationService;
     private final AccountRepository accountRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
@@ -84,6 +89,7 @@ public class UserManagementServiceImpl implements UserManagementService {
         // 연관 데이터 삭제
         transferLimitRepository.deleteByUser_UserId(user.getUserId());
         notificationRepository.deleteByUser(user);
+        userNotificationRepository.deleteByUser_UserId(user.getUserId());
 
         List<Accounts> accounts = accountRepository.findByUser(user);
         for (Accounts account : accounts) {
@@ -108,6 +114,20 @@ public class UserManagementServiceImpl implements UserManagementService {
                 .build();
 
         loginHistoryRepository.save(loginHistory);
+
+        // 보안 알림 생성 (실패해도 로그인 기록은 유지)
+        try {
+            String device = (deviceInfo == null || deviceInfo.isBlank()) ? "알 수 없는 기기" : deviceInfo;
+            String ip = (ipAddress == null || ipAddress.isBlank()) ? "" : " (" + ipAddress + ")";
+            userNotificationService.create(
+                    user,
+                    UserNotificationCategory.SECURITY,
+                    "로그인 알림",
+                    device + "에서 로그인" + ip
+            );
+        } catch (Exception e) {
+            // 알림 생성 실패는 로그인 흐름을 막지 않는다.
+        }
     }
 
     @Override

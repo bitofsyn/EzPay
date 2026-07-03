@@ -1,79 +1,57 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
-  AlignJustify,
-  ArrowDown,
-  ArrowUp,
-  Bell,
-  Users,
-  TrendingUp,
-  Activity,
-} from "lucide-react";
-import UserSidebar from "../components/UserSidebar";
+import UserShell from "../components/UserShell";
 import { getDashboardInfo } from "../api/UserAPI";
-import {
-  formatAccountNumber,
-  formatCurrency,
-  formatDateShort,
-  parseDate,
-} from "../utils/formatters";
+import { parseDate } from "../utils/formatters";
 import { clearUserData } from "../utils/storage";
-import { navigateToAdminDashboard } from "../utils/adminView";
 import { Account, Transaction } from "../types";
 import { Skeleton } from "../components/Skeleton";
+import {
+  AssetTrendCard,
+  FrequentFriendsCard,
+  HeroCard,
+  MonthlyBudgetCard,
+  MonthlyExpenseCard,
+  MonthlyStatsCard,
+  RecentTransactionsCard,
+  won,
+  type BudgetItem,
+  type ChartPoint,
+  type FriendChip,
+  type HeroAccount,
+  type QuickAction,
+  type RecentTx,
+  type StatItem,
+} from "../components/dashboard";
 
 interface DashboardAccount extends Account {
   main?: boolean;
   bankName?: string;
 }
 
-type DashboardTransaction = Transaction;
-
-type BudgetItem = {
-  label: string;
-  spent: number;
-  budget: number;
-  tone: string;
-};
-
 const monthLabels = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
 
+const maskAccountNumber = (raw?: string): string => {
+  const digits = (raw || "").replace(/\D/g, "");
+  if (digits.length < 8) return raw || "****";
+  return `${digits.slice(0, 4)}-****-${digits.slice(-4)}`;
+};
+
 const normalizeAccounts = (accountList: DashboardAccount[]): DashboardAccount[] =>
-  accountList.map((account) => ({
-    ...account,
-    main: account.main ?? account.isMain ?? false,
-  }));
+  accountList.map((account) => ({ ...account, main: account.main ?? account.isMain ?? false }));
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState<DashboardAccount[]>([]);
-  const [transactions, setTransactions] = useState<DashboardTransaction[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const todayLabel = new Date().toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         const dashboardRes = await getDashboardInfo();
         setAccounts(normalizeAccounts(dashboardRes.data?.account || []));
-        setTransactions((dashboardRes.data?.transactions || []) as DashboardTransaction[]);
+        setTransactions((dashboardRes.data?.transactions || []) as Transaction[]);
       } catch (error) {
         console.error("대시보드 조회 실패:", error);
         clearUserData();
@@ -82,498 +60,229 @@ const Dashboard = () => {
         setIsLoading(false);
       }
     };
-
     fetchDashboard();
   }, [navigate]);
 
-  const sortedAccounts = useMemo(() => {
-    return [...accounts].sort((a, b) => {
-      const aIsMain = a.main ?? a.isMain ?? false;
-      const bIsMain = b.main ?? b.isMain ?? false;
-      if (aIsMain === bIsMain) return a.accountId - b.accountId;
-      return aIsMain ? -1 : 1;
-    });
-  }, [accounts]);
+  const sortedAccounts = useMemo(
+    () =>
+      [...accounts].sort((a, b) => {
+        const aMain = a.main ?? a.isMain ?? false;
+        const bMain = b.main ?? b.isMain ?? false;
+        if (aMain === bMain) return a.accountId - b.accountId;
+        return aMain ? -1 : 1;
+      }),
+    [accounts]
+  );
 
   const ownAccountIds = useMemo(
-    () => new Set(sortedAccounts.map((account) => account.accountId)),
+    () => new Set(sortedAccounts.map((a) => a.accountId)),
     [sortedAccounts]
   );
 
-  const mainAccount = sortedAccounts[0] ?? null;
-  const totalBalance = sortedAccounts.reduce((sum, account) => sum + Number(account.balance || 0), 0);
+  const totalBalance = sortedAccounts.reduce((sum, a) => sum + Number(a.balance || 0), 0);
   const unreadNotifications = Math.min(transactions.length, 3);
 
+  // ── 대표 계좌 뷰모델 ──
+  const primaryAccount: HeroAccount | null = useMemo(() => {
+    const main = sortedAccounts[0];
+    if (!main) return null;
+    return {
+      bankName: main.bankName || "EzPay Bank",
+      maskedNumber: maskAccountNumber(main.accountNumber),
+      balance: Number(main.balance || 0),
+    };
+  }, [sortedAccounts]);
+
+  // ── 이달의 통계 ──
   const monthlyStats = useMemo(() => {
     const now = new Date();
-    const currentMonthTx = transactions.filter((t) => {
+    const inMonth = transactions.filter((t) => {
       const d = parseDate(t.transactionDate);
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     });
-
-    const totalSent = currentMonthTx
+    const totalSent = inMonth
       .filter((t) => ownAccountIds.has(t.senderAccount?.accountId))
       .reduce((s, t) => s + Number(t.amount || 0), 0);
-
-    const totalReceived = currentMonthTx
-      .filter(
-        (t) =>
-          ownAccountIds.has(t.receiverAccount?.accountId) &&
-          !ownAccountIds.has(t.senderAccount?.accountId)
-      )
+    const totalReceived = inMonth
+      .filter((t) => ownAccountIds.has(t.receiverAccount?.accountId) && !ownAccountIds.has(t.senderAccount?.accountId))
       .reduce((s, t) => s + Number(t.amount || 0), 0);
-
-    const averageAmount = currentMonthTx.length
-      ? Math.round(currentMonthTx.reduce((s, t) => s + Number(t.amount || 0), 0) / currentMonthTx.length)
+    const avg = inMonth.length
+      ? Math.round(inMonth.reduce((s, t) => s + Number(t.amount || 0), 0) / inMonth.length)
       : 0;
-
-    return { totalSent, totalReceived, count: currentMonthTx.length, averageAmount };
+    return { totalSent, totalReceived, count: inMonth.length, averageAmount: avg };
   }, [ownAccountIds, transactions]);
 
-  const monthlyExpenseData = useMemo(() => {
+  // ── 월별 지출 ──
+  const monthlyExpenseData = useMemo<ChartPoint[]>(() => {
     const now = new Date();
-    return Array.from({ length: 6 }).map((_, index) => {
+    const points = Array.from({ length: 6 }).map((_, index) => {
       const target = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
-      const label = monthLabels[target.getMonth()];
       const amount = transactions.reduce((sum, t) => {
         const d = parseDate(t.transactionDate);
-        const isSameMonth = d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth();
-        const isOutgoing = ownAccountIds.has(t.senderAccount?.accountId);
-        return isSameMonth && isOutgoing ? sum + Number(t.amount || 0) : sum;
+        const sameMonth = d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth();
+        const isOut = ownAccountIds.has(t.senderAccount?.accountId);
+        return sameMonth && isOut ? sum + Number(t.amount || 0) : sum;
       }, 0);
-      return { month: label, amount };
+      return { label: monthLabels[target.getMonth()], value: amount };
     });
+    // 마지막(이번 달) 막대만 진하게 강조
+    return points.map((p, i) => ({ ...p, color: i === points.length - 1 ? "#0f172a" : "#94a3b8" }));
   }, [ownAccountIds, transactions]);
 
-  const assetTrendData = useMemo(() => {
-    const monthlyNetFlows = monthlyExpenseData.map((expenseItem) => {
-      const monthNumber = Number(expenseItem.month.replace("월", ""));
+  // ── 자산 추이 ──
+  const assetTrendData = useMemo<ChartPoint[]>(() => {
+    const netFlows = monthlyExpenseData.map((expense) => {
+      const monthNumber = Number(expense.label.replace("월", ""));
       const incoming = transactions.reduce((sum, t) => {
         const d = parseDate(t.transactionDate);
-        const isIncoming =
-          ownAccountIds.has(t.receiverAccount?.accountId) &&
-          !ownAccountIds.has(t.senderAccount?.accountId);
-        return d.getMonth() + 1 === monthNumber && isIncoming ? sum + Number(t.amount || 0) : sum;
+        const isIn = ownAccountIds.has(t.receiverAccount?.accountId) && !ownAccountIds.has(t.senderAccount?.accountId);
+        return d.getMonth() + 1 === monthNumber && isIn ? sum + Number(t.amount || 0) : sum;
       }, 0);
-      return incoming - expenseItem.amount;
+      return incoming - expense.value;
     });
-
-    const seed = Math.max(totalBalance - monthlyNetFlows.reduce((s, v) => s + v, 0), 0);
+    const seed = Math.max(totalBalance - netFlows.reduce((s, v) => s + v, 0), 0);
     let running = seed;
-    return monthlyExpenseData.map((item, index) => {
-      running += monthlyNetFlows[index];
-      return { month: item.month, balance: Math.max(running, 0) };
+    return monthlyExpenseData.map((p, i) => {
+      running += netFlows[i];
+      return { label: p.label, value: Math.max(running, 0) };
     });
   }, [monthlyExpenseData, ownAccountIds, totalBalance, transactions]);
 
+  // ── 월간 예산 ──
   const budgetItems = useMemo<BudgetItem[]>(() => {
-    const defaultBudgets: Record<string, { label: string; budget: number; tone: string; keywords: string[] }> = {
-      food: { label: "식비", budget: 300000, tone: "bg-slate-600", keywords: ["food", "meal", "cafe", "coffee", "식비", "카페", "음식"] },
-      transport: { label: "교통", budget: 100000, tone: "bg-slate-500", keywords: ["transport", "taxi", "bus", "subway", "교통", "택시", "버스"] },
-      housing: { label: "주거", budget: 700000, tone: "bg-amber-500", keywords: ["rent", "home", "house", "housing", "주거", "월세", "관리비"] },
+    const config = {
+      food: { label: "식비", limit: 300000, color: "#334155", keywords: ["food", "meal", "cafe", "coffee", "식비", "카페", "음식"] },
+      transport: { label: "교통", limit: 100000, color: "#334155", keywords: ["transport", "taxi", "bus", "subway", "교통", "택시", "버스"] },
+      housing: { label: "주거", limit: 700000, color: "#f59e0b", keywords: ["rent", "home", "house", "housing", "주거", "월세", "관리비"] },
     };
     const totals = { food: 0, transport: 0, housing: 0 };
     const now = new Date();
-
     transactions.forEach((t) => {
       const d = parseDate(t.transactionDate);
-      const isOutgoing = ownAccountIds.has(t.senderAccount?.accountId);
-      if (!isOutgoing || d.getFullYear() !== now.getFullYear() || d.getMonth() !== now.getMonth()) return;
+      const isOut = ownAccountIds.has(t.senderAccount?.accountId);
+      if (!isOut || d.getFullYear() !== now.getFullYear() || d.getMonth() !== now.getMonth()) return;
       const src = `${t.category || ""} ${t.memo || ""} ${t.description || ""}`.toLowerCase();
-      if (defaultBudgets.food.keywords.some((k) => src.includes(k))) { totals.food += Number(t.amount || 0); return; }
-      if (defaultBudgets.transport.keywords.some((k) => src.includes(k))) { totals.transport += Number(t.amount || 0); return; }
-      totals.housing += Number(t.amount || 0);
+      if (config.food.keywords.some((k) => src.includes(k))) totals.food += Number(t.amount || 0);
+      else if (config.transport.keywords.some((k) => src.includes(k))) totals.transport += Number(t.amount || 0);
+      else totals.housing += Number(t.amount || 0);
     });
-
     return [
-      { label: defaultBudgets.food.label, spent: totals.food, budget: defaultBudgets.food.budget, tone: defaultBudgets.food.tone },
-      { label: defaultBudgets.transport.label, spent: totals.transport, budget: defaultBudgets.transport.budget, tone: defaultBudgets.transport.tone },
-      { label: defaultBudgets.housing.label, spent: totals.housing, budget: defaultBudgets.housing.budget, tone: defaultBudgets.housing.tone },
+      { category: config.food.label, used: totals.food, limit: config.food.limit, color: config.food.color },
+      { category: config.transport.label, used: totals.transport, limit: config.transport.limit, color: config.transport.color },
+      { category: config.housing.label, used: totals.housing, limit: config.housing.limit, color: config.housing.color },
     ];
   }, [ownAccountIds, transactions]);
 
-  const frequentFriends = useMemo(() => {
+  // ── 자주 보내는 친구 ──
+  const frequentFriends = useMemo<FriendChip[]>(() => {
     const outgoing = transactions.filter((t) => ownAccountIds.has(t.senderAccount?.accountId));
-    const frequency: Record<number, { name: string; count: number }> = {};
+    const freq: Record<number, { name: string; count: number }> = {};
     outgoing.forEach((t) => {
       const id = t.receiverAccount?.accountId;
-      const name = t.receiverAccount?.bankName || "상대방";
+      const name = t.receiverAccount?.ownerName || t.receiverAccount?.bankName || "상대방";
       if (id != null) {
-        if (!frequency[id]) frequency[id] = { name, count: 0 };
-        frequency[id].count++;
+        if (!freq[id]) freq[id] = { name, count: 0 };
+        freq[id].count += 1;
       }
     });
-    return Object.entries(frequency)
+    return Object.entries(freq)
       .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 4)
-      .map(([id, { name }]) => ({ id: Number(id), name }));
+      .slice(0, 5)
+      .map(([id, { name }], i) => ({ id: Number(id), name, favorite: i < 2 }));
   }, [ownAccountIds, transactions]);
 
-  const recentTransactions = useMemo(() => {
+  // ── 최근 거래 ──
+  const recentTransactions = useMemo<RecentTx[]>(() => {
     return [...transactions]
       .sort((a, b) => parseDate(b.transactionDate).getTime() - parseDate(a.transactionDate).getTime())
-      .slice(0, 5);
-  }, [transactions]);
+      .slice(0, 5)
+      .map((t) => {
+        const isOut = ownAccountIds.has(t.senderAccount?.accountId);
+        const counter = isOut ? t.receiverAccount : t.senderAccount;
+        return {
+          id: t.transactionId,
+          counterparty: counter?.ownerName || counter?.bankName || "거래 상대",
+          category: t.category,
+          dateLabel: t.memo || t.description || "",
+          amount: Number(t.amount || 0),
+          direction: isOut ? "out" : "in",
+        } satisfies RecentTx;
+      });
+  }, [ownAccountIds, transactions]);
 
+  // 실제 API 데이터를 그대로 사용 (비어 있으면 각 카드가 빈 상태를 렌더)
+  const assetTrend = assetTrendData;
+  const expenseData = monthlyExpenseData;
+  const recentTx = recentTransactions;
+  const friends = frequentFriends;
+  const budget = budgetItems;
 
-  const heroActions = [
-    { label: "이체", Icon: ArrowUp, path: "/send" },
-    { label: "충전", Icon: ArrowDown, path: "/accounts" },
-    { label: "내역", Icon: AlignJustify, path: "/transactions" },
-    { label: "친구", Icon: Users, path: "/send" },
+  const stats: StatItem[] = [
+    { label: "총 송금", value: won(monthlyStats.totalSent) },
+    { label: "총 입금", value: won(monthlyStats.totalReceived) },
+    { label: "거래 건수", value: `${monthlyStats.count}건` },
+    { label: "평균 금액", value: won(monthlyStats.averageAmount) },
+  ];
+
+  const quickActions: QuickAction[] = [
+    { key: "transfer", label: "이체", icon: "↑", onClick: () => navigate("/send") },
+    { key: "charge", label: "충전", icon: "↓", onClick: () => navigate("/accounts") },
+    { key: "history", label: "내역", icon: "≡", onClick: () => navigate("/transactions") },
+    { key: "friends", label: "친구", icon: "♡", onClick: () => navigate("/friends") },
   ];
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1a2847] to-[#0f172a] p-4 lg:p-5 relative overflow-hidden">
-        {/* Background circles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
-        </div>
-        <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)] relative z-10">
-          <div className="rounded-[28px] bg-white/5 backdrop-blur-md p-5 border border-white/10">
-            <Skeleton className="h-12 w-40 rounded-2xl" />
-            <Skeleton className="mt-6 h-16 w-full rounded-[24px]" />
-            <Skeleton className="mt-6 h-80 w-full rounded-[28px]" />
+      <UserShell title="사용자 홈" showViewToggle>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-64 w-full rounded-[20px]" />
+            <Skeleton className="h-44 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
           </div>
-          <div className="space-y-6">
-            <Skeleton className="h-24 w-full rounded-[28px]" />
-            <div className="grid gap-6 xl:grid-cols-[1.65fr_1fr]">
-              <Skeleton className="h-96 w-full rounded-[28px]" />
-              <Skeleton className="h-96 w-full rounded-[28px]" />
-            </div>
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-28 w-full rounded-2xl" />
+            <Skeleton className="h-36 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
           </div>
         </div>
-      </div>
+      </UserShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
-      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <UserSidebar />
+    <UserShell title="사용자 홈" showViewToggle unreadCount={unreadNotifications}>
+      <div className="grid flex-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+        {/* 좌측 컬럼 */}
+        <div className="flex flex-col gap-4">
+          <HeroCard
+            totalBalance={totalBalance}
+            accountCount={sortedAccounts.length}
+            primaryAccount={primaryAccount}
+            quickActions={quickActions}
+            onViewAccounts={() => navigate("/accounts")}
+          />
+          <AssetTrendCard data={assetTrend} />
+          <RecentTransactionsCard
+            transactions={recentTx}
+            onSelectTx={() => navigate("/transactions")}
+            onViewAll={() => navigate("/transactions")}
+          />
+        </div>
 
-        <main className="flex flex-col gap-5">
-          {/* Header */}
-          <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-              <div>
-                <h1 className="text-[2rem] font-black tracking-tight text-slate-950">사용자 홈</h1>
-                <p className="mt-1 text-sm font-semibold text-slate-400">EzPay · {todayLabel}</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 text-sm font-semibold">
-                  <button type="button" className="rounded-full bg-slate-950 px-5 py-2 text-white shadow-sm">
-                    사용자 뷰
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-full px-5 py-2 text-slate-600 transition hover:text-slate-900"
-                    onClick={() => navigateToAdminDashboard(navigate)}
-                  >
-                    관리자 뷰
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
-                  onClick={() => navigate("/notifications")}
-                >
-                  <Bell size={18} />
-                  {unreadNotifications > 0 && (
-                    <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white shadow-lg shadow-rose-500/30">
-                      {unreadNotifications}
-                    </span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </header>
-
-          {/* 2-column layout: left (hero + chart + transactions) | right (friends + stats + expense + budget) */}
-          <div className="grid flex-1 gap-5 xl:grid-cols-[1.55fr_1fr]">
-            {/* Left column */}
-            <div className="flex flex-col gap-5">
-              {/* Hero Card */}
-              <div className="rounded-[28px] bg-gradient-to-br from-cyan-500/20 via-blue-500/20 to-slate-100 border border-cyan-500/30 p-6 text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur overflow-hidden relative">
-
-                <div className="relative z-10">
-                  <p className="text-sm font-semibold text-slate-600">총 보유 자산</p>
-                  <p className="mt-2 text-[3rem] font-black tracking-tight lg:text-[3.35rem]">
-                    ₩{totalBalance.toLocaleString()}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-slate-500">
-                    계좌 {sortedAccounts.length}개 · <span className="text-emerald-600">전월 대비 +12.5%</span>
-                  </p>
-
-                  {mainAccount && (
-                    <div className="mt-5 rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-4 transition hover:bg-slate-100 hover:border-slate-300">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-slate-600">{mainAccount.bankName || "EzPay Bank"}</p>
-                          <span className="rounded-full bg-cyan-100 border border-cyan-300 px-2 py-0.5 text-xs font-bold text-cyan-700">대표</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => navigate("/accounts")}
-                          className="text-xs font-semibold text-slate-500 transition hover:text-slate-700"
-                        >
-                          전체 계좌 →
-                        </button>
-                      </div>
-                      <p className="mt-2 text-sm font-semibold tracking-[0.14em] text-slate-500">
-                        {formatAccountNumber(mainAccount.accountNumber)}
-                      </p>
-                      <p className="mt-2 text-[2rem] font-black text-slate-900">
-                        {formatCurrency(mainAccount.balance).replace(" 원", "")}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="mt-5 grid grid-cols-4 gap-3">
-                    {heroActions.map(({ label, Icon, path }) => (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() => navigate(path)}
-                        className="flex flex-col items-center gap-2 rounded-[16px] border border-slate-200 bg-slate-100 py-3 transition hover:bg-slate-200 hover:border-slate-300"
-                      >
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200">
-                          <Icon size={16} className="text-slate-700" />
-                        </div>
-                        <span className="text-xs font-bold text-slate-700">{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Asset Trend */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-                <div className="flex items-center justify-between gap-4">
-                  <h2 className="text-[1.7rem] font-black tracking-tight text-slate-950 flex items-center gap-2">
-                    <TrendingUp size={28} className="text-cyan-600" />
-                    자산 추이
-                  </h2>
-                  <div className="rounded-full bg-emerald-100 border border-emerald-300 px-4 py-2 text-base font-bold text-emerald-700">
-                    ↑ 12.5%
-                  </div>
-                </div>
-                <div className="mt-5 h-[220px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={assetTrendData} margin={{ left: 6, right: 12, top: 12, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="assetFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.05} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.1)" />
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#7dd3fc", fontSize: 13, fontWeight: 700 }} />
-                      <YAxis hide />
-                      <Tooltip formatter={(value: number) => [formatCurrency(value), "자산"]} labelFormatter={(label) => `${label}`} contentStyle={{ backgroundColor: "rgba(15,23,42,0.9)", border: "1px solid rgba(34,211,238,0.3)", borderRadius: "12px" }} />
-                      <Area
-                        type="monotone"
-                        dataKey="balance"
-                        stroke="#06b6d4"
-                        strokeWidth={3}
-                        fill="url(#assetFill)"
-                        dot={{ r: 5, strokeWidth: 3, fill: "#0f172a", stroke: "#06b6d4" }}
-                        activeDot={{ r: 8, strokeWidth: 3, fill: "#0f172a", stroke: "#06b6d4" }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Recent Transactions */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-                <h2 className="flex items-center gap-2 text-[1.7rem] font-black tracking-tight text-slate-950">
-                  <Activity size={28} className="text-cyan-600" />
-                  최근 거래
-                </h2>
-                <div className="mt-5 space-y-3">
-                  {recentTransactions.length > 0 ? (
-                    recentTransactions.map((transaction) => {
-                      const isOutgoing = ownAccountIds.has(transaction.senderAccount?.accountId);
-                      const counterparty = isOutgoing ? transaction.receiverAccount : transaction.senderAccount;
-                      return (
-                        <button
-                          key={transaction.transactionId}
-                          type="button"
-                          onClick={() => navigate("/transactions")}
-                          className="flex w-full items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-left transition hover:border-slate-300 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/10"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`flex h-11 w-11 items-center justify-center rounded-full border text-xs font-black ${isOutgoing ? "border-rose-200 bg-rose-50 text-rose-600" : "border-emerald-200 bg-emerald-50 text-emerald-600"}`}>
-                              {isOutgoing ? "출금" : "입금"}
-                            </div>
-                            <div>
-                              <p className="text-base font-black text-slate-950">
-                                {counterparty?.bankName || "거래 상대"}
-                              </p>
-                              <p className="mt-1 text-sm font-semibold text-slate-500">
-                                {transaction.memo || transaction.description || formatDateShort(transaction.transactionDate)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className={`text-xl font-black ${isOutgoing ? "text-rose-400" : "text-emerald-400"}`}>
-                              {isOutgoing ? "-" : "+"}
-                              {formatCurrency(transaction.amount)}
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-slate-400">
-                              {formatDateShort(transaction.transactionDate)}
-                            </p>
-                          </div>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center text-slate-400">
-                      최근 거래 내역이 없습니다.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right column */}
-            <div className="flex flex-col gap-5">
-              {/* Frequent Friends */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">자주 보내는 친구</h2>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/transactions")}
-                    className="text-sm font-semibold text-slate-500 transition hover:text-slate-700"
-                  >
-                    전체보기
-                  </button>
-                </div>
-                <div className="mt-4 grid grid-cols-4 gap-3">
-                  {frequentFriends.length > 0 ? (
-                    frequentFriends.map((friend, index) => {
-                      const avatarColors = [
-                        "bg-gradient-to-r from-blue-500 to-cyan-500",
-                        "bg-gradient-to-r from-cyan-500 to-teal-500",
-                        "bg-gradient-to-r from-indigo-500 to-purple-500",
-                        "bg-gradient-to-r from-violet-500 to-pink-500",
-                      ];
-                      return (
-                        <button
-                          key={friend.id}
-                          type="button"
-                          onClick={() => navigate("/send")}
-                          className="group flex flex-col items-center gap-2"
-                        >
-                          <div className={`flex h-12 w-12 items-center justify-center rounded-full text-base font-black text-white shadow-lg transition group-hover:shadow-xl ${avatarColors[index % avatarColors.length]}`}>
-                            {friend.name.charAt(0)}
-                          </div>
-                          <span className="w-full truncate text-center text-xs font-semibold text-slate-500 group-hover:text-slate-800">
-                            {friend.name}
-                          </span>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="col-span-4 rounded-[18px] bg-slate-50 py-5 text-center text-sm text-slate-400">
-                      거래 내역이 없습니다
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Monthly Stats */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">이달의 통계</h2>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[18px] border border-rose-200 bg-rose-50 px-4 py-4">
-                    <p className="text-xs font-semibold text-rose-500">총 송금</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-rose-600">{formatCurrency(monthlyStats.totalSent)}</p>
-                  </div>
-                  <div className="rounded-[18px] border border-emerald-200 bg-emerald-50 px-4 py-4">
-                    <p className="text-xs font-semibold text-emerald-600">총 입금</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-emerald-700">{formatCurrency(monthlyStats.totalReceived)}</p>
-                  </div>
-                  <div className="rounded-[18px] border border-cyan-200 bg-cyan-50 px-4 py-4">
-                    <p className="text-xs font-semibold text-cyan-700">거래 건수</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-cyan-800">{monthlyStats.count}건</p>
-                  </div>
-                  <div className="rounded-[18px] border border-indigo-200 bg-indigo-50 px-4 py-4">
-                    <p className="text-xs font-semibold text-indigo-600">평균 금액</p>
-                    <p className="mt-1 text-[1.4rem] font-black text-indigo-700">{formatCurrency(monthlyStats.averageAmount)}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Monthly Expense */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">월별 지출</h2>
-                <div className="mt-4 h-[180px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyExpenseData} barGap={12}>
-                      <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" />
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#475569", fontSize: 12, fontWeight: 700 }} />
-                      <Tooltip
-                        cursor={{ fill: "rgba(15,23,42,0.04)" }}
-                        formatter={(value: number) => [formatCurrency(value), "지출"]}
-                        labelFormatter={(label) => `${label}`}
-                        contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", color: "#0f172a" }}
-                      />
-                      <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
-                        {monthlyExpenseData.map((entry, index) => (
-                          <Cell
-                            key={entry.month}
-                            fill={index === monthlyExpenseData.length - 1 ? "#06b6d4" : "#06b6d4"}
-                            fillOpacity={index === monthlyExpenseData.length - 1 ? 1 : 0.5}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Monthly Budget */}
-              <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-                <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">월간 예산</h2>
-                <div className="mt-4 space-y-4">
-                  {budgetItems.map((item) => {
-                    const progress = item.budget > 0 ? Math.min((item.spent / item.budget) * 100, 100) : 0;
-                    const remain = Math.max(item.budget - item.spent, 0);
-                    const toneMap: Record<string, string> = {
-                      "bg-slate-600": "from-slate-500 to-slate-600",
-                      "bg-slate-500": "from-blue-500 to-cyan-500",
-                      "bg-amber-500": "from-amber-500 to-orange-500",
-                    };
-                    const gradientTone = toneMap[item.tone] || "from-cyan-500 to-blue-500";
-                    return (
-                      <div key={item.label}>
-                        <div className="flex items-end justify-between gap-4">
-                          <p className="text-sm font-black text-slate-900">{item.label}</p>
-                          <p className="text-xs font-bold text-slate-500">
-                            {formatCurrency(item.spent)} / {formatCurrency(item.budget)}
-                          </p>
-                        </div>
-                        <div className="mt-2 h-2 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
-                          <div className={`h-2 rounded-full bg-gradient-to-r ${gradientTone}`} style={{ width: `${progress}%` }} />
-                        </div>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">
-                          {Math.round(progress)}% 사용 · 남은 {formatCurrency(remain)}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </main>
+        {/* 우측 컬럼 */}
+        <div className="flex flex-col gap-4">
+          <FrequentFriendsCard
+            friends={friends}
+            onSelectFriend={() => navigate("/send")}
+            onViewAll={() => navigate("/friends")}
+          />
+          <MonthlyStatsCard stats={stats} />
+          <MonthlyExpenseCard data={expenseData} />
+          <MonthlyBudgetCard items={budget} />
+        </div>
       </div>
-    </div>
+    </UserShell>
   );
 };
 

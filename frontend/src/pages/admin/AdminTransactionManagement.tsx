@@ -1,48 +1,73 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FiSearch } from "react-icons/fi";
+import toast from "react-hot-toast";
 import AdminShell from "../../components/admin/AdminShell";
-import { FilterTabs, RiskBadge, StatusBadge } from "../../components/admin/AdminUI";
+import { FilterTabs, StatusBadge } from "../../components/admin/AdminUI";
+import { getAllTransactions } from "../../api/AdminAPI";
+import type { AdminTransactionInfo, AdminTransactionStatusType } from "../../types";
 
-type TxStatus = "완료" | "실패" | "처리중";
-type RiskLevel = "안전" | "주의" | "위험";
-type FilterType = "전체" | "완료" | "실패" | "처리중";
+type FilterType = "전체" | "완료" | "처리중" | "실패" | "취소";
 
-interface MockTx {
-  id: string;
-  sender: string;
-  receiver: string;
-  amount: number;
-  date: string;
-  status: TxStatus;
-  risk: RiskLevel;
-  responseMs: number;
-}
-
-const MOCK_TRANSACTIONS: MockTx[] = [
-  { id: "TX001", sender: "소윤", receiver: "김민수", amount: 50000, date: "2026-06-21", status: "완료", risk: "안전", responseMs: 450 },
-  { id: "TX002", sender: "이지현", receiver: "소윤", amount: 35000, date: "2026-06-20", status: "완료", risk: "안전", responseMs: 380 },
-  { id: "TX003", sender: "소윤", receiver: "박서준", amount: 120000, date: "2026-06-19", status: "완료", risk: "주의", responseMs: 620 },
-  { id: "TX004", sender: "최유진", receiver: "소윤", amount: 25000, date: "2026-06-18", status: "실패", risk: "안전", responseMs: 410 },
-  { id: "TX005", sender: "소윤", receiver: "최유진", amount: 8000, date: "2026-06-17", status: "완료", risk: "안전", responseMs: 290 },
-  { id: "TX006", sender: "박서준", receiver: "이지현", amount: 980000, date: "2026-06-16", status: "완료", risk: "위험", responseMs: 710 },
-  { id: "TX007", sender: "정수현", receiver: "김민수", amount: 450000, date: "2026-06-15", status: "처리중", risk: "주의", responseMs: 520 },
-];
-
-const msColor = (ms: number) =>
-  ms >= 700 ? "text-red-400" : ms >= 600 ? "text-amber-500" : "text-slate-400";
+// 백엔드 TransactionStatus enum → 화면 라벨 매핑
+const STATUS_LABEL: Record<AdminTransactionStatusType, string> = {
+  SUCCESS: "완료",
+  PROCESSING: "처리중",
+  FAILED: "실패",
+  CANCELLED: "취소",
+};
 
 const AdminTransactionManagement: React.FC = () => {
+  const [transactions, setTransactions] = useState<AdminTransactionInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("전체");
 
-  const filtered = MOCK_TRANSACTIONS.filter((tx) => {
+  const fetchTransactions = useCallback(async () => {
+    setIsLoading(true);
+    setIsError(false);
+    try {
+      const data = await getAllTransactions();
+      setTransactions(data);
+    } catch (error) {
+      console.error("거래 내역 조회 실패:", error);
+      setIsError(true);
+      toast.error("거래 내역을 불러오는데 실패했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setIsLoading(true);
+      setIsError(false);
+      try {
+        const data = await getAllTransactions();
+        if (active) setTransactions(data);
+      } catch (error) {
+        if (!active) return;
+        console.error("거래 내역 조회 실패:", error);
+        setIsError(true);
+        toast.error("거래 내역을 불러오는데 실패했습니다.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const filtered = transactions.filter((tx) => {
     const q = search.toLowerCase();
     const matchSearch =
       !search ||
-      tx.id.toLowerCase().includes(q) ||
-      tx.sender.includes(q) ||
-      tx.receiver.includes(q);
-    const matchFilter = filter === "전체" || tx.status === filter;
+      String(tx.transactionId).includes(q) ||
+      String(tx.senderAccountId).includes(q) ||
+      String(tx.receiverAccountId).includes(q);
+    const matchFilter = filter === "전체" || STATUS_LABEL[tx.status] === filter;
     return matchSearch && matchFilter;
   });
 
@@ -60,14 +85,14 @@ const AdminTransactionManagement: React.FC = () => {
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
               <input
                 type="text"
-                placeholder="거래ID·이름 검색"
+                placeholder="거래ID·계좌 검색"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-cyan-300 w-52"
               />
             </div>
             <FilterTabs<FilterType>
-              options={["전체", "완료", "실패", "처리중"]}
+              options={["전체", "완료", "처리중", "실패", "취소"]}
               active={filter}
               onChange={setFilter}
             />
@@ -76,10 +101,10 @@ const AdminTransactionManagement: React.FC = () => {
 
         {/* Table */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <table className="w-full min-w-[800px]">
+          <table className="w-full min-w-[760px]">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
-                {["거래ID", "보내는 분", "받는 분", "금액", "일시", "상태", "위험도", "처리시간"].map((h) => (
+                {["거래ID", "출금 계좌", "입금 계좌", "금액", "카테고리", "일시", "상태"].map((h) => (
                   <th key={h} className="px-4 py-3.5 text-xs font-semibold text-slate-400 text-left">
                     {h}
                   </th>
@@ -87,33 +112,56 @@ const AdminTransactionManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((tx) => (
-                <tr
-                  key={tx.id}
-                  className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors cursor-pointer"
-                >
-                  <td className="px-4 py-4 text-sm font-mono font-bold text-blue-600">{tx.id}</td>
-                  <td className="px-4 py-4 text-sm font-semibold text-slate-800">{tx.sender}</td>
-                  <td className="px-4 py-4 text-sm font-semibold text-slate-800">{tx.receiver}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-slate-800">
-                    ₩{tx.amount.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-slate-600">{tx.date}</td>
-                  <td className="px-4 py-4">
-                    <StatusBadge status={tx.status} />
-                  </td>
-                  <td className="px-4 py-4">
-                    <RiskBadge risk={tx.risk} />
-                  </td>
-                  <td className={`px-4 py-4 text-sm font-mono ${msColor(tx.responseMs)}`}>
-                    {tx.responseMs}ms
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-16 text-center text-sm text-slate-400">
+                    거래 내역을 불러오는 중입니다...
                   </td>
                 </tr>
-              ))}
-              {filtered.length === 0 && (
+              ) : isError ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-sm text-slate-400">
-                    검색 결과가 없습니다.
+                  <td colSpan={7} className="px-5 py-16 text-center text-sm text-rose-500">
+                    <p className="mb-3">거래 내역을 불러오지 못했습니다.</p>
+                    <button
+                      type="button"
+                      onClick={fetchTransactions}
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                    >
+                      다시 시도
+                    </button>
+                  </td>
+                </tr>
+              ) : filtered.length > 0 ? (
+                filtered.map((tx) => (
+                  <tr
+                    key={tx.transactionId}
+                    className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors"
+                  >
+                    <td className="px-4 py-4 text-sm font-mono font-bold text-blue-600">
+                      TX{tx.transactionId}
+                    </td>
+                    <td className="px-4 py-4 text-sm font-semibold text-slate-800">
+                      #{tx.senderAccountId}
+                    </td>
+                    <td className="px-4 py-4 text-sm font-semibold text-slate-800">
+                      #{tx.receiverAccountId}
+                    </td>
+                    <td className="px-4 py-4 text-sm font-bold text-slate-800">
+                      ₩{Number(tx.amount).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-4 text-sm text-slate-600">{tx.category || "-"}</td>
+                    <td className="px-4 py-4 text-sm text-slate-600">
+                      {tx.createdAt ? new Date(tx.createdAt).toLocaleString("ko-KR") : "-"}
+                    </td>
+                    <td className="px-4 py-4">
+                      <StatusBadge status={STATUS_LABEL[tx.status]} />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400">
+                    {transactions.length === 0 ? "거래 내역이 없습니다." : "검색 결과가 없습니다."}
                   </td>
                 </tr>
               )}

@@ -1,197 +1,283 @@
-import { useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Bell,
+  ChevronLeft,
+  ChevronRight,
   Receipt,
   SendHorizontal,
   ShieldAlert,
 } from "lucide-react";
-import UserSidebar from "../components/UserSidebar";
-import { navigateToAdminDashboard } from "../utils/adminView";
+import UserShell from "../components/UserShell";
+import {
+  getUnreadNotificationCount,
+  getUserNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "../api/UserAPI";
+import { getToken, getUserData } from "../utils/storage";
+import { getRelativeTime } from "../utils/formatters";
+import type {
+  UserNotificationCategory,
+  UserNotificationItem,
+  UserNotificationPage,
+} from "../types";
 
-type NotificationType = "transfer" | "deposit" | "security";
+const PAGE_SIZE = 10;
 
-interface Notification {
-  id: number;
-  type: NotificationType;
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-}
+type TypeKey = "transfer" | "deposit" | "security";
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: 1,
-    type: "transfer",
-    title: "송금 완료",
-    message: "김민수에게 50,000원",
-    time: "3분 전",
-    read: false,
-  },
-  {
-    id: 2,
-    type: "deposit",
-    title: "입금 확인",
-    message: "이지원으로부터 35,000원",
-    time: "1시간 전",
-    read: false,
-  },
-  {
-    id: 3,
-    type: "security",
-    title: "보안 알림",
-    message: "새 기기에서 로그인 감지",
-    time: "2시간 전",
-    read: false,
-  },
-];
+const categoryToType: Record<UserNotificationCategory, TypeKey> = {
+  TRANSFER: "transfer",
+  DEPOSIT: "deposit",
+  SECURITY: "security",
+};
 
-const typeConfig: Record<NotificationType, { bg: string; dot: string; icon: ReactNode }> = {
+const typeConfig: Record<TypeKey, { bg: string; dot: string; icon: ReactNode }> = {
   transfer: {
-    bg: "bg-emerald-500/20",
+    bg: "bg-emerald-500/15",
     dot: "bg-emerald-500",
-    icon: <SendHorizontal size={18} className="text-emerald-400" />,
+    icon: <SendHorizontal size={15} className="text-emerald-500" />,
   },
   deposit: {
-    bg: "bg-cyan-500/20",
+    bg: "bg-cyan-500/15",
     dot: "bg-cyan-400",
-    icon: <Receipt size={18} className="text-cyan-400" />,
+    icon: <Receipt size={15} className="text-cyan-500" />,
   },
   security: {
-    bg: "bg-rose-500/20",
+    bg: "bg-rose-500/15",
     dot: "bg-rose-500",
-    icon: <ShieldAlert size={18} className="text-rose-400" />,
+    icon: <ShieldAlert size={15} className="text-rose-500" />,
   },
 };
 
-
-const todayLabel = new Date().toLocaleDateString("ko-KR", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-});
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const user = useMemo(() => getUserData(), []);
+  const userId = user?.userId;
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const [feed, setFeed] = useState<UserNotificationPage | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
+  // SSE 콜백에서 최신 페이지 번호를 참조하기 위한 ref (stale closure 방지)
+  const pageRef = useRef(0);
 
-  const markRead = (id: number) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+  const items = feed?.content ?? [];
+  const page = feed?.page ?? 0;
+  const totalPages = feed?.totalPages ?? 0;
+
+  const fetchUnread = useCallback(() => {
+    getUnreadNotificationCount()
+      .then(setUnreadCount)
+      .catch(() => {});
+  }, []);
+
+  const fetchPage = useCallback((p: number, showLoading = true) => {
+    if (showLoading) setLoading(true);
+    return getUserNotifications(p, PAGE_SIZE)
+      .then((data) => {
+        setFeed(data);
+        pageRef.current = data.page;
+        setError(false);
+      })
+      .catch((err) => {
+        console.error("알림 조회 실패:", err);
+        setError(true);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // 초기 로드
+  useEffect(() => {
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+    fetchPage(0);
+    fetchUnread();
+  }, [navigate, userId, fetchPage, fetchUnread]);
+
+  // 실시간 구독 (SSE) — 새 알림이 오면 미확인 수 갱신, 첫 페이지면 새로고침
+  useEffect(() => {
+    if (!userId) return;
+    const token = getToken();
+    if (!token) return;
+
+    const source = new EventSource(
+      `${apiBaseUrl}/user-notifications/stream?token=${encodeURIComponent(token)}`
     );
+
+    source.onmessage = (event) => {
+      try {
+        const item: UserNotificationItem = JSON.parse(event.data);
+        if (!item || typeof item.notificationId !== "number") return;
+        fetchUnread();
+        if (pageRef.current === 0) fetchPage(0, false);
+      } catch {
+        /* connect 핑 등 JSON이 아닌 메시지는 무시 */
+      }
+    };
+
+    return () => source.close();
+  }, [userId, fetchPage, fetchUnread]);
+
+  const goToPage = (p: number) => {
+    if (p < 0 || (totalPages > 0 && p >= totalPages) || p === page) return;
+    fetchPage(p);
   };
+
+  const markRead = useCallback((id: number) => {
+    setFeed((prev) =>
+      prev
+        ? {
+            ...prev,
+            content: prev.content.map((n) =>
+              n.notificationId === id ? { ...n, isRead: true } : n
+            ),
+          }
+        : prev
+    );
+    setUnreadCount((c) => Math.max(0, c - 1));
+    markNotificationRead(id).catch((err) => {
+      console.error("알림 읽음 처리 실패:", err);
+      fetchUnread();
+    });
+  }, [fetchUnread]);
+
+  const markAllRead = useCallback(() => {
+    setFeed((prev) =>
+      prev ? { ...prev, content: prev.content.map((n) => ({ ...n, isRead: true })) } : prev
+    );
+    setUnreadCount(0);
+    markAllNotificationsRead()
+      .then(() => fetchPage(pageRef.current, false))
+      .catch((err) => {
+        console.error("전체 읽음 처리 실패:", err);
+        fetchUnread();
+      });
+  }, [fetchPage, fetchUnread]);
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
-      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <UserSidebar unreadCount={unreadCount} />
+    <UserShell title="알림" showViewToggle unreadCount={unreadCount}>
+      <div className="rounded-2xl border border-slate-100 bg-white p-3.5 shadow-sm">
+        {/* Header */}
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-sm font-black tracking-tight text-slate-900">알림</h2>
+            {unreadCount > 0 && (
+              <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-500">
+                미확인 {unreadCount}
+              </span>
+            )}
+          </div>
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={markAllRead}
+              className="text-xs font-semibold text-slate-400 transition hover:text-slate-700"
+            >
+              모두 읽음 처리
+            </button>
+          )}
+        </div>
 
-        {/* Main content */}
-        <main className="flex flex-col gap-5">
-          {/* Header */}
-          <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-              <div>
-                <h1 className="text-[2rem] font-black tracking-tight text-slate-950">알림</h1>
-                <p className="mt-1 text-sm font-semibold text-slate-400">EzPay · {todayLabel}</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 text-sm font-semibold">
-                  <button
-                    type="button"
-                    className="rounded-full bg-slate-950 px-5 py-2 text-white shadow-sm"
-                  >
-                    사용자 뷰
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-full px-5 py-2 text-slate-600 transition hover:text-slate-900"
-                    onClick={() => navigateToAdminDashboard(navigate)}
-                  >
-                    관리자 뷰
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
-                >
-                  <Bell size={18} />
-                  {unreadCount > 0 && (
-                    <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white shadow-lg shadow-rose-500/30">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </header>
-
-          {/* Notification list */}
-          <div className="rounded-[28px] border border-white/80 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">알림</h2>
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  onClick={markAllRead}
-                  className="text-sm font-semibold text-slate-500 transition hover:text-slate-700"
-                >
-                  모두 읽음 처리
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              {notifications.map((notification) => {
-                const config = typeConfig[notification.type];
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-600" />
+          </div>
+        ) : error ? (
+          <div className="rounded-xl border border-dashed border-rose-200 bg-rose-50 px-6 py-12 text-center text-sm text-rose-400">
+            알림을 불러오지 못했습니다.
+          </div>
+        ) : items.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-sm text-slate-400">
+            새로운 알림이 없습니다.
+          </div>
+        ) : (
+          <>
+            <ul className="divide-y divide-slate-100">
+              {items.map((n) => {
+                const config = typeConfig[categoryToType[n.category] ?? "security"];
                 return (
-                  <button
-                    key={notification.id}
-                    type="button"
-                    onClick={() => markRead(notification.id)}
-                    className={`flex w-full items-center gap-4 rounded-[20px] border px-5 py-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/10 ${
-                      notification.read
-                        ? "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100"
-                        : "border-cyan-100 bg-cyan-50/70 hover:border-cyan-200 hover:bg-cyan-50"
-                    }`}
-                  >
-                    {/* Icon */}
-                    <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full ${config.bg}`}>
-                      {config.icon}
-                    </div>
-
-                    {/* Text */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[15px] font-bold text-slate-950">{notification.title}</p>
-                      <p className="mt-0.5 text-sm font-semibold text-slate-600">{notification.message}</p>
-                      <p className="mt-1 text-xs font-medium text-slate-400">{notification.time}</p>
-                    </div>
-
-                    {/* Unread indicator */}
-                    {!notification.read && (
-                      <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${config.dot}`} />
-                    )}
-                  </button>
+                  <li key={n.notificationId}>
+                    <button
+                      type="button"
+                      onClick={() => markRead(n.notificationId)}
+                      className={`flex w-full items-center gap-3 px-1.5 py-2 text-left transition hover:bg-slate-50 ${
+                        n.isRead ? "opacity-60" : ""
+                      }`}
+                    >
+                      <span
+                        className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${config.bg}`}
+                      >
+                        {config.icon}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-[13px] font-bold text-slate-900">
+                            {n.title}
+                          </span>
+                          {!n.isRead && (
+                            <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${config.dot}`} />
+                          )}
+                        </span>
+                        <span className="mt-0.5 block truncate text-xs font-medium text-slate-500">
+                          {n.message}
+                        </span>
+                      </span>
+                      <span className="flex-shrink-0 text-[11px] font-medium text-slate-400">
+                        {getRelativeTime(n.createdAt)}
+                      </span>
+                    </button>
+                  </li>
                 );
               })}
+            </ul>
 
-              {notifications.length === 0 && (
-                <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center text-slate-400">
-                  새로운 알림이 없습니다.
-                </div>
-              )}
-            </div>
-          </div>
-        </main>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-3 flex items-center justify-center gap-1 border-t border-slate-100 pt-3">
+                <button
+                  type="button"
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page === 0}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                  aria-label="이전 페이지"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => goToPage(p)}
+                    className={`h-7 min-w-7 rounded-lg px-2 text-xs font-bold transition ${
+                      p === page
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-500 hover:bg-slate-100"
+                    }`}
+                  >
+                    {p + 1}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => goToPage(page + 1)}
+                  disabled={!feed?.hasNext}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                  aria-label="다음 페이지"
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </div>
+    </UserShell>
   );
 };
 

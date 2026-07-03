@@ -51,6 +51,7 @@ export interface TransactionAccount {
   accountId: number;
   accountNumber: string;
   bankName: string;
+  ownerName?: string; // 계좌 소유자 이름 (거래 상대 표시용)
   balance: number;
   createdAt?: string;
   main?: boolean;
@@ -98,6 +99,28 @@ export interface NotificationSettings {
   userId: number;
   notificationType: string;
   isEnabled: boolean;
+}
+
+// 알림 피드(이벤트) — 백엔드 UserNotificationInfo와 정합
+export type UserNotificationCategory = 'TRANSFER' | 'DEPOSIT' | 'SECURITY';
+
+export interface UserNotificationItem {
+  notificationId: number;
+  category: UserNotificationCategory;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// 백엔드 UserNotificationPage와 정합
+export interface UserNotificationPage {
+  content: UserNotificationItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
 }
 
 export interface TransferLimit {
@@ -204,6 +227,117 @@ export interface AdminTransferLimitInfo {
   perTransactionLimit: number;
   usedAmount: number;
   remainingAmount: number;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Admin API DTOs (백엔드 컨트롤러/DTO와 1:1 정합)
+// ─────────────────────────────────────────────────────────────────
+
+// 백엔드 DashboardMetricsInfo (GET /admin/dashboard/metrics)
+export interface AdminDashboardMetrics {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  lockedUsers: number;
+  totalTransactions: number;
+  totalVolume: number;
+  dailyTransactionCount: number;
+  dailyTransactionVolume: number;
+  totalAccounts: number;
+  recentErrors: number;
+  lastUpdated: string;
+}
+
+// 백엔드 TPSMetricsInfo (GET /admin/dashboard/tps-metrics)
+export interface AdminTPSMetrics {
+  currentTPS: number;
+  peakTPS: number;
+  avgTPS: number;
+  successRate: number;
+  failureRate: number;
+  timestamp: string;
+}
+
+// 백엔드 SystemLogInfo (GET /admin/system-logs)
+export interface AdminSystemLog {
+  id: number;
+  time: string;
+  level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
+  service: string;
+  message: string;
+}
+
+// 백엔드 RiskTransactionInfo (GET /admin/risk-transactions)
+export type AdminRiskLevel = 'DANGER' | 'CAUTION' | 'SAFE';
+export type AdminRiskStatus = 'PENDING_REVIEW' | 'APPROVED' | 'BLOCKED';
+
+export interface AdminRiskTransaction {
+  transactionId: string;
+  level: AdminRiskLevel;
+  sender: string;
+  receiver: string;
+  amount: number;
+  datetime: string;
+  category: string;
+  reason: string;
+  status: AdminRiskStatus;
+}
+
+// 백엔드 RiskActionResult (POST /admin/risk-transactions/{id}/approve|block)
+export interface AdminRiskActionResult {
+  transactionId: string;
+  status: AdminRiskStatus;
+  approvedAt: string;
+}
+
+// 백엔드 TransactionInfo (GET /admin/transaction/all)
+export type AdminTransactionStatusType = 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
+
+export interface AdminTransactionInfo {
+  transactionId: number;
+  senderAccountId: number;
+  receiverAccountId: number;
+  amount: number;
+  memo?: string;
+  category?: string;
+  status: AdminTransactionStatusType;
+  createdAt: string;
+}
+
+// 백엔드 UserInfo (GET /admin/users, /admin/users/{id})
+export interface AdminUserInfo {
+  userId: number;
+  email: string;
+  name: string;
+  phone?: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
+  role: 'USER' | 'ADMIN';
+  createdAt: string;
+}
+
+// 정책 관리 (신규 엔드포인트 계약: GET/PUT /admin/policies, GET /admin/policies/history)
+export interface AdminPolicyConfig {
+  dailyLimit: number;
+  singleLimit: number;
+  maxTxCount: number;
+  feeRate: number;
+  minFee: number;
+  maxFee: number;
+  aiEnabled: boolean;
+  autoBlock: boolean;
+  adminApproval: boolean;
+  riskThreshold: number;
+  warnThreshold: number;
+}
+
+export interface AdminPolicyChange {
+  id: number | string;
+  changedAt: string;
+  adminName: string;
+  policyName: string;
+  before: string;
+  after: string;
+  reason: string;
 }
 
 // Re-export admin types

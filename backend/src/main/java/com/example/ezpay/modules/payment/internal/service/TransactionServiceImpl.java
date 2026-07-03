@@ -12,6 +12,8 @@ import com.example.ezpay.repository.user.*;
 import com.example.ezpay.modules.payment.api.dto.AccountOwnerInfo;
 import com.example.ezpay.modules.payment.api.dto.TransferRequest;
 import com.example.ezpay.modules.notification.internal.service.NotificationService;
+import com.example.ezpay.modules.notification.internal.service.UserNotificationService;
+import com.example.ezpay.shared.common.enums.UserNotificationCategory;
 import com.example.ezpay.service.user.ErrorLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,6 +39,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final NotificationRepository notificationRepository;
     private final ErrorLogService errorLogService;
     private final NotificationService notificationService;
+    private final UserNotificationService userNotificationService;
 
     // 송금 요청 (kafka 이벤트 발행)
     @Override
@@ -149,6 +152,28 @@ public class TransactionServiceImpl implements TransactionService {
                 }
             } catch (Exception notifyError) {
                 errorLogService.logError("Notification", "이메일 발송 실패: " + notifyError.getMessage(), ErrorLogStatus.UNRESOLVED);
+            }
+
+            // 알림 피드 저장 + 실시간(SSE) 전송 (실패해도 송금은 성공 처리)
+            try {
+                User sender = fromAccount.getUser();
+                User receiver = toAccount.getUser();
+                String amountText = String.format("%,d원", event.getAmount().longValue());
+
+                userNotificationService.create(
+                        sender,
+                        UserNotificationCategory.TRANSFER,
+                        "송금 완료",
+                        String.format("%s님에게 %s 송금", receiver.getName(), amountText)
+                );
+                userNotificationService.create(
+                        receiver,
+                        UserNotificationCategory.DEPOSIT,
+                        "입금 확인",
+                        String.format("%s님으로부터 %s 입금", sender.getName(), amountText)
+                );
+            } catch (Exception feedError) {
+                errorLogService.logError("Notification", "알림 피드 저장 실패: " + feedError.getMessage(), ErrorLogStatus.UNRESOLVED);
             }
 
             try {

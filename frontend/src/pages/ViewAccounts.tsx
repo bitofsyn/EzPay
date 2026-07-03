@@ -1,20 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ChevronDown, CreditCard, Plus, Trash2, X } from "lucide-react";
 import {
-  ArrowLeft,
-  Bell,
-  ChevronDown,
-  ChevronRight,
-  CreditCard,
-  Plus,
-  Star,
-  X,
-} from "lucide-react";
-import { createAccount, getMyAccounts } from "../api/UserAPI";
+  createAccount,
+  deleteAccount,
+  getMyAccounts,
+  setMainAccount,
+} from "../api/UserAPI";
 import { Account } from "../types";
-import { formatAccountNumber, formatCurrency } from "../utils/formatters";
+import { formatAccountNumber } from "../utils/formatters";
 import { getUserData } from "../utils/storage";
-import UserSidebar from "../components/UserSidebar";
+import UserShell from "../components/UserShell";
 
 interface AccountWithBank extends Account {
   bankName?: string;
@@ -32,6 +28,24 @@ const BANK_OPTIONS = [
 ];
 
 const ACCOUNT_TYPES = ["입출금", "적금", "예금", "청약"];
+
+/** 은행별 카드 상단 컬러 바 / 은행명 색상 (참고 목업 기준) */
+const BANK_COLORS: Record<string, [string, string]> = {
+  토스뱅크: ["#0f172a", "#1e3a5f"],
+  카카오뱅크: ["#0c4a6e", "#155e75"],
+  신한은행: ["#1e3a8a", "#1d4ed8"],
+  국민은행: ["#334155", "#475569"],
+  우리은행: ["#0f4c75", "#1a6ea8"],
+  하나은행: ["#064e3b", "#065f46"],
+  기업은행: ["#312e81", "#3730a3"],
+  농협은행: ["#14532d", "#166534"],
+};
+
+const bankColors = (bank?: string): [string, string] =>
+  (bank && BANK_COLORS[bank]) || ["#475569", "#334155"];
+
+const won = (amount: number | string) =>
+  `₩${Math.floor(Number(amount) || 0).toLocaleString()}`;
 
 const ViewAccounts: React.FC = () => {
   const navigate = useNavigate();
@@ -51,6 +65,10 @@ const ViewAccounts: React.FC = () => {
   const [modalIsMain, setModalIsMain] = useState(false);
   const [modalError, setModalError] = useState("");
   const [modalSubmitting, setModalSubmitting] = useState(false);
+
+  // 대표 설정 / 삭제 상태
+  const [actionId, setActionId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
   const fetchAccounts = async () => {
     try {
@@ -119,182 +137,195 @@ const ViewAccounts: React.FC = () => {
   };
 
   const totalBalance = accounts.reduce((s, acc) => s + Number(acc.balance || 0), 0);
+  const mainAccount = accounts.find((acc) => acc.isMain);
 
-  const cardGradients = [
-    "from-[#264997] via-[#175f8b] to-[#17667b]",
-    "from-slate-700 via-slate-800 to-slate-900",
-    "from-cyan-600 via-cyan-700 to-cyan-900",
-    "from-indigo-600 via-indigo-700 to-indigo-900",
-  ];
+  const handleSetMain = async (accountId: number) => {
+    setActionId(accountId);
+    try {
+      await setMainAccount(accountId);
+      await fetchAccounts();
+    } catch {
+      setError("대표 계좌 설정에 실패했습니다.");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handleDelete = async (accountId: number) => {
+    setActionId(accountId);
+    try {
+      await deleteAccount(accountId);
+      setDeleteConfirmId(null);
+      await fetchAccounts();
+    } catch {
+      setError("계좌 삭제에 실패했습니다.");
+    } finally {
+      setActionId(null);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
-      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <UserSidebar />
+    <>
+    <UserShell title="내 계좌" showViewToggle>
 
-        <main className="flex flex-col gap-5">
-          {/* Header */}
-          <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => navigate("/dashboard")}
-                  className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-                >
-                  <ArrowLeft size={18} />
-                </button>
+          {/* 헤더 */}
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-lg font-black tracking-tight text-slate-950">내 계좌</h2>
+              <p className="mt-1 text-xs font-medium text-slate-400">
+                등록된 계좌를 관리합니다 · 총 {accounts.length}개
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openModal}
+              className="flex shrink-0 items-center gap-2 rounded-[14px] bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800"
+            >
+              <Plus size={15} />
+              계좌 추가
+            </button>
+          </div>
+
+          {/* 총 보유 잔액 + 대표 계좌 히어로 */}
+          {!loading && mainAccount && (
+            <div className="rounded-[20px] bg-gradient-to-br from-[#1e3a8a] via-[#0c4a6e] to-[#155e75] p-6 text-white shadow-[0_12px_32px_rgba(14,57,107,0.25)]">
+              <div className="mb-4 flex items-start justify-between">
                 <div>
-                  <h1 className="text-[2rem] font-black tracking-tight text-slate-950">내 계좌</h1>
-                  <p className="text-sm font-semibold text-slate-400">전체 계좌 조회 및 관리</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/70">
+                    총 보유 잔액
+                  </p>
+                  <p className="mt-1.5 break-words text-3xl font-black tracking-tight tabular-nums">
+                    {won(totalBalance)}
+                  </p>
                 </div>
+                <span className="shrink-0 rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold backdrop-blur">
+                  대표 계좌
+                </span>
               </div>
               <button
                 type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
-                onClick={() => navigate("/settings/notification")}
+                onClick={() => navigate(`/account/${mainAccount.accountId}`)}
+                className="flex w-full items-center justify-between rounded-xl bg-white/10 px-4 py-3 text-left transition hover:bg-white/15"
               >
-                <Bell size={18} />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold text-white/70">
+                    {mainAccount.bankName || "EzPay Bank"}
+                  </p>
+                  <p className="mt-0.5 truncate text-sm font-bold">
+                    {mainAccount.accountName || "대표 통장"}
+                  </p>
+                  <p className="mt-1 font-mono text-[11px] tracking-[0.12em] text-white/75">
+                    {formatAccountNumber(mainAccount.accountNumber)}
+                  </p>
+                </div>
+                <div className="shrink-0 pl-4 text-right">
+                  <p className="text-lg font-black tabular-nums">{won(mainAccount.balance)}</p>
+                  <p className="mt-0.5 text-[10px] text-white/60">잔액 →</p>
+                </div>
               </button>
-            </div>
-          </header>
-
-          {/* Total balance hero */}
-          {!loading && accounts.length > 0 && (
-            <div className="rounded-[28px] bg-gradient-to-r from-[#264997] via-[#175f8b] to-[#17667b] p-6 text-white shadow-[0_30px_70px_rgba(23,53,120,0.32)]">
-              <p className="text-sm font-semibold text-white/70">총 보유 자산</p>
-              <p className="mt-2 text-[3rem] font-black tracking-tight">
-                ₩{totalBalance.toLocaleString()}
-              </p>
-              <p className="mt-1 text-sm font-semibold text-white/60">
-                계좌 {accounts.length}개 연결됨
-              </p>
             </div>
           )}
 
-          {/* Account list */}
-          <div className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[1.4rem] font-black tracking-tight text-slate-950">계좌 목록</h2>
+          {/* 계좌 목록 */}
+          {loading ? (
+            <div className="grid gap-3.5 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-44 animate-pulse rounded-2xl bg-white shadow-sm" />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-8 text-center">
+              <p className="text-sm font-semibold text-rose-600">{error}</p>
+            </div>
+          ) : accounts.length > 0 ? (
+            <div className="grid gap-3.5 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
+              {accounts.map((account) => {
+                const [c0, c1] = bankColors(account.bankName);
+                const busy = actionId === account.accountId;
+                return (
+                  <div
+                    key={account.accountId}
+                    onClick={() => navigate(`/account/${account.accountId}`)}
+                    className="cursor-pointer overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)]"
+                  >
+                    {/* 상단 컬러 바 */}
+                    <div
+                      className="h-[5px]"
+                      style={{ background: `linear-gradient(90deg,${c0},${c1})` }}
+                    />
+                    <div className="p-[18px]">
+                      <div className="mb-3 flex items-start justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold" style={{ color: c0 }}>
+                            {account.bankName || "EzPay Bank"}
+                          </span>
+                          {account.isMain && (
+                            <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[9px] font-bold text-cyan-600">
+                              대표
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-sm font-extrabold text-slate-900">
+                        {account.accountName || "입출금 통장"}
+                      </p>
+                      <p className="mt-1 font-mono text-[11px] tracking-[0.1em] text-slate-400">
+                        {formatAccountNumber(account.accountNumber)}
+                      </p>
+                      <p className="mt-3 text-xl font-black tabular-nums text-slate-900">
+                        {won(account.balance)}
+                      </p>
+
+                      {/* 액션 버튼 */}
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-3.5 flex gap-1.5 border-t border-slate-100 pt-3"
+                      >
+                        {!account.isMain && (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => handleSetMain(account.accountId)}
+                            className="flex-1 rounded-lg bg-sky-50 py-1.5 text-[11px] font-bold text-cyan-600 transition hover:bg-sky-100 disabled:opacity-50"
+                          >
+                            대표 설정
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setDeleteConfirmId(account.accountId)}
+                          className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-rose-50 py-1.5 text-[11px] font-bold text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+                        >
+                          <Trash2 size={12} />
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center rounded-2xl bg-white py-16 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+                <CreditCard size={28} className="text-slate-400" />
+              </div>
+              <p className="text-base font-bold text-slate-500">등록된 계좌가 없습니다</p>
+              <p className="mt-1 mb-5 text-sm font-medium text-slate-400">
+                계좌를 추가하여 자산을 관리해보세요.
+              </p>
               <button
                 type="button"
                 onClick={openModal}
-                className="flex items-center gap-2 rounded-[14px] bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800"
+                className="flex items-center gap-2 rounded-[16px] bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
               >
-                <Plus size={15} />
-                계좌 추가
-              </button>
-            </div>
-
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2].map((i) => (
-                  <div key={i} className="h-24 animate-pulse rounded-[20px] bg-slate-100" />
-                ))}
-              </div>
-            ) : error ? (
-              <div className="rounded-[20px] border border-rose-200 bg-rose-50 px-5 py-8 text-center">
-                <p className="text-sm font-semibold text-rose-600">{error}</p>
-              </div>
-            ) : accounts.length > 0 ? (
-              <div className="space-y-4">
-                {accounts.map((account, index) => (
-                  <button
-                    key={account.accountId}
-                    type="button"
-                    onClick={() => navigate(`/account/${account.accountId}`)}
-                    className="group w-full text-left"
-                  >
-                    <div className={`relative overflow-hidden rounded-[24px] bg-gradient-to-r ${cardGradients[index % cardGradients.length]} p-5 text-white shadow-lg transition group-hover:shadow-xl group-hover:scale-[1.01]`}>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-white/80">
-                              {account.bankName || "EzPay Bank"}
-                            </p>
-                            {account.isMain && (
-                              <span className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white">
-                                <Star size={10} fill="currentColor" />
-                                대표
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-1 text-sm font-semibold tracking-[0.14em] text-white/60">
-                            {formatAccountNumber(account.accountNumber)}
-                          </p>
-                        </div>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
-                          <CreditCard size={18} />
-                        </div>
-                      </div>
-                      <div className="mt-4 flex items-end justify-between">
-                        <p className="text-[1.8rem] font-black">
-                          {formatCurrency(account.balance).replace(" 원", "")}
-                          <span className="ml-1 text-base font-bold text-white/60">원</span>
-                        </p>
-                        <div className="flex items-center gap-1 text-sm font-bold text-white/60 transition group-hover:text-white">
-                          상세보기
-                          <ChevronRight size={16} />
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center py-16 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
-                  <CreditCard size={28} className="text-slate-400" />
-                </div>
-                <p className="text-base font-bold text-slate-500">보유한 계좌가 없습니다</p>
-                <p className="mt-1 mb-5 text-sm font-medium text-slate-400">새 계좌를 추가해 EzPay를 시작해 보세요.</p>
-                <button
-                  type="button"
-                  onClick={openModal}
-                  className="flex items-center gap-2 rounded-[16px] bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
-                >
-                  <Plus size={16} />
-                  계좌 추가
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Quick actions */}
-          {accounts.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => navigate("/send")}
-                className="flex items-center gap-4 rounded-[24px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition hover:shadow-md"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-slate-950 text-white">
-                  <CreditCard size={20} />
-                </div>
-                <div className="text-left">
-                  <p className="text-base font-black text-slate-950">송금하기</p>
-                  <p className="text-sm font-medium text-slate-400">빠른 계좌 이체</p>
-                </div>
-                <ChevronRight size={18} className="ml-auto text-slate-400" />
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/transactions")}
-                className="flex items-center gap-4 rounded-[24px] border border-white/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] transition hover:shadow-md"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-slate-950 text-white">
-                  <Bell size={20} />
-                </div>
-                <div className="text-left">
-                  <p className="text-base font-black text-slate-950">거래 내역</p>
-                  <p className="text-sm font-medium text-slate-400">입출금 내역 조회</p>
-                </div>
-                <ChevronRight size={18} className="ml-auto text-slate-400" />
+                <Plus size={16} />
+                첫 번째 계좌 추가하기
               </button>
             </div>
           )}
-        </main>
-      </div>
+    </UserShell>
 
       {/* 계좌 추가 모달 */}
       {showModal && (
@@ -447,7 +478,45 @@ const ViewAccounts: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+
+      {/* 삭제 확인 모달 */}
+      {deleteConfirmId !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
+          onClick={() => setDeleteConfirmId(null)}
+        >
+          <div
+            className="w-full max-w-[320px] rounded-[18px] bg-white p-7 text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-3.5 flex h-12 w-12 items-center justify-center rounded-full bg-rose-50">
+              <Trash2 size={22} className="text-rose-500" />
+            </div>
+            <p className="text-sm font-extrabold text-slate-900">계좌를 삭제할까요?</p>
+            <p className="mt-2 mb-5 text-xs font-medium text-slate-400">
+              삭제된 계좌는 복구할 수 없습니다.
+            </p>
+            <div className="flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-200"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={actionId === deleteConfirmId}
+                onClick={() => handleDelete(deleteConfirmId)}
+                className="flex-1 rounded-xl bg-rose-500 py-2.5 text-sm font-bold text-white transition hover:bg-rose-600 disabled:opacity-60"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

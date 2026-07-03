@@ -66,9 +66,10 @@ const NotificationSettings: React.FC = () => {
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-6">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">알림 수신 이메일</h3>
         <div>
-          <label className="text-xs font-semibold text-slate-500 block mb-1.5">수신 이메일</label>
+          <label htmlFor="notification-email" className="text-xs font-semibold text-slate-500 block mb-1.5">수신 이메일</label>
           <div className="flex gap-2">
             <input
+              id="notification-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

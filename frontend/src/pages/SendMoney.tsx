@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import * as Sentry from "@sentry/react";
 import toast from "react-hot-toast";
 import {
-  ArrowLeft,
   ArrowUpRight,
-  Bell,
   Bot,
   CheckCircle2,
   ChevronRight,
   Clock,
   X,
 } from "lucide-react";
+import { AxiosError } from "axios";
 import { getAccountOwner, transferMoney, getMyAccounts, getDashboardInfo } from "../api/UserAPI";
 import { handleTransferError } from "../utils/errorHandler";
 import { Account, Transaction } from "../types";
@@ -21,7 +20,7 @@ import {
   formatDateShort,
   parseDate,
 } from "../utils/formatters";
-import UserSidebar from "../components/UserSidebar";
+import UserShell from "../components/UserShell";
 
 interface AccountWithMain extends Account {
   main?: boolean;
@@ -70,8 +69,15 @@ const formatInputAmount = (value: string): string => {
 const parseAmount = (value: string): number =>
   Number(value.replace(/[^\d]/g, "")) || 0;
 
+interface TransferPrefill {
+  bank?: string;
+  accountNumber?: string;
+  name?: string;
+}
+
 const SendMoney: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [accounts, setAccounts] = useState<AccountWithMain[]>([]);
   const [fromAccountId, setFromAccountId] = useState<number | null>(null);
@@ -114,7 +120,7 @@ const SendMoney: React.FC = () => {
       .filter((t) => ownAccountIds.has(t.senderAccount?.accountId))
       .forEach((t) => {
         const id = t.receiverAccount?.accountId;
-        const name = t.receiverAccount?.bankName || "상대방";
+        const name = t.receiverAccount?.ownerName || t.receiverAccount?.bankName || "상대방";
         const bank = t.receiverAccount?.bankName || "";
         if (id != null) {
           if (!freq[id]) freq[id] = { name, bank, count: 0 };
@@ -138,7 +144,7 @@ const SendMoney: React.FC = () => {
       .sort((a, b) => parseDate(b.transactionDate).getTime() - parseDate(a.transactionDate).getTime())
       .slice(0, 3)
       .map((t) => ({
-        name: t.receiverAccount?.bankName || "상대방",
+        name: t.receiverAccount?.ownerName || t.receiverAccount?.bankName || "상대방",
         date: formatDateShort(t.transactionDate),
         amount: t.amount,
       }));
@@ -162,6 +168,19 @@ const SendMoney: React.FC = () => {
       }
     };
     fetchAll();
+  }, []);
+
+  // 친구 화면에서 넘어온 수취인 정보(은행/계좌번호/이름) 자동 채움.
+  // 계좌번호가 채워지면 아래 자동 조회 effect가 실제 계좌를 확인한다.
+  useEffect(() => {
+    const prefill = (location.state as { prefill?: TransferPrefill } | null)?.prefill;
+    if (!prefill) return;
+    if (prefill.bank) setReceiverBank(prefill.bank);
+    if (prefill.name) setReceiverInputName(prefill.name);
+    if (prefill.accountNumber) setToAccountNumber(prefill.accountNumber.replace(/\D/g, ""));
+    // 소비한 state는 비워 뒤로가기/새로고침 시 재적용을 막는다.
+    window.history.replaceState({}, "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 메모 → AI 카테고리 예측
@@ -204,8 +223,14 @@ const SendMoney: React.FC = () => {
       setReceiverAccountId(data.accountId);
       setReceiverInputName(data.ownerName);
       return data;
-    } catch {
-      setCheckError("존재하지 않는 계좌번호입니다.");
+    } catch (err) {
+      const status = err instanceof AxiosError ? err.response?.status : undefined;
+      // 404는 실제 미존재 계좌, 그 외(네트워크/500/인증 등)는 조회 실패로 구분해 오해를 줄인다.
+      setCheckError(
+        status === 404
+          ? "존재하지 않는 계좌번호입니다."
+          : "계좌 조회에 실패했어요. 잠시 후 다시 시도해주세요."
+      );
       setReceiverName("");
       setReceiverAccountId(null);
       return null;
@@ -233,8 +258,9 @@ const SendMoney: React.FC = () => {
   };
 
   const handleNext = async () => {
-    if (!toAccountNumber || !amount) {
-      toast.error("계좌번호와 금액을 입력해주세요.");
+    // 최근 보낸 사람을 선택하면 계좌번호 입력 없이도 receiverAccountId가 채워진다.
+    if ((!toAccountNumber && !receiverAccountId) || !amount) {
+      toast.error("받는 사람과 금액을 입력해주세요.");
       return;
     }
     const parsed = parseAmount(amount);
@@ -278,37 +304,8 @@ const SendMoney: React.FC = () => {
   const aiAnalysisReady = (receiverInputName || receiverName) && parseAmount(amount) > 0;
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
-      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <UserSidebar />
-
-        <main className="flex flex-col gap-5">
-          {/* Header */}
-          <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => navigate("/dashboard")}
-                  className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-                >
-                  <ArrowLeft size={18} />
-                </button>
-                <div>
-                  <h1 className="text-[2rem] font-black tracking-tight text-slate-950">송금하기</h1>
-                  <p className="text-sm font-semibold text-slate-400">EzPay · {new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
-                onClick={() => navigate("/settings/notification")}
-              >
-                <Bell size={18} />
-              </button>
-            </div>
-          </header>
-
+    <>
+    <UserShell title="송금하기" backTo="/dashboard">
           <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
             {/* ── 메인 폼 ── */}
             <div className="flex flex-col gap-4">
@@ -600,15 +597,14 @@ const SendMoney: React.FC = () => {
               </div>
             </div>
           </div>
-        </main>
-      </div>
+    </UserShell>
 
       {/* 송금 확인 모달 */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-[28px] bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
-              <h3 className="text-[1.2rem] font-black text-slate-950">송금 확인</h3>
+              <h3 className="text-base font-black text-slate-950">송금 확인</h3>
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}
@@ -621,8 +617,8 @@ const SendMoney: React.FC = () => {
             <div className="space-y-2.5 px-6 py-5">
               {[
                 { label: "출금 계좌", value: selectedAccount ? `${selectedAccount.bankName} · ${formatAccountNumber(selectedAccount.accountNumber)}` : "-" },
-                { label: "받는 분", value: receiverInputName || receiverName },
-                { label: "받는 계좌", value: toAccountNumber },
+                { label: "받는 분", value: receiverInputName || receiverName || "-" },
+                ...(toAccountNumber ? [{ label: "받는 계좌", value: formatAccountNumber(toAccountNumber) }] : []),
                 { label: "송금 금액", value: `₩${amount}`, highlight: true },
                 ...(memo ? [{ label: "메모", value: memo }] : []),
                 ...(aiCategory ? [{ label: "카테고리", value: aiCategory }] : []),
@@ -653,7 +649,7 @@ const SendMoney: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

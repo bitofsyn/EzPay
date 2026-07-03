@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
-  Bell,
   Pencil,
   Plus,
   Search,
@@ -14,7 +12,7 @@ import {
 import { getDashboardInfo } from "../api/UserAPI";
 import { Transaction } from "../types";
 import { formatDateShort, parseDate } from "../utils/formatters";
-import UserSidebar from "../components/UserSidebar";
+import UserShell from "../components/UserShell";
 
 interface Friend {
   id: string;
@@ -37,10 +35,25 @@ const AVATAR_COLORS = [
   "bg-violet-600",
 ];
 
-const BANK_OPTIONS = [
-  "국민은행", "신한은행", "우리은행", "하나은행",
-  "기업은행", "농협은행", "카카오뱅크", "토스뱅크",
-];
+// 백엔드 AccountNumberGenerator와 동일한 은행별 지정번호(계좌번호 앞 2자리)
+const BANK_PREFIXES: Record<string, string> = {
+  신한은행: "12",
+  우리은행: "34",
+  KB국민은행: "56",
+  NH농협은행: "78",
+  기업은행: "90",
+  카카오뱅크: "13",
+  토스뱅크: "24",
+};
+const BANK_OPTIONS = Object.keys(BANK_PREFIXES);
+const DEFAULT_BANK = BANK_OPTIONS[0];
+
+/** 선택 은행의 지정번호로 계좌번호가 시작되도록 앞 2자리를 교체(최대 10자리). */
+const withBankPrefix = (bank: string, account: string): string => {
+  const prefix = BANK_PREFIXES[bank] ?? "99";
+  const rest = account.replace(/\D/g, "").slice(2); // 기존 앞 2자리(은행코드) 제거
+  return (prefix + rest).slice(0, 10);
+};
 
 const STORAGE_KEY = "ezpay_friends";
 
@@ -141,8 +154,8 @@ const Friends: React.FC = () => {
     setEditingId(null);
     setFormNickname("");
     setFormRealName("");
-    setFormBank(BANK_OPTIONS[0]);
-    setFormAccount("");
+    setFormBank(DEFAULT_BANK);
+    setFormAccount(withBankPrefix(DEFAULT_BANK, "")); // 지정번호로 시작
     setFormFavorite(false);
     setFormError("");
     setShowModal(true);
@@ -162,6 +175,7 @@ const Friends: React.FC = () => {
   const handleSave = () => {
     if (!formRealName.trim() && !formNickname.trim()) { setFormError("이름 또는 별칭을 입력해주세요."); return; }
     if (!formAccount.trim()) { setFormError("계좌번호를 입력해주세요."); return; }
+    if (formAccount.length !== 10) { setFormError("계좌번호는 은행 지정번호 포함 10자리여야 합니다."); return; }
 
     // 표시 이름: 별칭 우선, 없으면 실명
     const displayNickname = formNickname.trim() || formRealName.trim();
@@ -204,8 +218,17 @@ const Friends: React.FC = () => {
     setFriends(updated);
   };
 
-  const handleSend = (_f: Friend) => {
-    navigate("/send");
+  const handleSend = (f: Friend) => {
+    // 친구의 은행/계좌번호/이름을 송금 화면으로 넘겨 자동 채움 + 계좌 조회를 트리거한다.
+    navigate("/send", {
+      state: {
+        prefill: {
+          bank: f.bank,
+          accountNumber: f.accountNumber,
+          name: f.nickname || f.realName,
+        },
+      },
+    });
   };
 
   const FriendRow = ({ f }: { f: Friend }) => (
@@ -263,47 +286,22 @@ const Friends: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
-      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <UserSidebar />
-
-        <main className="flex flex-col gap-5">
-          {/* Header */}
-          <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => navigate("/dashboard")}
-                  className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-                >
-                  <ArrowLeft size={18} />
-                </button>
-                <div>
-                  <h1 className="text-[2rem] font-black tracking-tight text-slate-950">친구 관리</h1>
-                  <p className="text-sm font-semibold text-slate-400">총 {friends.length}명 등록됨</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={openAdd}
-                  className="flex items-center gap-2 rounded-[14px] bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800"
-                >
-                  <Plus size={15} />
-                  친구 추가
-                </button>
-                <button
-                  type="button"
-                  className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
-                  onClick={() => navigate("/settings/notification")}
-                >
-                  <Bell size={18} />
-                </button>
-              </div>
-            </div>
-          </header>
-
+    <>
+    <UserShell
+      title="친구 관리"
+      subtitle={`총 ${friends.length}명 등록됨`}
+      backTo="/dashboard"
+      actions={
+        <button
+          type="button"
+          onClick={openAdd}
+          className="flex items-center gap-2 rounded-[14px] bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800"
+        >
+          <Plus size={15} />
+          친구 추가
+        </button>
+      }
+    >
           {/* Search */}
           <div className="relative">
             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -382,8 +380,7 @@ const Friends: React.FC = () => {
               </div>
             )}
           </div>
-        </main>
-      </div>
+    </UserShell>
 
       {/* 친구 추가/수정 모달 */}
       {showModal && (
@@ -403,6 +400,44 @@ const Friends: React.FC = () => {
             </div>
 
             <div className="space-y-3 px-6 py-5">
+              {/* 은행 (선택 시 계좌번호가 지정번호로 시작) */}
+              <div>
+                <label htmlFor="formBank" className="mb-1.5 block text-sm font-semibold text-slate-700">은행</label>
+                <select
+                  id="formBank"
+                  value={formBank}
+                  onChange={(e) => {
+                    const bank = e.target.value;
+                    setFormBank(bank);
+                    setFormAccount((prev) => withBankPrefix(bank, prev));
+                  }}
+                  className="w-full appearance-none rounded-[10px] border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-200"
+                >
+                  {BANK_OPTIONS.map((b) => (
+                    <option key={b} value={b}>
+                      {b} ({BANK_PREFIXES[b]})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 계좌번호 (은행 지정번호로 시작하는 10자리) */}
+              <div>
+                <label htmlFor="formAccount" className="mb-1.5 block text-sm font-semibold text-slate-700">계좌번호</label>
+                <input
+                  id="formAccount"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="숫자만 입력"
+                  value={formAccount}
+                  onChange={(e) => setFormAccount(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  className="w-full rounded-[10px] border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-200"
+                />
+                <p className="mt-1.5 text-xs font-medium text-slate-400">
+                  {formBank} 계좌는 <span className="font-bold text-slate-600">{BANK_PREFIXES[formBank] ?? "99"}</span>로 시작하는 10자리입니다.
+                </p>
+              </div>
+
               {/* 이름 (실명) */}
               <div>
                 <label htmlFor="formRealName" className="mb-1.5 block text-sm font-semibold text-slate-700">이름</label>
@@ -427,33 +462,6 @@ const Friends: React.FC = () => {
                   onChange={(e) => setFormNickname(e.target.value)}
                   className="w-full rounded-[10px] border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-200"
                 />
-              </div>
-
-              {/* 계좌번호 */}
-              <div>
-                <label htmlFor="formAccount" className="mb-1.5 block text-sm font-semibold text-slate-700">계좌번호</label>
-                <input
-                  id="formAccount"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="숫자만 입력"
-                  value={formAccount}
-                  onChange={(e) => setFormAccount(e.target.value.replace(/\D/g, ""))}
-                  className="w-full rounded-[10px] border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-200"
-                />
-              </div>
-
-              {/* 은행 */}
-              <div>
-                <label htmlFor="formBank" className="mb-1.5 block text-sm font-semibold text-slate-700">은행</label>
-                <select
-                  id="formBank"
-                  value={formBank}
-                  onChange={(e) => setFormBank(e.target.value)}
-                  className="w-full appearance-none rounded-[10px] border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-200"
-                >
-                  {BANK_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
-                </select>
               </div>
 
               {/* 즐겨찾기 */}
@@ -505,7 +513,7 @@ const Friends: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

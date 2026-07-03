@@ -1,18 +1,11 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import AdminShell from "../../components/admin/AdminShell";
 import { AdminSlider, ToggleSwitch } from "../../components/admin/AdminUI";
+import { getPolicyConfig, getPolicyHistory, updatePolicyConfig } from "../../api/AdminAPI";
+import type { AdminPolicyChange, AdminPolicyConfig } from "../../types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface PolicyChange {
-  id: string;
-  date: string;
-  admin: string;
-  item: string;
-  before: string;
-  after: string;
-  reason: string;
-}
 
 interface PreviewItem {
   label: string;
@@ -20,25 +13,9 @@ interface PreviewItem {
   after: string;
 }
 
-// ─── Mock history data ────────────────────────────────────────────────────────
+// ─── Initial policy state (백엔드 조회 실패 시 폴백 기본값) ────────────────────
 
-const HISTORY: PolicyChange[] = [
-  { id: "1", date: "2026-06-22 14:38", admin: "admin", item: "일일 송금 한도", before: "₩3,000,000", after: "₩5,000,000", reason: "정기 한도 조정" },
-  { id: "2", date: "2026-06-28 09:15", admin: "admin", item: "수수료율", before: "0.3%", after: "0.5%", reason: "수익성 개선" },
-  { id: "3", date: "2026-06-15 16:45", admin: "admin", item: "AI 자동 차단", before: "OFF", after: "ON", reason: "보안 강화" },
-  { id: "4", date: "2026-06-18 11:28", admin: "admin", item: "위험도 임계치", before: "60", after: "80", reason: "오탐 감소" },
-];
-
-const RECENT_CHANGES = [
-  { label: "일일 송금 한도", date: "06-22 14:38", value: "₩5,000,000" },
-  { label: "수수료율", date: "06-28 09:15", value: "0.5%" },
-  { label: "AI 자동 차단", date: "06-15 16:45", value: "ON" },
-  { label: "위험도 임계치", date: "06-10 11:20", value: "80" },
-];
-
-// ─── Initial policy state ─────────────────────────────────────────────────────
-
-const INITIAL = {
+const INITIAL: AdminPolicyConfig = {
   dailyLimit: 5000000,
   singleLimit: 1000000,
   maxTxCount: 1000,
@@ -54,17 +31,19 @@ const INITIAL = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const pct = (v: number, min: number, max: number) => ((v - min) / (max - min)) * 100;
-
 const fmtWon = (v: number) => `₩${v.toLocaleString()}`;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const AdminPolicy: React.FC = () => {
-  const [policy, setPolicy] = useState(INITIAL);
+  const [policy, setPolicy] = useState<AdminPolicyConfig>(INITIAL);
   const [preview, setPreview] = useState<PreviewItem[]>([]);
+  const [history, setHistory] = useState<AdminPolicyChange[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [isHistoryError, setIsHistoryError] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const set = <K extends keyof typeof INITIAL>(key: K, value: (typeof INITIAL)[K]) => {
+  const set = <K extends keyof AdminPolicyConfig>(key: K, value: AdminPolicyConfig[K]) => {
     const old = policy[key];
     if (old === value) return;
     setPolicy((p) => ({ ...p, [key]: value }));
@@ -106,6 +85,56 @@ const AdminPolicy: React.FC = () => {
       }
       return [...prev, entry];
     });
+  };
+
+  const fetchHistory = useCallback(async (signal?: { aborted: boolean }) => {
+    setIsHistoryLoading(true);
+    setIsHistoryError(false);
+    try {
+      const data = await getPolicyHistory();
+      if (!signal?.aborted) setHistory(data);
+    } catch (error) {
+      if (signal?.aborted) return;
+      console.error("정책 변경 이력 조회 실패:", error);
+      setIsHistoryError(true);
+    } finally {
+      if (!signal?.aborted) setIsHistoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const signal = { aborted: false };
+
+    // 정책 설정 조회 (실패 시 기본값 유지 - 화면 차단하지 않음)
+    (async () => {
+      try {
+        const config = await getPolicyConfig();
+        if (!signal.aborted && config) setPolicy(config);
+      } catch (error) {
+        console.error("정책 설정 조회 실패:", error);
+      }
+    })();
+
+    fetchHistory(signal);
+
+    return () => {
+      signal.aborted = true;
+    };
+  }, [fetchHistory]);
+
+  const handleApply = async () => {
+    setIsSaving(true);
+    try {
+      await updatePolicyConfig(policy);
+      toast.success("정책이 적용되었습니다.");
+      setPreview([]);
+      fetchHistory();
+    } catch (error) {
+      console.error("정책 적용 실패:", error);
+      toast.error("정책 적용에 실패했습니다.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -195,8 +224,9 @@ const AdminPolicy: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 block mb-1.5">최소 수수료</label>
+                    <label htmlFor="policy-min-fee" className="text-xs font-semibold text-slate-500 block mb-1.5">최소 수수료</label>
                     <input
+                      id="policy-min-fee"
                       type="number"
                       value={policy.minFee}
                       onChange={(e) => set("minFee", Number(e.target.value))}
@@ -204,8 +234,9 @@ const AdminPolicy: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 block mb-1.5">최대 수수료</label>
+                    <label htmlFor="policy-max-fee" className="text-xs font-semibold text-slate-500 block mb-1.5">최대 수수료</label>
                     <input
+                      id="policy-max-fee"
                       type="number"
                       value={policy.maxFee}
                       onChange={(e) => set("maxFee", Number(e.target.value))}
@@ -284,7 +315,7 @@ const AdminPolicy: React.FC = () => {
             <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800">정책 변경 이력</h3>
-                <span className="text-xs text-slate-400">{HISTORY.length}건</span>
+                <span className="text-xs text-slate-400">{history.length}건</span>
               </div>
               <table className="w-full min-w-[600px]">
                 <thead>
@@ -295,16 +326,38 @@ const AdminPolicy: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {HISTORY.map((h) => (
-                    <tr key={h.id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
-                      <td className="px-4 py-3 text-xs font-mono text-slate-500">{h.date}</td>
-                      <td className="px-4 py-3 text-xs font-semibold text-cyan-600">{h.admin}</td>
-                      <td className="px-4 py-3 text-xs font-semibold text-slate-700">{h.item}</td>
-                      <td className="px-4 py-3 text-xs text-slate-400">{h.before}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-slate-800">{h.after}</td>
-                      <td className="px-4 py-3 text-xs text-slate-500">{h.reason}</td>
+                  {isHistoryLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-10 text-center text-xs text-slate-400">
+                        변경 이력을 불러오는 중입니다...
+                      </td>
                     </tr>
-                  ))}
+                  ) : isHistoryError ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-10 text-center text-xs text-rose-500">
+                        변경 이력을 불러오지 못했습니다.
+                      </td>
+                    </tr>
+                  ) : history.length > 0 ? (
+                    history.map((h) => (
+                      <tr key={h.id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
+                        <td className="px-4 py-3 text-xs font-mono text-slate-500">
+                          {h.changedAt ? new Date(h.changedAt).toLocaleString("ko-KR") : "-"}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-semibold text-cyan-600">{h.adminName}</td>
+                        <td className="px-4 py-3 text-xs font-semibold text-slate-700">{h.policyName}</td>
+                        <td className="px-4 py-3 text-xs text-slate-400">{h.before}</td>
+                        <td className="px-4 py-3 text-xs font-bold text-slate-800">{h.after}</td>
+                        <td className="px-4 py-3 text-xs text-slate-500">{h.reason}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-10 text-center text-xs text-slate-400">
+                        변경 이력이 없습니다.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -335,10 +388,11 @@ const AdminPolicy: React.FC = () => {
                     </div>
                   ))}
                   <button
-                    onClick={() => setPreview([])}
-                    className="w-full mt-2 rounded-xl bg-slate-900 text-white py-2.5 text-sm font-bold hover:bg-slate-800 transition-colors"
+                    onClick={handleApply}
+                    disabled={isSaving}
+                    className="w-full mt-2 rounded-xl bg-slate-900 text-white py-2.5 text-sm font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
                   >
-                    정책 적용
+                    {isSaving ? "적용 중..." : "정책 적용"}
                   </button>
                 </div>
               )}
@@ -347,17 +401,27 @@ const AdminPolicy: React.FC = () => {
             {/* 최근 변경 이력 */}
             <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5">
               <h3 className="text-sm font-bold text-slate-800 mb-4">최근 변경 이력</h3>
-              <div className="space-y-3">
-                {RECENT_CHANGES.map((r) => (
-                  <div key={r.label} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-semibold text-slate-700">{r.label}</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{r.date}</p>
+              {isHistoryLoading ? (
+                <p className="py-4 text-center text-xs text-slate-400">불러오는 중...</p>
+              ) : isHistoryError ? (
+                <p className="py-4 text-center text-xs text-rose-400">이력을 불러오지 못했습니다.</p>
+              ) : history.length === 0 ? (
+                <p className="py-4 text-center text-xs text-slate-400">변경 이력이 없습니다.</p>
+              ) : (
+                <div className="space-y-3">
+                  {history.slice(0, 4).map((r) => (
+                    <div key={r.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-700">{r.policyName}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {r.changedAt ? new Date(r.changedAt).toLocaleString("ko-KR") : "-"}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold text-cyan-500">{r.after}</span>
                     </div>
-                    <span className="text-sm font-bold text-cyan-500">{r.value}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
