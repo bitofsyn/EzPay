@@ -79,8 +79,6 @@ sentry:
 ezpay:
   kafka:
     enabled: ${EZPAY_KAFKA_ENABLED:false}
-  internal-api:
-    secret-key: ${EZPAY_INTERNAL_API_SECRET_KEY:change-me-in-production}
 
 ---
 spring:

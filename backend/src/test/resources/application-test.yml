@@ -40,8 +40,6 @@ spring:
 ezpay:
   kafka:
     enabled: false
-  internal-api:
-    secret-key: test-secret-key
 
 sentry:
   dsn: ""

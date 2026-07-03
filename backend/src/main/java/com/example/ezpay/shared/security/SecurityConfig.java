@@ -50,8 +50,7 @@ public class SecurityConfig {
                                         "/password-reset/**",
                                         "/password-reset/validate",
                                         "/password-reset/request",
-                                "/password-reset/reset-password",
-                                "/api/statistics/**"
+                                "/password-reset/reset-password"
                         ).permitAll()
                         // SSE(EventSource)/WebSocket은 헤더 대신 쿼리 파라미터(?token=)로 JWT를 전달받아 인증한다.
                         // (JwtAuthenticationFilter가 token 파라미터를 인식) → 관리자만 실시간 스트림 구독 가능.
