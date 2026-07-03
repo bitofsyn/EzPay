@@ -4,6 +4,7 @@ import com.example.ezpay.model.user.Notification;
 import com.example.ezpay.model.user.TransferLimit;
 import com.example.ezpay.model.user.User;
 import com.example.ezpay.modules.auth.api.dto.*;
+import com.example.ezpay.modules.systemlog.service.SystemLogger;
 import com.example.ezpay.modules.user.api.facade.UserFacade;
 import com.example.ezpay.repository.user.NotificationRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
@@ -30,6 +31,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final UserFacade userFacade;
+    private final SystemLogger systemLogger;
+
+    // 관리자 시스템 로그 화면에 표시되는 서비스 이름
+    private static final String LOG_SERVICE = "AuthService";
 
     @Override
     @Transactional
@@ -88,12 +93,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
 
         if (userOpt.isEmpty()) {
+            // 시스템 로그: 로그인 실패(WARN). SystemLogger.save는 별도 트랜잭션이라 롤백돼도 로그는 남는다.
+            systemLogger.warn(LOG_SERVICE, String.format(
+                    "로그인 실패: %s (%s) - 존재하지 않는 이메일", request.getEmail(), ipAddress));
             throw new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다.");
         }
 
         User user = userOpt.get();
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            systemLogger.warn(LOG_SERVICE, String.format(
+                    "로그인 실패: %s (%s) - 비밀번호 불일치", request.getEmail(), ipAddress));
             throw new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다.");
         }
 
@@ -102,6 +112,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         // JWT 토큰 생성
         String token = jwtUtil.generateToken(user);
+
+        // 시스템 로그: 로그인 성공(INFO)
+        systemLogger.info(LOG_SERVICE, String.format(
+                "로그인 성공: %s (%s, %s)", user.getEmail(), ipAddress, deviceInfo));
 
         return new LoginResponse(
                 token,

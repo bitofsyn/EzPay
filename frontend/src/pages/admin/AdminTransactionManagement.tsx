@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { FiSearch } from "react-icons/fi";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { FiChevronLeft, FiChevronRight, FiSearch } from "react-icons/fi";
 import toast from "react-hot-toast";
 import AdminShell from "../../components/admin/AdminShell";
 import { FilterTabs, StatusBadge } from "../../components/admin/AdminUI";
@@ -7,6 +7,10 @@ import { getAllTransactions } from "../../api/AdminAPI";
 import type { AdminTransactionInfo, AdminTransactionStatusType } from "../../types";
 
 type FilterType = "전체" | "완료" | "처리중" | "실패" | "취소";
+
+// 페이지당 표시 건수 및 번호 페이지네이션 윈도우 크기(1,2,3,4,5)
+const PAGE_SIZE = 10;
+const PAGE_WINDOW = 5;
 
 // 백엔드 TransactionStatus enum → 화면 라벨 매핑
 const STATUS_LABEL: Record<AdminTransactionStatusType, string> = {
@@ -22,6 +26,7 @@ const AdminTransactionManagement: React.FC = () => {
   const [isError, setIsError] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("전체");
+  const [page, setPage] = useState(1);
 
   const fetchTransactions = useCallback(async () => {
     setIsLoading(true);
@@ -60,16 +65,43 @@ const AdminTransactionManagement: React.FC = () => {
     };
   }, []);
 
-  const filtered = transactions.filter((tx) => {
+  // 검색·필터 적용 후 최신순(일시 내림차순, 동시각이면 거래ID 큰 순)으로 정렬한다.
+  const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    const matchSearch =
-      !search ||
-      String(tx.transactionId).includes(q) ||
-      String(tx.senderAccountId).includes(q) ||
-      String(tx.receiverAccountId).includes(q);
-    const matchFilter = filter === "전체" || STATUS_LABEL[tx.status] === filter;
-    return matchSearch && matchFilter;
-  });
+    return transactions
+      .filter((tx) => {
+        const matchSearch =
+          !search ||
+          String(tx.transactionId).includes(q) ||
+          String(tx.senderAccountId).includes(q) ||
+          String(tx.receiverAccountId).includes(q);
+        const matchFilter = filter === "전체" || STATUS_LABEL[tx.status] === filter;
+        return matchSearch && matchFilter;
+      })
+      .sort((a, b) => {
+        const t =
+          new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+        return t !== 0 ? t : Number(b.transactionId) - Number(a.transactionId);
+      });
+  }, [transactions, search, filter]);
+
+  // 10개씩 페이지네이션
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // 검색·필터가 바뀌면 항상 첫 페이지로 되돌린다.
+  useEffect(() => {
+    setPage(1);
+  }, [search, filter]);
+
+  // 표시할 페이지 번호 윈도우(예: 1 2 3 4 5 → 6 7 8 9 10)
+  const windowStart = Math.floor((currentPage - 1) / PAGE_WINDOW) * PAGE_WINDOW + 1;
+  const windowEnd = Math.min(windowStart + PAGE_WINDOW - 1, pageCount);
+  const pageNumbers = Array.from(
+    { length: windowEnd - windowStart + 1 },
+    (_, i) => windowStart + i,
+  );
 
   return (
     <AdminShell title="거래 관리">
@@ -131,8 +163,8 @@ const AdminTransactionManagement: React.FC = () => {
                     </button>
                   </td>
                 </tr>
-              ) : filtered.length > 0 ? (
-                filtered.map((tx) => (
+              ) : paged.length > 0 ? (
+                paged.map((tx) => (
                   <tr
                     key={tx.transactionId}
                     className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors"
@@ -168,6 +200,46 @@ const AdminTransactionManagement: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination — 최신순 10개씩, 번호 페이지네이션 */}
+        {!isLoading && !isError && filtered.length > 0 && (
+          <div className="flex items-center justify-center gap-1.5 pt-1">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
+              aria-label="이전 페이지"
+            >
+              <FiChevronLeft size={15} />
+            </button>
+
+            {pageNumbers.map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setPage(n)}
+                className={`h-8 min-w-8 rounded-lg px-2.5 text-sm font-semibold transition-colors ${
+                  n === currentPage
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+              disabled={currentPage === pageCount}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
+              aria-label="다음 페이지"
+            >
+              <FiChevronRight size={15} />
+            </button>
+          </div>
+        )}
       </div>
     </AdminShell>
   );

@@ -71,6 +71,12 @@ class Settings(BaseSettings):
     retry_backoff_ms: int = Field(default=500, alias="AI_RETRY_BACKOFF_MS")
     min_confidence: float = Field(default=0.35, alias="AI_MIN_CONFIDENCE")
 
+    # ── LLM 동시성 백프레셔 ───────────────────────────────────────────
+    # 로컬 LM Studio 는 단일 모델 인스턴스라 사실상 직렬 처리된다. 동시 에스컬레이션을
+    # 무제한 허용하면 큐가 폭증해 전부 타임아웃으로 무너진다. 세마포어로 동시 LLM
+    # 호출 수를 제한해, 초과분은 대기(백프레셔)시켜 안정적인 처리량을 유지한다.
+    max_concurrent_llm: int = Field(default=4, alias="AI_MAX_CONCURRENT_LLM")
+
     # ── 계층형 추론(sklearn 1차 → LLM 에스컬레이션) ─────────────────
     # 빠르고 비용 0 인 기존 ML 분류기를 먼저 시도하고, 확신이 낮을 때만 LLM 호출.
     ml_first_enabled: bool = Field(default=True, alias="AI_ML_FIRST_ENABLED")

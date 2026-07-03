@@ -17,7 +17,10 @@ spring:
     password: ${DB_PASSWORD:${DB_PASS:${SPRING_DATASOURCE_PASSWORD:password}}}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
+      # 부하 테스트 결과 풀 크기 10은 수백 VU 동시 접수 시 즉시 고갈되는 SPOF였다.
+      # 30으로 상향(환경변수로 조정 가능). DB max_connections·CPU 코어 수와 함께 튜닝할 것.
+      maximum-pool-size: ${DB_HIKARI_MAX_POOL_SIZE:30}
+      minimum-idle: ${DB_HIKARI_MIN_IDLE:10}
       connection-timeout: 30000
 
   task:
@@ -71,6 +74,28 @@ logging:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
+
+# Actuator / Micrometer: Prometheus 수집용 엔드포인트 노출
+management:
+  endpoints:
+    web:
+      exposure:
+        # 부하 테스트 모니터링에 필요한 엔드포인트만 외부에 노출
+        include: health,info,prometheus,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      access: read_only
+  metrics:
+    tags:
+      # Grafana에서 서비스별로 구분할 수 있도록 공통 태그 부여
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 sentry:
   dsn: ${SENTRY_DSN:}

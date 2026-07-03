@@ -230,34 +230,36 @@ const TransactionPipeline: React.FC = () => {
         )}
       </div>
 
-      {/* 최근 종료 거래 히스토리 */}
+      {/* 최근 종료 거래 히스토리 — 항상 한 줄 수평 유지(넘치면 가로 스크롤) */}
       {history.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <div className="mt-4 flex items-center gap-2">
+          <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             최근 처리
           </span>
-          <AnimatePresence initial={false}>
-            {history.map((tx) => {
-              const failed = tx.stageStatus === "FAILED";
-              return (
-                <motion.span
-                  key={tx.txId}
-                  layout
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.25 }}
-                  className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                    failed ? "bg-rose-500/10 text-rose-300" : "bg-emerald-500/10 text-emerald-300"
-                  }`}
-                >
-                  {failed ? <X size={11} /> : <Check size={11} />}
-                  <span className="font-mono">{tx.txId}</span>
-                  <span className="text-slate-400">{won(tx.amount)}</span>
-                </motion.span>
-              );
-            })}
-          </AnimatePresence>
+          <div className="flex flex-1 items-center gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <AnimatePresence initial={false}>
+              {history.map((tx) => {
+                const failed = tx.stageStatus === "FAILED";
+                return (
+                  <motion.span
+                    key={tx.txId}
+                    layout
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.25 }}
+                    className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      failed ? "bg-rose-500/10 text-rose-300" : "bg-emerald-500/10 text-emerald-300"
+                    }`}
+                  >
+                    {failed ? <X size={11} /> : <Check size={11} />}
+                    <span className="font-mono">{tx.txId}</span>
+                    <span className="text-slate-400">{won(tx.amount)}</span>
+                  </motion.span>
+                );
+              })}
+            </AnimatePresence>
+          </div>
         </div>
       )}
     </div>

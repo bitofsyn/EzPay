@@ -46,6 +46,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // (2) OPTIONS 요청 허용
                         .requestMatchers("/health").permitAll()
+                        // Prometheus 스크레이프용 Actuator 엔드포인트는 인증 없이 허용
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/users/**",
                                         "/password-reset/**",
                                         "/password-reset/validate",

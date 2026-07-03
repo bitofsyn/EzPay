@@ -26,6 +26,8 @@ class CategorizationService:
     def __init__(self, settings: Settings | None = None, router: InferenceRouter | None = None):
         self._settings = settings or get_settings()
         self._router = router or InferenceRouter(self._settings)
+        # LLM 에스컬레이션 동시 호출 수 제한(백프레셔). ML 1차 확정은 이 제한과 무관하게 통과.
+        self._llm_semaphore = asyncio.Semaphore(max(1, self._settings.max_concurrent_llm))
 
     async def categorize(self, request: CategorizationRequest) -> CategorizationResult:
         """
@@ -45,7 +47,9 @@ class CategorizationService:
             return ml_result
 
         # 2차: LLM 에스컬레이션(로컬 1차 → 클라우드 폴백)
-        outcome = await self._router.classify(prompt.system_prompt(), prompt.user_prompt(request))
+        # 세마포어로 동시 LLM 호출 수를 제한 → 로컬 모델 과부하/타임아웃 폭주 방지(백프레셔).
+        async with self._llm_semaphore:
+            outcome = await self._router.classify(prompt.system_prompt(), prompt.user_prompt(request))
         prediction = parser.parse(outcome.raw_content)
 
         status = self._resolve_status(prediction.confidence, outcome.used_fallback)
