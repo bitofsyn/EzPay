@@ -4,8 +4,9 @@ import { FiSearch } from "react-icons/fi";
 import toast from "react-hot-toast";
 import AdminShell from "../../components/admin/AdminShell";
 import { FilterTabs, RoleBadge, StatusBadge } from "../../components/admin/AdminUI";
+import { useSseChannel } from "../../hooks";
 import { getAllUsers } from "../../api/AdminAPI";
-import type { AdminUserInfo } from "../../types";
+import type { AdminUserInfo, RealtimeUserEvent } from "../../types";
 
 type FilterType = "전체" | "활성" | "비활성" | "잠금";
 
@@ -60,6 +61,24 @@ const AdminUserManagement: React.FC = () => {
       active = false;
     };
   }, []);
+
+  // 사용자 상태 변경 실시간 구독: 이벤트가 오면 해당 사용자 행의 상태를
+  // 새로고침 없이 즉시 갱신한다. 목록에 없던 사용자면 안전하게 전체를 재조회한다.
+  useSseChannel<RealtimeUserEvent>("user-events", {
+    enabled: !isLoading && !isError,
+    onEvent: (evt) => {
+      setUsers((prev) => {
+        const exists = prev.some((u) => u.userId === evt.userId);
+        if (!exists) {
+          fetchUsers();
+          return prev;
+        }
+        return prev.map((u) =>
+          u.userId === evt.userId ? { ...u, status: evt.status } : u,
+        );
+      });
+    },
+  });
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase();

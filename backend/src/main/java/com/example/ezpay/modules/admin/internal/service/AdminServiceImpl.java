@@ -15,6 +15,8 @@ import com.example.ezpay.shared.common.enums.TransactionStatus;
 import com.example.ezpay.modules.payment.api.dto.TransactionInfo;
 import com.example.ezpay.modules.payment.api.dto.TransferLimitInfo;
 import com.example.ezpay.modules.payment.internal.service.TransferLimitService;
+import com.example.ezpay.modules.realtime.EventBroadcaster;
+import com.example.ezpay.modules.realtime.dto.RealtimeUserEvent;
 import com.example.ezpay.modules.user.api.dto.UserInfo;
 import com.example.ezpay.modules.user.internal.service.UserManagementService;
 import com.example.ezpay.repository.user.AccountRepository;
@@ -54,6 +56,11 @@ public class AdminServiceImpl implements AdminService {
     private final ErrorLogService errorLogService;
     private final AdminAlertRepository adminAlertRepository;
     private final AdminMessageRepository adminMessageRepository;
+    private final EventBroadcaster eventBroadcaster;
+
+    // 관리자 실시간 스트림 SSE 채널
+    private static final String SSE_CHANNEL_USER_EVENTS = "user-events";
+    private static final String SSE_CHANNEL_ACTIVITIES = "activities";
 
     // ========== 대시보드 ==========
 
@@ -389,6 +396,33 @@ public class AdminServiceImpl implements AdminService {
 
         user.setStatus(status);
         userRepository.save(user);
+
+        // 상태 변경을 관리자 실시간 스트림으로 발행한다.
+        // (사용자 관리 뷰의 해당 행 갱신 + 대시보드 지표 재조회 트리거)
+        broadcastUserStatusChange(user);
+    }
+
+    // 사용자 상태 변경 이벤트를 SSE로 발행한다. 실시간 표시는 부가 기능이므로 실패해도 상태 변경은 유지한다.
+    private void broadcastUserStatusChange(User user) {
+        try {
+            eventBroadcaster.broadcastToSse(
+                    SSE_CHANNEL_USER_EVENTS,
+                    RealtimeUserEvent.statusChanged(user.getUserId(), user.getName(), user.getStatus())
+            );
+            // 대시보드 활동 피드/지표가 즉시 반응하도록 activities 채널에도 활동 로그를 전달
+            eventBroadcaster.broadcastToSse(
+                    SSE_CHANNEL_ACTIVITIES,
+                    RecentActivityLog.builder()
+                            .type("user")
+                            .description(String.format("%s 님의 상태가 %s(으)로 변경되었습니다", user.getName(), user.getStatus()))
+                            .timestamp(LocalDateTime.now())
+                            .userName(user.getName())
+                            .status(user.getStatus().toString().toLowerCase())
+                            .build()
+            );
+        } catch (Exception ignore) {
+            // 브로드캐스트 실패는 무시(상태 변경 트랜잭션에 영향 주지 않음)
+        }
     }
 
     @Override
