@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import {
@@ -8,7 +8,10 @@ import {
   Radio,
   Circle,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import AdminShell from "../../components/admin/AdminShell";
+import { getAllTransactions, getDashboardMetrics, getTPSMetrics } from "../../api/AdminAPI";
+import type { AdminDashboardMetrics, AdminTPSMetrics, AdminTransactionStatusType } from "../../types";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -51,37 +54,38 @@ const Sparkline: React.FC<{ data: SparkPoint[]; color: string }> = ({ data, colo
 // ─── Metric Cards ─────────────────────────────────────────────────────────────
 
 interface MetricCardsProps {
-  tps: number;
+  metrics: AdminDashboardMetrics | null;
+  tps: AdminTPSMetrics | null;
   tpsSpark: SparkPoint[];
 }
 
-const MetricCards: React.FC<MetricCardsProps> = ({ tps, tpsSpark }) => {
+const MetricCards: React.FC<MetricCardsProps> = ({ metrics, tps, tpsSpark }) => {
   const cards = [
     {
       label: "실시간 TPS",
-      value: tps,
+      value: tps ? tps.currentTPS.toFixed(1) : "-",
       sub: "초당 트랜잭션 수",
       color: "#06b6d4",
       spark: tpsSpark.length > 0 ? tpsSpark : [{ v: 0 }],
     },
     {
       label: "성공률",
-      value: "-",
-      sub: "로드 중...",
+      value: tps ? `${tps.successRate.toFixed(1)}%` : "-",
+      sub: `평균 ${tps ? tps.avgTPS.toFixed(1) : "-"} TPS`,
       color: "#10b981",
       spark: [{ v: 0 }],
     },
     {
       label: "실패율",
-      value: "-",
-      sub: "로드 중...",
+      value: tps ? `${tps.failureRate.toFixed(1)}%` : "-",
+      sub: `최대 ${tps ? tps.peakTPS.toFixed(1) : "-"} TPS`,
       color: "#ef4444",
       spark: [{ v: 0 }],
     },
     {
       label: "활성 사용자",
-      value: "-",
-      sub: "로드 중...",
+      value: metrics ? metrics.activeUsers.toLocaleString() : "-",
+      sub: `전체 ${metrics ? metrics.totalUsers.toLocaleString() : "-"}명`,
       color: "#8b5cf6",
       spark: [{ v: 0 }],
     },
@@ -286,7 +290,7 @@ const TransactionLog: React.FC<{ txs: TxRow[] }> = ({ txs }) => {
                     tx.responseMs > 700 ? "text-red-400" : "text-gray-500"
                   }`}
                 >
-                  {tx.responseMs}ms
+                  {tx.responseMs > 0 ? `${tx.responseMs}ms` : "—"}
                 </span>
               </motion.div>
             );
@@ -387,20 +391,76 @@ const PolicyPanel: React.FC = () => {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
+// 백엔드 TransactionStatus → 대시보드 로그 상태 매핑
+const TX_STATUS_MAP: Record<AdminTransactionStatusType, TxStatus> = {
+  SUCCESS: "SUCCESS",
+  PROCESSING: "PENDING",
+  FAILED: "FAILED",
+  CANCELLED: "FAILED",
+};
+
 const AdminDashboard: React.FC = () => {
-  const [tps, setTps] = useState(0);
+  const [metrics, setMetrics] = useState<AdminDashboardMetrics | null>(null);
+  const [tps, setTps] = useState<AdminTPSMetrics | null>(null);
   const [tpsSpark, setTpsSpark] = useState<SparkPoint[]>([]);
   const [txs, setTxs] = useState<TxRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
-    // TODO: useRealtimeMetrics 훅으로 대체
-    // const { metrics, tpsMetrics } = useRealtimeMetrics();
-    setIsLoading(false);
-  }, []);
+    let active = true;
 
-  // TODO: useRealtimeTransactionStream 훅으로 대체
-  // const { transactions } = useRealtimeTransactionStream(30);
+    const load = async () => {
+      setIsLoading(true);
+      setIsError(false);
+      try {
+        const [metricsData, tpsData, txData] = await Promise.all([
+          getDashboardMetrics(),
+          getTPSMetrics(),
+          getAllTransactions(),
+        ]);
+        if (!active) return;
+
+        setMetrics(metricsData);
+        setTps(tpsData);
+        setTpsSpark([
+          { v: tpsData.avgTPS },
+          { v: tpsData.currentTPS },
+          { v: tpsData.peakTPS },
+        ]);
+
+        const rows: TxRow[] = txData
+          .slice()
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 30)
+          .map((tx) => ({
+            uid: String(tx.transactionId),
+            time: tx.createdAt
+              ? new Date(tx.createdAt).toLocaleTimeString("ko-KR", { hour12: false })
+              : "--:--",
+            id: `TX${tx.transactionId}`,
+            sender: `#${tx.senderAccountId}`,
+            receiver: `#${tx.receiverAccountId}`,
+            amount: Number(tx.amount),
+            status: TX_STATUS_MAP[tx.status] ?? "PENDING",
+            responseMs: 0,
+          }));
+        setTxs(rows);
+      } catch (error) {
+        if (!active) return;
+        console.error("대시보드 로드 실패:", error);
+        setIsError(true);
+        toast.error("대시보드 데이터를 불러오는데 실패했습니다.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <AdminShell title="관리자 대시보드">
@@ -409,10 +469,21 @@ const AdminDashboard: React.FC = () => {
           <div className="flex items-center justify-center py-20 text-gray-400">
             대시보드를 로드하는 중입니다...
           </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
+            <p className="text-sm font-semibold text-rose-500">대시보드 데이터를 불러오지 못했습니다.</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50"
+            >
+              새로고침
+            </button>
+          </div>
         ) : (
           <>
             {/* 1. 핵심 지표 카드 */}
-            <MetricCards tps={tps} tpsSpark={tpsSpark} />
+            <MetricCards metrics={metrics} tps={tps} tpsSpark={tpsSpark} />
 
             {/* 2. 프로세스 파이프라인 */}
             <ProcessPipeline activeTx={txs[0]} />

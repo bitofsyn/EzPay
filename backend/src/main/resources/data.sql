@@ -44,26 +44,7 @@ CREATE TABLE IF NOT EXISTS admin_alerts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 초기 알림 데이터
-INSERT INTO admin_alerts (alert_type, title, message, is_read, created_at)
-SELECT 'WARNING', '비정상 거래 감지', '사용자 ID 12345의 대량 거래가 감지되었습니다. 확인이 필요합니다.', false, CURRENT_TIMESTAMP - INTERVAL '5 minutes'
-WHERE NOT EXISTS (SELECT 1 FROM admin_alerts WHERE title = '비정상 거래 감지');
-
-INSERT INTO admin_alerts (alert_type, title, message, is_read, created_at)
-SELECT 'INFO', '시스템 업데이트', '새로운 보안 패치가 적용되었습니다. 버전 2.1.0', false, CURRENT_TIMESTAMP - INTERVAL '30 minutes'
-WHERE NOT EXISTS (SELECT 1 FROM admin_alerts WHERE title = '시스템 업데이트');
-
-INSERT INTO admin_alerts (alert_type, title, message, is_read, created_at)
-SELECT 'SUCCESS', '백업 완료', '일일 데이터 백업이 성공적으로 완료되었습니다.', true, CURRENT_TIMESTAMP - INTERVAL '1 hour'
-WHERE NOT EXISTS (SELECT 1 FROM admin_alerts WHERE title = '백업 완료');
-
-INSERT INTO admin_alerts (alert_type, title, message, is_read, created_at)
-SELECT 'ERROR', '서버 오류', 'API 서버 응답 지연이 발생했습니다. 모니터링 중입니다.', true, CURRENT_TIMESTAMP - INTERVAL '2 hours'
-WHERE NOT EXISTS (SELECT 1 FROM admin_alerts WHERE title = '서버 오류');
-
-INSERT INTO admin_alerts (alert_type, title, message, is_read, created_at)
-SELECT 'WARNING', '로그인 시도 초과', '사용자 test@example.com의 로그인 시도가 5회 초과되었습니다.', false, CURRENT_TIMESTAMP - INTERVAL '15 minutes'
-WHERE NOT EXISTS (SELECT 1 FROM admin_alerts WHERE title = '로그인 시도 초과');
+-- (초기 알림 목업 데이터 제거됨: 실제 알림은 시스템 이벤트로 생성)
 
 -- =============================================
 -- 관리자 메시지 테이블 생성 및 초기 데이터

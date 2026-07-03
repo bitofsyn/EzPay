@@ -25,16 +25,6 @@ const NAV_TABS: { label: NavTab; Icon: React.FC<{ size?: number }> }[] = [
   { label: "시스템 정보", Icon: FiInfo },
 ];
 
-// ─── Activity log mock ────────────────────────────────────────────────────────
-
-const ACTIVITY_LOG = [
-  { id: 1, date: "2026-06-28 09:15", admin: "admin", action: "수수료율 변경", detail: "0.3% → 0.5%", ip: "192.168.1.10" },
-  { id: 2, date: "2026-06-22 14:38", admin: "admin", action: "일일 송금 한도 변경", detail: "₩3,000,000 → ₩5,000,000", ip: "192.168.1.10" },
-  { id: 3, date: "2026-06-21 11:20", admin: "admin", action: "사용자 상태 변경", detail: "박서준 → 정지", ip: "192.168.1.11" },
-  { id: 4, date: "2026-06-15 16:45", admin: "admin", action: "AI 자동 차단 활성화", detail: "OFF → ON", ip: "192.168.1.10" },
-  { id: 5, date: "2026-06-10 09:30", admin: "admin", action: "관리자 계정 로그인", detail: "로그인 성공", ip: "192.168.1.12" },
-];
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const AdminSettings: React.FC = () => {
@@ -82,8 +72,9 @@ const AdminSettings: React.FC = () => {
                 <h3 className="text-sm font-bold text-slate-800 mb-5">서비스 기본 설정</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 block mb-1.5">서비스명</label>
+                    <label htmlFor="settings-service-name" className="text-xs font-semibold text-slate-500 block mb-1.5">서비스명</label>
                     <input
+                      id="settings-service-name"
                       type="text"
                       value={serviceName}
                       onChange={(e) => setServiceName(e.target.value)}
@@ -91,8 +82,9 @@ const AdminSettings: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 block mb-1.5">고객센터 이메일</label>
+                    <label htmlFor="settings-support-email" className="text-xs font-semibold text-slate-500 block mb-1.5">고객센터 이메일</label>
                     <input
+                      id="settings-support-email"
                       type="email"
                       value={supportEmail}
                       onChange={(e) => setSupportEmail(e.target.value)}
@@ -100,8 +92,9 @@ const AdminSettings: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 block mb-1.5">연락처</label>
+                    <label htmlFor="settings-contact" className="text-xs font-semibold text-slate-500 block mb-1.5">연락처</label>
                     <input
+                      id="settings-contact"
                       type="text"
                       value={contact}
                       onChange={(e) => setContact(e.target.value)}
@@ -155,28 +148,11 @@ const AdminSettings: React.FC = () => {
               <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="text-sm font-bold text-slate-800">관리자 활동 로그</h3>
-                  <span className="text-xs text-slate-400">{ACTIVITY_LOG.length}건</span>
+                  <span className="text-xs text-slate-400">0건</span>
                 </div>
-                <table className="w-full min-w-[600px]">
-                  <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50/50">
-                      {["일시", "관리자", "액션", "상세 내용", "IP 주소"].map((h) => (
-                        <th key={h} className="px-4 py-3 text-xs font-semibold text-slate-400 text-left">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ACTIVITY_LOG.map((a) => (
-                      <tr key={a.id} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
-                        <td className="px-4 py-3 text-xs font-mono text-slate-500">{a.date}</td>
-                        <td className="px-4 py-3 text-xs font-semibold text-cyan-600">{a.admin}</td>
-                        <td className="px-4 py-3 text-xs font-semibold text-slate-700">{a.action}</td>
-                        <td className="px-4 py-3 text-xs text-slate-500">{a.detail}</td>
-                        <td className="px-4 py-3 text-xs font-mono text-slate-400">{a.ip}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="px-5 py-12 text-center text-sm text-slate-400">
+                  기록된 관리자 활동이 없습니다.
+                </div>
               </div>
             </>
           )}

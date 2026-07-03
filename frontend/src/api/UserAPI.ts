@@ -13,6 +13,7 @@ import {
     TransferData,
     AccountOwner,
     ApiResponse,
+    UserNotificationPage,
 } from "../types";
 
 // 회원가입(Signup)
@@ -57,6 +58,34 @@ export const updateNotificationSetting = async (
         notificationType: type,
         isEnabled,
     });
+    return res.data;
+};
+
+// 알림 피드 조회 (NotificationsPage) — 송금/입금/보안 이벤트, 페이지네이션(기본 10개)
+export const getUserNotifications = async (
+    page: number = 0,
+    size: number = 10
+): Promise<UserNotificationPage> => {
+    const res = await api.get("/user-notifications", { params: { page, size } });
+    return res.data.data ?? res.data;
+};
+
+// 미확인 알림 수 (뱃지용)
+export const getUnreadNotificationCount = async (): Promise<number> => {
+    const res = await api.get("/user-notifications/unread-count");
+    const data = res.data.data ?? res.data;
+    return data?.unreadCount ?? 0;
+};
+
+// 알림 단건 읽음 처리
+export const markNotificationRead = async (notificationId: number): Promise<ApiResponse> => {
+    const res = await api.patch(`/user-notifications/${notificationId}/read`);
+    return res.data;
+};
+
+// 알림 전체 읽음 처리
+export const markAllNotificationsRead = async (): Promise<ApiResponse> => {
+    const res = await api.patch(`/user-notifications/read-all`);
     return res.data;
 };
 

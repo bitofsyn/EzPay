@@ -11,9 +11,7 @@ import {
 } from "recharts";
 import {
   ArrowDownCircle,
-  ArrowLeft,
   ArrowUpCircle,
-  Bell,
   CreditCard,
   SendHorizontal,
   TrendingDown,
@@ -30,7 +28,7 @@ import {
   formatAmount,
 } from "../utils/formatters";
 import { AccountCardSkeleton, TransactionListSkeleton, Skeleton } from "../components/Skeleton";
-import UserSidebar from "../components/UserSidebar";
+import UserShell from "../components/UserShell";
 
 interface AccountWithBank extends Account {
   bankName?: string;
@@ -112,56 +110,24 @@ const AccountDetail: React.FC = () => {
 
   if (pageLoading || !account) {
     return (
-      <div className="min-h-screen bg-[#eef3fb] p-3 lg:p-4">
-        <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-          <UserSidebar />
-          <div className="space-y-5">
-            <AccountCardSkeleton />
-            <div className="grid grid-cols-2 gap-5">
-              <Skeleton className="h-28 rounded-[28px]" />
-              <Skeleton className="h-28 rounded-[28px]" />
-            </div>
-            <div className="rounded-[28px] bg-white p-5 shadow-sm">
-              <Skeleton className="mb-4 h-6 w-36" />
-              <TransactionListSkeleton count={4} />
-            </div>
+      <UserShell title="계좌 상세" subtitle="불러오는 중..." backTo="/accounts">
+        <div className="space-y-5">
+          <AccountCardSkeleton />
+          <div className="grid grid-cols-2 gap-5">
+            <Skeleton className="h-28 rounded-[28px]" />
+            <Skeleton className="h-28 rounded-[28px]" />
+          </div>
+          <div className="rounded-[28px] bg-white p-5 shadow-sm">
+            <Skeleton className="mb-4 h-6 w-36" />
+            <TransactionListSkeleton count={4} />
           </div>
         </div>
-      </div>
+      </UserShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#eef3fb] p-3 text-slate-900 lg:p-4">
-      <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-        <UserSidebar />
-
-        <main className="flex flex-col gap-5">
-          {/* Header */}
-          <header className="rounded-[28px] border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => navigate("/accounts")}
-                  className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-                >
-                  <ArrowLeft size={18} />
-                </button>
-                <div>
-                  <h1 className="text-[2rem] font-black tracking-tight text-slate-950">계좌 상세</h1>
-                  <p className="text-sm font-semibold text-slate-400">{account.bankName || "EzPay Bank"}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300"
-                onClick={() => navigate("/settings/notification")}
-              >
-                <Bell size={18} />
-              </button>
-            </div>
-          </header>
+    <UserShell title="계좌 상세" subtitle={account.bankName || "EzPay Bank"} backTo="/accounts">
 
           {/* Hero card */}
           <div className="rounded-[28px] bg-gradient-to-r from-[#264997] via-[#175f8b] to-[#17667b] p-6 text-white shadow-[0_30px_70px_rgba(23,53,120,0.32)]">
@@ -184,7 +150,7 @@ const AccountDetail: React.FC = () => {
 
             <div className="mt-5">
               <p className="text-sm font-semibold text-white/60">현재 잔액</p>
-              <p className="mt-1 text-[2.8rem] font-black tracking-tight">
+              <p className="mt-1 break-words text-3xl font-black tracking-tight">
                 <CountUp end={account.balance} duration={1.5} separator="," />
                 <span className="ml-2 text-xl font-bold text-white/60">원</span>
               </p>
@@ -343,9 +309,9 @@ const AccountDetail: React.FC = () => {
                         <div>
                           <p className="text-sm font-black text-slate-950">
                             {isSent ? "출금" : "입금"}
-                            {counterparty?.bankName && (
+                            {(counterparty?.ownerName || counterparty?.bankName) && (
                               <span className="ml-1 font-semibold text-slate-400">
-                                ({counterparty.bankName})
+                                ({counterparty?.ownerName || counterparty?.bankName})
                               </span>
                             )}
                           </p>
@@ -367,9 +333,7 @@ const AccountDetail: React.FC = () => {
               </div>
             )}
           </div>
-        </main>
-      </div>
-    </div>
+    </UserShell>
   );
 };
 

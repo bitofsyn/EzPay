@@ -1,6 +1,7 @@
 package com.example.ezpay.model.user;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -43,4 +44,19 @@ public class Accounts {
 
     @UpdateTimestamp
     private Timestamp updatedAt;
+
+    /**
+     * 직렬화 전용: 계좌 소유자 이름.
+     * 프론트가 거래 상대를 은행명이 아닌 사람 이름으로 표시할 수 있도록 노출한다.
+     * user는 @JsonBackReference로 직렬화되지 않으므로 별도 파생 필드로 제공하며,
+     * OSIV가 꺼진 컨텍스트의 지연로딩 예외에는 null로 방어한다.
+     */
+    @JsonProperty("ownerName")
+    public String getOwnerName() {
+        try {
+            return user != null ? user.getName() : null;
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
 }

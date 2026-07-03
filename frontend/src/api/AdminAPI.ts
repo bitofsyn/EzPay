@@ -1,7 +1,5 @@
 import api from "./api";
 import {
-  User,
-  AdminUser,
   Account,
   Transaction,
   ApiResponse,
@@ -11,6 +9,15 @@ import {
   WeeklyTrendData,
   ErrorLog,
   AdminTransferLimitInfo,
+  AdminDashboardMetrics,
+  AdminTPSMetrics,
+  AdminSystemLog,
+  AdminRiskTransaction,
+  AdminRiskActionResult,
+  AdminTransactionInfo,
+  AdminUserInfo,
+  AdminPolicyConfig,
+  AdminPolicyChange,
 } from "../types";
 
 // ========== Dashboard API ==========
@@ -40,15 +47,27 @@ export const getWeeklyTransactionTrend = async (): Promise<ApiResponse<WeeklyTre
     return res.data;
 };
 
+// 대시보드 실시간 메트릭 조회 (사용자/거래/계좌 집계)
+export const getDashboardMetrics = async (): Promise<AdminDashboardMetrics> => {
+    const res = await api.get("/admin/dashboard/metrics");
+    return res.data.data ?? res.data;
+};
+
+// TPS 메트릭 조회 (실시간 TPS/성공률/실패율)
+export const getTPSMetrics = async (): Promise<AdminTPSMetrics> => {
+    const res = await api.get("/admin/dashboard/tps-metrics");
+    return res.data.data ?? res.data;
+};
+
 // ========== User Management API ==========
 // 전체 회원 조회
-export const getAllUsers = async (): Promise<AdminUser[]> => {
+export const getAllUsers = async (): Promise<AdminUserInfo[]> => {
     const res = await api.get("/admin/users");
     return res.data.data ?? res.data;
 };
 
 // 특정 회원 상세 조회
-export const getUserById = async (userId: number): Promise<User> => {
+export const getUserById = async (userId: number): Promise<AdminUserInfo> => {
     const res = await api.get(`/admin/users/${userId}`);
     return res.data.data ?? res.data;
 };
@@ -81,7 +100,7 @@ export const deleteUserByAdmin = async (userId: number): Promise<ApiResponse> =>
 
 // ========== Transaction Management API ==========
 // 모든 거래 내역 조회
-export const getAllTransactions = async (): Promise<Transaction[]> => {
+export const getAllTransactions = async (): Promise<AdminTransactionInfo[]> => {
     const res = await api.get("/admin/transaction/all");
     return res.data.data ?? res.data;
 };
@@ -137,4 +156,51 @@ export const updateUserTransferLimit = async (
 export const resetUserTransferLimit = async (userId: number): Promise<ApiResponse> => {
     const res = await api.put(`/admin/transfer-limits/reset/${userId}`);
     return res.data;
+};
+
+// ========== System Log API ==========
+// 최근 시스템 로그 조회
+export const getSystemLogs = async (limit: number = 30): Promise<AdminSystemLog[]> => {
+    const res = await api.get("/admin/system-logs", { params: { limit } });
+    return res.data.data ?? res.data;
+};
+
+// ========== Risk Transaction API ==========
+// 위험 거래 목록 조회 (filter: 선택)
+export const getRiskTransactions = async (filter?: string): Promise<AdminRiskTransaction[]> => {
+    const res = await api.get("/admin/risk-transactions", {
+        params: filter ? { filter } : undefined,
+    });
+    return res.data.data ?? res.data;
+};
+
+// 위험 거래 승인
+export const approveRiskTransaction = async (transactionId: string): Promise<AdminRiskActionResult> => {
+    const res = await api.post(`/admin/risk-transactions/${transactionId}/approve`);
+    return res.data.data ?? res.data;
+};
+
+// 위험 거래 차단
+export const blockRiskTransaction = async (transactionId: string): Promise<AdminRiskActionResult> => {
+    const res = await api.post(`/admin/risk-transactions/${transactionId}/block`);
+    return res.data.data ?? res.data;
+};
+
+// ========== Policy Management API ==========
+// 현재 정책 설정 조회
+export const getPolicyConfig = async (): Promise<AdminPolicyConfig> => {
+    const res = await api.get("/admin/policies");
+    return res.data.data ?? res.data;
+};
+
+// 정책 설정 저장
+export const updatePolicyConfig = async (config: AdminPolicyConfig): Promise<ApiResponse> => {
+    const res = await api.put("/admin/policies", config);
+    return res.data;
+};
+
+// 정책 변경 이력 조회
+export const getPolicyHistory = async (): Promise<AdminPolicyChange[]> => {
+    const res = await api.get("/admin/policies/history");
+    return res.data.data ?? res.data;
 };
