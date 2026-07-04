@@ -4,6 +4,7 @@ import com.example.ezpay.modules.auth.api.dto.*;
 import com.example.ezpay.modules.auth.api.facade.AuthFacade;
 import com.example.ezpay.modules.systemlog.service.SystemLogger;
 import com.example.ezpay.shared.common.dto.CommonResponse;
+import com.example.ezpay.shared.common.enums.AuthProvider;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -50,14 +51,57 @@ public class AuthController {
         LoginResponse response = authFacade.login(request, ip, device);
 
         // JWT를 httpOnly 쿠키로 설정
-        Cookie jwtCookie = new Cookie("jwt", response.getToken());
+        addJwtCookie(httpResponse, response.getToken());
+
+        return ResponseEntity.ok(new CommonResponse<>("success", response, "로그인 성공"));
+    }
+
+    /**
+     * 소셜 로그인 (카카오/네이버)
+     * 프론트가 제공자에게 받은 authorization code 를 전달하면, 백엔드가 토큰 교환·회원 식별/생성 후
+     * 일반 로그인과 동일한 형태(JWT 포함)로 응답한다.
+     */
+    @PostMapping("/oauth/{provider}/login")
+    public ResponseEntity<CommonResponse<LoginResponse>> oauthLogin(
+            @PathVariable String provider,
+            @Valid @RequestBody OAuthLoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse) {
+
+        AuthProvider authProvider = parseSocialProvider(provider);
+
+        String ip = extractClientIp(httpRequest);
+        String device = parseDeviceInfo(httpRequest);
+
+        LoginResponse response = authFacade.oauthLogin(authProvider, request, ip, device);
+
+        // 일반 로그인과 동일하게 JWT 쿠키 설정
+        addJwtCookie(httpResponse, response.getToken());
+
+        return ResponseEntity.ok(new CommonResponse<>("success", response, "소셜 로그인 성공"));
+    }
+
+    // 경로변수(provider) → AuthProvider 변환. 지원하지 않는 값은 400.
+    private AuthProvider parseSocialProvider(String provider) {
+        try {
+            AuthProvider parsed = AuthProvider.valueOf(provider.toUpperCase());
+            if (parsed == AuthProvider.LOCAL) {
+                throw new IllegalArgumentException();
+            }
+            return parsed;
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("지원하지 않는 소셜 로그인 제공자입니다: " + provider);
+        }
+    }
+
+    // JWT를 httpOnly 쿠키로 세팅 (일반/소셜 로그인 공통)
+    private void addJwtCookie(HttpServletResponse httpResponse, String token) {
+        Cookie jwtCookie = new Cookie("jwt", token);
         jwtCookie.setHttpOnly(true);
         jwtCookie.setSecure(false); // 개발 환경에서는 false, 프로덕션에서는 true
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(7 * 24 * 60 * 60); // 7일
         httpResponse.addCookie(jwtCookie);
-
-        return ResponseEntity.ok(new CommonResponse<>("success", response, "로그인 성공"));
     }
 
     /**

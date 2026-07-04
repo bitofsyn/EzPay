@@ -7,6 +7,7 @@ import { loginSchema } from "../validations/authSchemas";
 import { LoginFormData } from "../types";
 import { handleApiError } from "../utils/errorHandler";
 import { saveUserData, saveToken } from "../utils/storage";
+import { redirectToProvider } from "../utils/oauth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,7 +29,7 @@ const PROVIDER_CONFIG = {
     notice: "네이버 인증 화면으로 이동하기 전, 로그인 요청 정보를 확인해주세요.",
     method: "네이버 OAuth",
     continueLabel: "네이버 인증 계속하기",
-    toastMessage: "네이버 OAuth 로그인은 현재 준비 중입니다.",
+    toastMessage: "네이버 로그인이 설정되지 않았습니다. 관리자에게 문의해주세요.",
     btnBg: "#03C75A",
     btnHoverBg: "#02b350",
     btnText: "#fff",
@@ -47,7 +48,7 @@ const PROVIDER_CONFIG = {
     notice: "카카오 인증 화면으로 이동하기 전, 로그인 요청 정보를 확인해주세요.",
     method: "카카오 OAuth",
     continueLabel: "카카오 인증 계속하기",
-    toastMessage: "카카오 OAuth 로그인은 현재 준비 중입니다.",
+    toastMessage: "카카오 로그인이 설정되지 않았습니다. 관리자에게 문의해주세요.",
     btnBg: "#FEE500",
     btnHoverBg: "#f5dc00",
     btnText: "#191919",
@@ -204,10 +205,14 @@ function SocialLoginDetail({ provider, onBack }: SocialLoginDetailProps) {
     if (oauthLoading) return;
     setOauthLoading(true);
     setToastVisible(false);
-    setTimeout(() => {
+
+    // 제공자 인가 페이지로 리다이렉트. client-id 미설정 시 false → 안내 토스트 노출.
+    const redirected = redirectToProvider(provider);
+    if (!redirected) {
       setOauthLoading(false);
       setToastVisible(true);
-    }, 1000);
+    }
+    // 성공 시 브라우저가 제공자 도메인으로 이동하므로 로딩 상태를 유지한다.
   };
 
   return (
