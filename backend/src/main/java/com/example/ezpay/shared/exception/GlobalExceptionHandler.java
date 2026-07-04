@@ -57,4 +57,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(new CommonResponse<>("error", e.getMessage(), "TRANSFER_LIMIT_EXCEEDED"));
     }
 
+    // 소셜 로그인(OAuth) 제공자 통신/프로토콜 실패
+    @ExceptionHandler(OAuthAuthenticationException.class)
+    public ResponseEntity<CommonResponse<Object>> handleOAuthAuthenticationException(OAuthAuthenticationException ex) {
+        log.warn("소셜 로그인 실패: {}", ex.getMessage());
+        CommonResponse<Object> response = new CommonResponse<>(
+                "error", null, ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
 }

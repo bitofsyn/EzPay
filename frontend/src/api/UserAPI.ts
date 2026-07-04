@@ -28,6 +28,15 @@ export const login = async (userData: LoginFormData): Promise<ApiResponse<{ user
     return res.data;
 };
 
+// 소셜 로그인(OAuth) - 제공자에게 받은 인가 코드를 백엔드로 전달하고, 일반 로그인과 동일한 응답을 받는다.
+export const oauthLogin = async (
+    provider: 'kakao' | 'naver',
+    payload: { code: string; state?: string | null; redirectUri: string }
+): Promise<ApiResponse<{ userId: number; email: string; name: string; role: 'USER' | 'ADMIN'; token: string | null }>> => {
+    const res = await api.post(`/users/oauth/${provider}/login`, payload);
+    return res.data;
+};
+
 // 비밀번호 변경 (Settings)
 export const updatePassword = async (newPassword: string): Promise<ApiResponse> => {
     const res = await api.put(

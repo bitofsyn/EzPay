@@ -19,6 +19,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const FindEmail = lazy(() => import("./pages/FindEmail"));
 const FindPassword = lazy(() => import("./pages/FindPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const OAuthCallback = lazy(() => import("./pages/OAuthCallback"));
 const Friends = lazy(() => import("./pages/Friends"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 
@@ -59,6 +60,8 @@ const AppRoutes = () => {
           <Route path="/find-email" element={<FindEmail />} />
           <Route path="/find-password" element={<FindPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          {/* 소셜 로그인 콜백 (카카오/네이버) */}
+          <Route path="/oauth/callback/:provider" element={<OAuthCallback />} />
 
           {/* 로그인 후 접근 가능 */}
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />

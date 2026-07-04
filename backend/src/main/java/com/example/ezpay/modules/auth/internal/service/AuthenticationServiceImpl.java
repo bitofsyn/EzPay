@@ -9,6 +9,7 @@ import com.example.ezpay.modules.user.api.facade.UserFacade;
 import com.example.ezpay.repository.user.NotificationRepository;
 import com.example.ezpay.repository.user.TransferLimitRepository;
 import com.example.ezpay.repository.user.UserRepository;
+import com.example.ezpay.shared.common.enums.AuthProvider;
 import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.shared.common.enums.Status;
 import com.example.ezpay.shared.security.JwtUtil;
@@ -54,6 +55,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .name(request.getName())
                 .phoneNumber(request.getPhoneNumber())
                 .status(Status.ACTIVE)
+                .authProvider(AuthProvider.LOCAL)
                 .build();
 
         User savedUser = userRepository.save(user);

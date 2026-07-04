@@ -3,7 +3,9 @@ package com.example.ezpay.modules.auth.internal.service.facade;
 import com.example.ezpay.modules.auth.api.dto.*;
 import com.example.ezpay.modules.auth.api.facade.AuthFacade;
 import com.example.ezpay.modules.auth.internal.service.AuthenticationService;
+import com.example.ezpay.modules.auth.internal.service.OAuthService;
 import com.example.ezpay.modules.auth.internal.service.PasswordResetService;
+import com.example.ezpay.shared.common.enums.AuthProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +15,7 @@ public class AuthFacadeImpl implements AuthFacade {
 
     private final PasswordResetService passwordResetService;
     private final AuthenticationService authenticationService;
+    private final OAuthService oauthService;
 
     @Override
     public RegisterResponse register(RegisterRequest request) {
@@ -22,6 +25,11 @@ public class AuthFacadeImpl implements AuthFacade {
     @Override
     public LoginResponse login(LoginRequest request, String ipAddress, String deviceInfo) {
         return authenticationService.login(request, ipAddress, deviceInfo);
+    }
+
+    @Override
+    public LoginResponse oauthLogin(AuthProvider provider, OAuthLoginRequest request, String ipAddress, String deviceInfo) {
+        return oauthService.login(provider, request, ipAddress, deviceInfo);
     }
 
     @Override

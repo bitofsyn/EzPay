@@ -1,10 +1,11 @@
 package com.example.ezpay.modules.auth.api.facade;
 
 import com.example.ezpay.modules.auth.api.dto.*;
+import com.example.ezpay.shared.common.enums.AuthProvider;
 
 /**
  * Auth 모듈의 공개 API Facade
- * 회원가입, 로그인, 비밀번호 재설정, 이메일 찾기 등
+ * 회원가입, 로그인, 소셜 로그인, 비밀번호 재설정, 이메일 찾기 등
  */
 public interface AuthFacade {
 
@@ -13,6 +14,9 @@ public interface AuthFacade {
 
     // 로그인
     LoginResponse login(LoginRequest request, String ipAddress, String deviceInfo);
+
+    // 소셜 로그인 (카카오/네이버)
+    LoginResponse oauthLogin(AuthProvider provider, OAuthLoginRequest request, String ipAddress, String deviceInfo);
 
     // 비밀번호 재설정 요청 (이메일로 토큰 발송)
     void initiatePasswordReset(String email);
