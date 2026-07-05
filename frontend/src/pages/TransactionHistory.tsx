@@ -8,6 +8,7 @@ import { getUserData } from "../utils/storage";
 import { formatAccountNumber, formatCurrency, formatDateShort } from "../utils/formatters";
 import UserShell from "../components/UserShell";
 import { FilterTabs, StatusBadge } from "../components/admin/AdminUI";
+import { Pagination, usePagination } from "../components/ui";
 
 type TypeFilter = "전체" | "입금" | "출금";
 
@@ -80,6 +81,14 @@ const TransactionHistory: React.FC = () => {
       })
       .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
   }, [transactions, selectedAccountId, filterType, dateFilter, search]);
+
+  // 최신순 10개씩 번호 페이지네이션
+  const { page, setPage, pageCount, paged } = usePagination(filtered);
+
+  // 검색·필터·계좌가 바뀌면 항상 첫 페이지로 되돌린다.
+  useEffect(() => {
+    setPage(1);
+  }, [selectedAccountId, filterType, dateFilter, search, setPage]);
 
   const totalIn = filtered.reduce(
     (s, tx) => (tx.senderAccount?.accountId !== selectedAccountId ? s + Number(tx.amount || 0) : s),
@@ -184,7 +193,7 @@ const TransactionHistory: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((tx) => {
+                  {paged.map((tx) => {
                     const isSent = tx.senderAccount?.accountId === selectedAccountId;
                     const counterparty = isSent ? tx.receiverAccount : tx.senderAccount;
                     return (
@@ -232,6 +241,11 @@ const TransactionHistory: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* 페이지네이션 — 10개씩, 번호 페이지네이션 */}
+        {!loading && (
+          <Pagination page={page} pageCount={pageCount} onChange={setPage} />
+        )}
       </div>
     </UserShell>
   );

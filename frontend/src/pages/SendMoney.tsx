@@ -35,6 +35,7 @@ interface AccountOwnerResponse {
 interface RecentSender {
   name: string;
   bank: string;
+  accountNumber: string;
   accountId: number;
   avatarColor: string;
 }
@@ -115,24 +116,26 @@ const SendMoney: React.FC = () => {
   );
 
   const recentSenders = useMemo((): RecentSender[] => {
-    const freq: Record<number, { name: string; bank: string; count: number }> = {};
+    const freq: Record<number, { name: string; bank: string; accountNumber: string; count: number }> = {};
     transactions
       .filter((t) => ownAccountIds.has(t.senderAccount?.accountId))
       .forEach((t) => {
         const id = t.receiverAccount?.accountId;
         const name = t.receiverAccount?.ownerName || t.receiverAccount?.bankName || "상대방";
         const bank = t.receiverAccount?.bankName || "";
+        const accountNumber = t.receiverAccount?.accountNumber || "";
         if (id != null) {
-          if (!freq[id]) freq[id] = { name, bank, count: 0 };
+          if (!freq[id]) freq[id] = { name, bank, accountNumber, count: 0 };
           freq[id].count++;
         }
       });
     return Object.entries(freq)
       .sort((a, b) => b[1].count - a[1].count)
       .slice(0, 5)
-      .map(([id, { name, bank }], i) => ({
+      .map(([id, { name, bank, accountNumber }], i) => ({
         name,
         bank,
+        accountNumber,
         accountId: Number(id),
         avatarColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
       }));
@@ -183,19 +186,23 @@ const SendMoney: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 메모 → AI 카테고리 예측
+  // 메모 + 수신자명 → AI 카테고리 예측
+  // 모델은 "메모 + ' ' + 수신자명"으로 학습되므로(train/data_loader.py) 추론 입력도 동일하게 맞춘다.
   useEffect(() => {
     if (memo.trim().length <= 1) {
       setAiCategory("");
       setAiConfidence(0);
       return;
     }
+    // 조회로 확정된 이름을 우선 사용하고, 없으면 사용자가 입력한 이름을 사용한다.
+    const receiver = (receiverName || receiverInputName || "").trim();
+    const text = receiver ? `${memo.trim()} ${receiver}` : memo.trim();
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_AI_SERVICE_URL}/predict-prob`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: memo }),
+          body: JSON.stringify({ text }),
         });
         const result = await res.json();
         if (result.confidence >= 0.4) {
@@ -210,7 +217,7 @@ const SendMoney: React.FC = () => {
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [memo]);
+  }, [memo, receiverName, receiverInputName]);
 
   const handleCheckAccount = useCallback(async (): Promise<AccountOwnerResponse | null> => {
     if (!toAccountNumber) return null;
@@ -251,6 +258,8 @@ const SendMoney: React.FC = () => {
     setReceiverName(sender.name);
     setReceiverAccountId(sender.accountId);
     setReceiverBank(sender.bank);
+    setToAccountNumber(sender.accountNumber.replace(/\D/g, ""));
+    setCheckError("");
   };
 
   const handleQuickAmount = (val: number) => {

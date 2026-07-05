@@ -9,3 +9,9 @@ export { default as ToggleSwitch, ToggleSwitchCompact } from "./ToggleSwitch";
 export { default as LogViewer } from "./LogViewer";
 export { default as Spinner, SpinnerDark } from "./Spinner";
 export { default as EmptyState, EmptyStateDark } from "./EmptyState";
+export {
+  default as Pagination,
+  usePagination,
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_PAGE_WINDOW,
+} from "./Pagination";
