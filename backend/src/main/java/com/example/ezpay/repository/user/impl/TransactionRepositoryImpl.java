@@ -55,8 +55,8 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
     public BigDecimal sumTodayTransactionBySender(Long senderAccountId, LocalDate today) {
         QTransaction transaction = QTransaction.transaction;
 
-        Timestamp start = Timestamp.from(today.atStartOfDay(ZoneId.systemDefault()).toInstant());
-        Timestamp end = Timestamp.from(today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Timestamp start = Timestamp.from(today.atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant());
+        Timestamp end = Timestamp.from(today.plusDays(1).atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant());
 
         return queryFactory
                 .select(transaction.amount.sum())

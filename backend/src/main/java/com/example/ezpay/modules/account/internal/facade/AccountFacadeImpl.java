@@ -75,7 +75,7 @@ public class AccountFacadeImpl implements AccountFacade {
                 .balance(account.getBalance())
                 .isMainAccount(account.isMain())
                 .createdAt(account.getCreatedAt().toInstant()
-                        .atZone(ZoneId.systemDefault())
+                        .atZone(ZoneId.of("Asia/Seoul"))
                         .toLocalDateTime())
                 .build();
     }

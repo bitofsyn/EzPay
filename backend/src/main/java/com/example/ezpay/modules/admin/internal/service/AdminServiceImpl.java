@@ -173,7 +173,7 @@ public class AdminServiceImpl implements AdminService {
 
         Map<Long, Long> perSecondCounts = todayTransactions.stream()
                 .collect(Collectors.groupingBy(
-                        t -> t.getTransactionDate().toLocalDateTime().toEpochSecond(ZoneId.systemDefault().getRules().getOffset(now)),
+                        t -> t.getTransactionDate().toLocalDateTime().toEpochSecond(ZoneId.of("Asia/Seoul").getRules().getOffset(now)),
                         Collectors.counting()
                 ));
         long peakSecondCount = perSecondCounts.values().stream().mapToLong(Long::longValue).max().orElse(0L);
@@ -498,7 +498,7 @@ public class AdminServiceImpl implements AdminService {
                 .category(null) // Admin에서는 카테고리 정보 불필요
                 .status(transaction.getStatus())
                 .createdAt(transaction.getTransactionDate().toInstant()
-                        .atZone(ZoneId.systemDefault())
+                        .atZone(ZoneId.of("Asia/Seoul"))
                         .toLocalDateTime())
                 .build();
     }
