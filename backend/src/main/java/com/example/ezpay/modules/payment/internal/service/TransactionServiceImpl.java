@@ -3,6 +3,8 @@ package com.example.ezpay.modules.payment.internal.service;
 import com.example.ezpay.shared.common.enums.NotificationType;
 import com.example.ezpay.model.user.*;
 import com.example.ezpay.shared.exception.CustomNotFoundException;
+import com.example.ezpay.shared.exception.FraudBlockedException;
+import com.example.ezpay.shared.exception.FraudHeldException;
 import com.example.ezpay.shared.exception.TransferLimitExceededException;
 import com.example.ezpay.kafka.TransactionProducer;
 import com.example.ezpay.shared.common.enums.ErrorLogStatus;
@@ -20,6 +22,9 @@ import com.example.ezpay.modules.realtime.dto.TransactionPipelineEvent;
 import com.example.ezpay.modules.risk.entity.RiskLevel;
 import com.example.ezpay.modules.risk.entity.RiskTransaction;
 import com.example.ezpay.modules.risk.entity.RiskTransactionStatus;
+import com.example.ezpay.modules.risk.fds.FraudDetectionService;
+import com.example.ezpay.modules.risk.fds.dto.FraudCheckContext;
+import com.example.ezpay.modules.risk.fds.dto.FraudCheckResult;
 import com.example.ezpay.modules.risk.service.RiskTransactionService;
 import com.example.ezpay.modules.systemlog.service.SystemLogger;
 import com.example.ezpay.shared.common.enums.UserNotificationCategory;
@@ -52,6 +57,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final UserNotificationService userNotificationService;
     private final EventBroadcaster eventBroadcaster;
     private final RiskTransactionService riskTransactionService;
+    private final FraudDetectionService fraudDetectionService;
     private final SystemLogger systemLogger;
 
     // 관리자 대시보드 실시간 트랜잭션 파이프라인 SSE 채널
@@ -80,7 +86,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
-    // 송금 금액 기반 이상거래 탐지. 위험/주의 거래를 관리자 검토 큐(위험 거래)에 적재한다.
+    // 송금 성공 후 금액 기반 이상거래 모니터링. 통과된 위험/주의 거래를 관리자 검토 큐에 적재한다.
     // 탐지는 부가 기능이므로 실패해도 송금 성공 흐름을 깨지 않는다.
     private void detectRisk(Transaction transaction, Accounts fromAccount, Accounts toAccount, BigDecimal amount) {
         try {
@@ -98,18 +104,7 @@ public class TransactionServiceImpl implements TransactionService {
                 return; // 정상 거래는 적재하지 않음
             }
 
-            RiskTransaction risk = RiskTransaction.builder()
-                    .transactionId("TX" + transaction.getTransactionId())
-                    .level(level)
-                    .sender(fromAccount.getUser().getName())
-                    .receiver(toAccount.getUser().getName())
-                    .amount(amount)
-                    .transactionDatetime(LocalDateTime.now())
-                    .category(transaction.getCategory())
-                    .reason(reason)
-                    .status(RiskTransactionStatus.PENDING_REVIEW)
-                    .build();
-            riskTransactionService.save(risk);
+            recordRisk(transaction, fromAccount, toAccount, amount, level, reason, RiskTransactionStatus.PENDING_REVIEW);
 
             // 시스템 로그: 위험거래 감지(WARN). 레벨(DANGER/CAUTION)은 메시지로 구분한다.
             systemLogger.warn(LOG_SERVICE_RISK, String.format(
@@ -118,6 +113,23 @@ public class TransactionServiceImpl implements TransactionService {
         } catch (Exception e) {
             errorLogService.logError("Risk Detection", "위험 거래 탐지/저장 실패: " + e.getMessage(), ErrorLogStatus.UNRESOLVED);
         }
+    }
+
+    // 위험 거래를 관리자 검토 큐(RiskTransaction)에 적재한다. 사후 모니터링과 사전 FDS 차단/보류가 공유한다.
+    private void recordRisk(Transaction transaction, Accounts fromAccount, Accounts toAccount, BigDecimal amount,
+                            RiskLevel level, String reason, RiskTransactionStatus status) {
+        RiskTransaction risk = RiskTransaction.builder()
+                .transactionId("TX" + transaction.getTransactionId())
+                .level(level)
+                .sender(fromAccount.getUser().getName())
+                .receiver(toAccount.getUser().getName())
+                .amount(amount)
+                .transactionDatetime(LocalDateTime.now())
+                .category(transaction.getCategory())
+                .reason(reason)
+                .status(status)
+                .build();
+        riskTransactionService.save(risk);
     }
 
     // 송금 요청 (kafka 이벤트 발행)
@@ -216,6 +228,34 @@ public class TransactionServiceImpl implements TransactionService {
                 throw new TransferLimitExceededException("하루 송금 한도를 초과했습니다.");
             }
 
+            // 사전 위험도 분석(FDS): 원장 기록 직전, 결과를 즉시 받아 송금 진행 여부를 결정한다.
+            // 계좌 락을 잡은 상태이므로 in-process 동기 평가로 처리하며, 서비스 장애는 서킷 브레이커로 격리한다.
+            FraudCheckContext fraudContext = FraudCheckContext.builder()
+                    .requestId(event.getRequestId())
+                    .fromAccountId(fromAccount.getAccountId())
+                    .toAccountId(toAccount.getAccountId())
+                    .fromAccountNumber(fromAccount.getAccountNumber())
+                    .toAccountNumber(toAccount.getAccountNumber())
+                    .senderName(fromAccount.getUser().getName())
+                    .receiverName(toAccount.getUser().getName())
+                    .amount(event.getAmount())
+                    .category(event.getCategory())
+                    .build();
+            FraudCheckResult fraudResult = fraudDetectionService.evaluate(fraudContext);
+
+            if (fraudResult.isBlocked()) {
+                // 사기 판정: 관리자 검토 큐에 차단 이력 적재 후 송금 차단
+                recordRisk(transaction, fromAccount, toAccount, event.getAmount(),
+                        fraudResult.getLevel(), fraudResult.getReason(), RiskTransactionStatus.BLOCKED);
+                throw new FraudBlockedException(fraudResult.getReason());
+            }
+            if (fraudResult.isHeld()) {
+                // FDS 장애 등 fail-safe: 관리자 검토 큐에 보류 이력 적재 후 송금 일시 보류
+                recordRisk(transaction, fromAccount, toAccount, event.getAmount(),
+                        fraudResult.getLevel(), fraudResult.getReason(), RiskTransactionStatus.PENDING_REVIEW);
+                throw new FraudHeldException(fraudResult.getReason());
+            }
+
             // 3단계: 분산 원장(잔액) 기록
             broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
                     pipelineStart, PipelineStage.LEDGER, PipelineStageStatus.PROCESSING, "원장에 거래를 기록하고 있습니다");
@@ -294,6 +334,27 @@ public class TransactionServiceImpl implements TransactionService {
                     toAccount.getAccountId(), event.getAmount().longValue()));
 
             return saved;
+        } catch (FraudBlockedException e) {
+            // FDS 차단: 송금 실패 처리(잔액 이동 없음). 예외를 삼켜 커밋하므로 차단 이력이 유지된다.
+            transaction.setStatus(TransactionStatus.BLOCKED);
+            transaction.setDescription(e.getMessage());
+            transactionRepository.save(transaction);
+            broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+                    pipelineStart, PipelineStage.RISK_CHECK, PipelineStageStatus.FAILED, e.getMessage());
+            errorLogService.logError("Fraud Detection", "송금 차단(FDS): " + e.getMessage(), ErrorLogStatus.UNRESOLVED);
+            systemLogger.warn(LOG_SERVICE_RISK, String.format(
+                    "송금 차단(FDS): TX%d - %s", transaction.getTransactionId(), e.getMessage()));
+            return transaction;
+        } catch (FraudHeldException e) {
+            // FDS 장애 fail-safe: 송금 일시 보류(잔액 이동 없음). 재시도/관리자 검토 대상.
+            transaction.setStatus(TransactionStatus.HELD);
+            transaction.setDescription(e.getMessage());
+            transactionRepository.save(transaction);
+            broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+                    pipelineStart, PipelineStage.RISK_CHECK, PipelineStageStatus.FAILED, e.getMessage());
+            systemLogger.warn(LOG_SERVICE_RISK, String.format(
+                    "송금 보류(FDS 장애): TX%d - %s", transaction.getTransactionId(), e.getMessage()));
+            return transaction;
         } catch (CustomNotFoundException | TransferLimitExceededException | IllegalArgumentException e) {
             transaction.setStatus(TransactionStatus.FAILED);
             transaction.setDescription(e.getMessage());

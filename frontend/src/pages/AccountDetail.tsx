@@ -29,6 +29,7 @@ import {
 } from "../utils/formatters";
 import { AccountCardSkeleton, TransactionListSkeleton, Skeleton } from "../components/Skeleton";
 import UserShell from "../components/UserShell";
+import { Pagination, usePagination } from "../components/ui";
 
 interface AccountWithBank extends Account {
   bankName?: string;
@@ -59,6 +60,9 @@ const AccountDetail: React.FC = () => {
     countOut: 0,
   });
   const [pageLoading, setPageLoading] = useState(true);
+
+  // 최신순 10개씩 번호 페이지네이션
+  const { page, setPage, pageCount, paged } = usePagination(transactions);
 
   const isOutgoing = (tx: Transaction, accountId: number): boolean =>
     tx.senderAccount?.accountId === accountId;
@@ -289,7 +293,7 @@ const AccountDetail: React.FC = () => {
 
             {transactions.length > 0 ? (
               <div className="space-y-2">
-                {transactions.map((tx) => {
+                {paged.map((tx) => {
                   const currentAccountId = parseInt(id || "0");
                   const isSent = isOutgoing(tx, currentAccountId);
                   const counterparty = isSent ? tx.receiverAccount : tx.senderAccount;
@@ -326,6 +330,13 @@ const AccountDetail: React.FC = () => {
                     </div>
                   );
                 })}
+                {/* 페이지네이션 — 10개씩, 번호 페이지네이션 */}
+                <Pagination
+                  page={page}
+                  pageCount={pageCount}
+                  onChange={setPage}
+                  className="pt-3"
+                />
               </div>
             ) : (
               <div className="py-12 text-center">

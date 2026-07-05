@@ -13,6 +13,7 @@ import { getDashboardInfo } from "../api/UserAPI";
 import { Transaction } from "../types";
 import { formatDateShort, parseDate } from "../utils/formatters";
 import UserShell from "../components/UserShell";
+import { Pagination, usePagination } from "../components/ui";
 
 interface Friend {
   id: string;
@@ -149,6 +150,19 @@ const Friends: React.FC = () => {
 
   const favorites = filteredFriends.filter((f) => f.isFavorite);
   const others = filteredFriends.filter((f) => !f.isFavorite);
+
+  // 전체 친구 목록 10명씩 번호 페이지네이션
+  const {
+    page: othersPage,
+    setPage: setOthersPage,
+    pageCount: othersPageCount,
+    paged: pagedOthers,
+  } = usePagination(others);
+
+  // 검색어가 바뀌면 첫 페이지로 되돌린다.
+  useEffect(() => {
+    setOthersPage(1);
+  }, [search, setOthersPage]);
 
   const openAdd = () => {
     setEditingId(null);
@@ -359,9 +373,18 @@ const Friends: React.FC = () => {
             </p>
 
             {others.length > 0 ? (
-              <div className="divide-y divide-slate-50">
-                {others.map((f) => <FriendRow key={f.id} f={f} />)}
-              </div>
+              <>
+                <div className="divide-y divide-slate-50">
+                  {pagedOthers.map((f) => <FriendRow key={f.id} f={f} />)}
+                </div>
+                {/* 페이지네이션 — 10명씩, 번호 페이지네이션 */}
+                <Pagination
+                  page={othersPage}
+                  pageCount={othersPageCount}
+                  onChange={setOthersPage}
+                  className="pt-4"
+                />
+              </>
             ) : (
               <div className="flex flex-col items-center py-14 text-center">
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">

@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ChevronLeft,
-  ChevronRight,
   Receipt,
   SendHorizontal,
   ShieldAlert,
 } from "lucide-react";
 import UserShell from "../components/UserShell";
+import { Pagination } from "../components/ui";
 import {
   getUnreadNotificationCount,
   getUserNotifications,
@@ -237,43 +236,13 @@ const NotificationsPage = () => {
               })}
             </ul>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-3 flex items-center justify-center gap-1 border-t border-slate-100 pt-3">
-                <button
-                  type="button"
-                  onClick={() => goToPage(page - 1)}
-                  disabled={page === 0}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
-                  aria-label="이전 페이지"
-                >
-                  <ChevronLeft size={15} />
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => goToPage(p)}
-                    className={`h-7 min-w-7 rounded-lg px-2 text-xs font-bold transition ${
-                      p === page
-                        ? "bg-slate-900 text-white"
-                        : "text-slate-500 hover:bg-slate-100"
-                    }`}
-                  >
-                    {p + 1}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => goToPage(page + 1)}
-                  disabled={!feed?.hasNext}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
-                  aria-label="다음 페이지"
-                >
-                  <ChevronRight size={15} />
-                </button>
-              </div>
-            )}
+            {/* 페이지네이션 — 10개씩, 번호 페이지네이션(1 2 3 4 5) */}
+            <Pagination
+              page={page + 1}
+              pageCount={totalPages}
+              onChange={(n) => goToPage(n - 1)}
+              className="mt-3 border-t border-slate-100 pt-3"
+            />
           </>
         )}
       </div>

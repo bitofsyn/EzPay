@@ -67,4 +67,20 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
                         .and(transaction.transactionDate.lt(end)))
                 .fetchOne();
     }
+
+    @Override
+    public long countRecentTransfersBySender(Long senderAccountId, Timestamp since) {
+        QTransaction transaction = QTransaction.transaction;
+
+        // 처리 완료(SUCCESS) 및 처리 중(PROCESSING) 건을 모두 포함해 순간적인 반복 송금 시도를 포착한다.
+        Long count = queryFactory
+                .select(transaction.count())
+                .from(transaction)
+                .where(transaction.senderAccount.accountId.eq(senderAccountId)
+                        .and(transaction.transactionDate.goe(since))
+                        .and(transaction.status.in(TransactionStatus.SUCCESS, TransactionStatus.PROCESSING)))
+                .fetchOne();
+
+        return count == null ? 0L : count;
+    }
 }

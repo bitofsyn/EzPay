@@ -118,6 +118,21 @@ sentry:
 ezpay:
   kafka:
     enabled: ${EZPAY_KAFKA_ENABLED:false}
+  # 사전 위험도 분석(FDS) 설정. 원장 기록 직전 동기 평가로 송금 차단/보류를 결정한다.
+  fds:
+    block-score: ${EZPAY_FDS_BLOCK_SCORE:80}     # 누적 위험 점수 >= 이 값이면 차단(BLOCK)
+    review-score: ${EZPAY_FDS_REVIEW_SCORE:40}   # >= 이 값이면 통과시키되 관리자 검토(REVIEW)
+    high-amount:
+      caution-threshold: ${EZPAY_FDS_CAUTION_THRESHOLD:1000000}
+      danger-threshold: ${EZPAY_FDS_DANGER_THRESHOLD:3000000}
+    velocity:
+      window-seconds: ${EZPAY_FDS_VELOCITY_WINDOW_SECONDS:60}  # 속도 룰 관찰 시간창(초)
+      max-count: ${EZPAY_FDS_VELOCITY_MAX_COUNT:5}             # 시간창 내 이 건수 이상이면 차단
+    blacklist:
+      accounts: ${EZPAY_FDS_BLACKLIST_ACCOUNTS:}              # 쉼표 구분 블랙리스트 계좌번호
+    circuit-breaker:
+      failure-threshold: ${EZPAY_FDS_CB_FAILURE_THRESHOLD:5}  # 연속 실패 이 횟수 초과 시 회로 개방
+      open-millis: ${EZPAY_FDS_CB_OPEN_MILLIS:30000}          # 회로 개방 유지 시간(ms)
 
 ---
 spring:
