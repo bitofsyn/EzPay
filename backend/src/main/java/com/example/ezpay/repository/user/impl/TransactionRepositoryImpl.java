@@ -3,6 +3,7 @@ package com.example.ezpay.repository.user.impl;
 import com.example.ezpay.model.user.QTransaction;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.repository.queryDSL.TransactionRepositoryCustom;
+import com.example.ezpay.response.SpendingSummaryDto;
 import com.example.ezpay.shared.common.enums.TransactionStatus;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -82,5 +83,54 @@ public class TransactionRepositoryImpl implements TransactionRepositoryCustom {
                 .fetchOne();
 
         return count == null ? 0L : count;
+    }
+
+    @Override
+    public List<SpendingSummaryDto> getSpendingSummaryByCategory(
+            Long userId, Timestamp start, Timestamp end) {
+        QTransaction transaction = QTransaction.transaction;
+
+        return queryFactory
+                .select(com.querydsl.core.types.Projections.constructor(
+                        SpendingSummaryDto.class,
+                        transaction.category.coalesce("미분류"),
+                        transaction.amount.sum()))
+                .from(transaction)
+                .where(transaction.senderAccount.user.userId.eq(userId)
+                        .and(transaction.status.eq(TransactionStatus.SUCCESS))
+                        .and(transaction.transactionDate.goe(start))
+                        .and(transaction.transactionDate.lt(end)))
+                .groupBy(transaction.category)
+                .orderBy(transaction.amount.sum().desc())
+                .fetch();
+    }
+
+    @Override
+    public List<Transaction> searchTransactions(
+            Long userId, String keyword, LocalDate startDate, LocalDate endDate) {
+        QTransaction transaction = QTransaction.transaction;
+        com.querydsl.core.BooleanBuilder conditions = new com.querydsl.core.BooleanBuilder()
+                .and(transaction.senderAccount.user.userId.eq(userId)
+                        .or(transaction.receiverAccount.user.userId.eq(userId)));
+
+        if (keyword != null && !keyword.isBlank()) {
+            String searchTerm = keyword.trim();
+            conditions.and(transaction.memo.containsIgnoreCase(searchTerm)
+                    .or(transaction.description.containsIgnoreCase(searchTerm))
+                    .or(transaction.category.containsIgnoreCase(searchTerm)));
+        }
+        if (startDate != null) {
+            conditions.and(transaction.transactionDate.goe(Timestamp.from(
+                    startDate.atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant())));
+        }
+        if (endDate != null) {
+            conditions.and(transaction.transactionDate.lt(Timestamp.from(
+                    endDate.plusDays(1).atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant())));
+        }
+
+        return queryFactory.selectFrom(transaction)
+                .where(conditions)
+                .orderBy(transaction.transactionDate.desc())
+                .fetch();
     }
 }

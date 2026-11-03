@@ -32,9 +32,20 @@ public class RiskEventConsumer {
     public void consumeRiskEvent(RiskDetectionEvent event, Acknowledgment ack) {
         log.info("위험거래 이벤트 수신: {}", event);
 
+        if (event == null || event.getRiskLevel() == null || event.getRiskLevel().isBlank()) {
+            throw new IllegalArgumentException("위험거래 이벤트의 riskLevel이 비어있습니다.");
+        }
+
+        RiskLevel riskLevel;
+        try {
+            riskLevel = RiskLevel.valueOf(event.getRiskLevel().trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("지원하지 않는 위험도입니다: " + event.getRiskLevel(), ex);
+        }
+
         RiskTransaction riskTransaction = RiskTransaction.builder()
                 .transactionId(event.getTransactionId())
-                .level(RiskLevel.valueOf(event.getRiskLevel()))
+                .level(riskLevel)
                 .sender(event.getSender())
                 .receiver(event.getReceiver())
                 .amount(event.getAmount())
