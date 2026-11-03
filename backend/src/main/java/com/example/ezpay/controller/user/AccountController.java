@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -28,18 +27,10 @@ public class AccountController {
 
     // 계좌등록
     @PostMapping
-    public ResponseEntity<CommonResponse<AccountResponse>> createAccount(@Valid @RequestBody AccountCreateRequest accountRequest) {
-        Accounts accounts = accountService.createAccount(accountRequest);
+    public ResponseEntity<CommonResponse<AccountResponse>> createAccount(Authentication authentication,
+                                                                          @Valid @RequestBody AccountCreateRequest accountRequest) {
+        Accounts accounts = accountService.createAccount(authentication.getName(), accountRequest);
         return ResponseEntity.ok(new CommonResponse<>("success", new AccountResponse(accounts), "Account created"));
-    }
-
-    // 모든 계좌 조회
-    @GetMapping
-    public ResponseEntity<CommonResponse<List<AccountResponse>>> getAllAccounts() {
-        List<AccountResponse> accounts = accountService.getAllAccounts().stream()
-                .map(AccountResponse::new)
-                .toList();
-        return ResponseEntity.ok(new CommonResponse<>("success", accounts, "조회 성공"));
     }
 
     // 특정 사용자의 모든 계좌 조회
@@ -60,8 +51,9 @@ public class AccountController {
 
     // 계좌 삭제
     @DeleteMapping("/{accountId}")
-    public ResponseEntity<CommonResponse<String>> deleteAccount(@PathVariable Long accountId) {
-        accountService.deleteAccount(accountId);
+    public ResponseEntity<CommonResponse<String>> deleteAccount(Authentication authentication,
+                                                                 @PathVariable Long accountId) {
+        accountService.deleteAccount(authentication.getName(), accountId);
         return ResponseEntity.ok(new CommonResponse<>("success", "Account deleted", "DELETE SUCCESS"));
     }
 

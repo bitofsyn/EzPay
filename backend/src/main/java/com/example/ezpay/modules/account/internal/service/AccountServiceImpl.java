@@ -25,19 +25,14 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Accounts createAccount(AccountCreateRequest accountRequest) {
-        User user = userRepository.findById(accountRequest.getUserId())
-                .orElseThrow(() -> new CustomNotFoundException("사용자를 찾을 수 없습니다." + accountRequest.getUserId()));
+    public Accounts createAccount(String email, AccountCreateRequest accountRequest) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomNotFoundException("사용자를 찾을 수 없습니다."));
 
         String accountNumber = AccountNumberGenerator.generateAccountNumber(accountRequest.getBankName());
         Accounts account = accountRequest.toEntity(user, accountNumber);
 
         return accountRepository.save(account);
-    }
-
-    @Override
-    public List<Accounts> getAllAccounts() {
-        return accountRepository.findAll();
     }
 
     @Override
@@ -79,10 +74,20 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public void deleteAccount(Long accountId) {
-        Accounts account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다." + accountId));
+    public void deleteAccount(String email, Long accountId) {
+        Accounts account = requireOwnedAccount(email, accountId);
         accountRepository.delete(account);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Accounts requireOwnedAccount(String email, Long accountId) {
+        Accounts account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다: " + accountId));
+        if (!account.getUser().getEmail().equals(email)) {
+            throw new org.springframework.security.access.AccessDeniedException("본인 계좌에만 접근할 수 있습니다.");
+        }
+        return account;
     }
 
     @Transactional
