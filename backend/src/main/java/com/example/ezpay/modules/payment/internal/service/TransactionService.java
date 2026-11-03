@@ -2,6 +2,7 @@ package com.example.ezpay.modules.payment.internal.service;
 
 import com.example.ezpay.shared.messaging.events.TransferEvent;
 import com.example.ezpay.model.user.Transaction;
+import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.modules.payment.api.dto.AccountOwnerInfo;
 import com.example.ezpay.modules.payment.api.dto.TransferRequest;
 
@@ -15,7 +16,7 @@ public interface TransactionService {
     String transferMoney(TransferRequest transferRequest);
 
     // 송금 처리 및 거래 기록 저장
-    Transaction processTransfer(TransferEvent transferEvent);
+    Transaction processTransfer(TransferEvent transferEvent, Accounts fromAccount, Accounts toAccount);
 
     List<Transaction> getTransactionByAccount(Long accountId);
     Transaction getTransactionById(Long transactionId);

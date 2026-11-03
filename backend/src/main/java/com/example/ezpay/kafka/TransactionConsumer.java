@@ -1,7 +1,7 @@
 package com.example.ezpay.kafka;
 
 import com.example.ezpay.modules.kafka.service.FailedEventLogService;
-import com.example.ezpay.modules.payment.internal.service.TransactionService;
+import com.example.ezpay.modules.payment.internal.facade.TransferConcurrencyFacade;
 import com.example.ezpay.shared.messaging.config.KafkaConfig;
 import com.example.ezpay.shared.messaging.events.TransferEvent;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(name = "ezpay.kafka.enabled", havingValue = "true", matchIfMissing = true)
 public class TransactionConsumer {
 
-    private final TransactionService transactionService;
+    private final TransferConcurrencyFacade transferConcurrencyFacade;
     private final FailedEventLogService failedEventLogService;
 
     @KafkaListener(
@@ -32,7 +32,7 @@ public class TransactionConsumer {
     public void consumerTransferEvent(TransferEvent event, Acknowledgment ack) {
         log.info("이벤트 수신: {}", event);
         // DefaultErrorHandler가 예외를 처리하므로, 서비스 레이어의 예외가 그대로 전파되도록 함
-        transactionService.processTransfer(event);
+        transferConcurrencyFacade.process(event);
         ack.acknowledge();
     }
 

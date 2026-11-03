@@ -45,6 +45,25 @@ public class Accounts {
     @UpdateTimestamp
     private Timestamp updatedAt;
 
+    public void withdraw(BigDecimal amount) {
+        validatePositiveAmount(amount);
+        if (balance.compareTo(amount) < 0) {
+            throw new IllegalArgumentException("잔액 부족으로 송금할 수 없습니다.");
+        }
+        balance = balance.subtract(amount);
+    }
+
+    public void deposit(BigDecimal amount) {
+        validatePositiveAmount(amount);
+        balance = balance.add(amount);
+    }
+
+    private void validatePositiveAmount(BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("송금 금액이 올바르지 않습니다.");
+        }
+    }
+
     /**
      * 직렬화 전용: 계좌 소유자 이름.
      * 프론트가 거래 상대를 은행명이 아닌 사람 이름으로 표시할 수 있도록 노출한다.
