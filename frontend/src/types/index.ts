@@ -218,6 +218,22 @@ export interface ErrorLog {
   status: "RESOLVED" | "UNRESOLVED";
 }
 
+export type FailedEventStatus = "PENDING" | "RETRYING" | "RESOLVED" | "RETRY_FAILED";
+
+export interface FailedEventInfo {
+  id: number;
+  topic: string;
+  kafkaKey?: string;
+  payload?: string;
+  errorMessage?: string;
+  status: FailedEventStatus;
+  retryCount: number;
+  occurredAt?: string;
+  lastRetriedAt?: string;
+  resolvedAt?: string;
+  lastRetryError?: string;
+}
+
 // Admin Transfer Limit Types
 export interface AdminTransferLimitInfo {
   limitId: number;

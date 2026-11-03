@@ -12,6 +12,7 @@ import {
   FiSettings,
   FiSliders,
   FiUsers,
+  FiInbox,
 } from "react-icons/fi";
 import { disableAdminPreview, hasAdminPreview } from "../../utils/adminView";
 import { clearUserData, getUserData } from "../../utils/storage";
@@ -29,6 +30,7 @@ const adminMenus = [
   { label: "AI 위험 거래", path: "/admin/risk", icon: FiAlertTriangle, match: /^\/admin\/risk$/ },
   { label: "정책 관리", path: "/admin/policy", icon: FiSliders, match: /^\/admin\/policy$/ },
   { label: "시스템 로그", path: "/admin/system-logs", icon: FiMonitor, match: /^\/admin\/system-logs$/ },
+  { label: "실패 이벤트", path: "/admin/failed-events", icon: FiInbox, match: /^\/admin\/failed-events$/ },
   { label: "설정", path: "/admin/settings", icon: FiSettings, match: /^\/admin\/settings$/ },
 ];
 

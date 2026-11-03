@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface FailedEventLogRepository extends JpaRepository<FailedEventLog, Long> {
+    java.util.List<FailedEventLog> findAllByOrderByOccurredAtDesc();
 }
