@@ -16,6 +16,7 @@ import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.FixedBackOff;
@@ -38,8 +39,11 @@ public class KafkaConfig {
     public static final String TRANSFER_EVENTS_DLT = TRANSFER_EVENTS_TOPIC + ".DLT";
 
     public static final String TRANSACTION_EVENTS_TOPIC = "transaction-events";
+    public static final String TRANSACTION_EVENTS_DLT = TRANSACTION_EVENTS_TOPIC + ".DLT";
     public static final String RISK_DETECTION_EVENTS_TOPIC = "risk-detection-events";
+    public static final String RISK_DETECTION_EVENTS_DLT = RISK_DETECTION_EVENTS_TOPIC + ".DLT";
     public static final String SYSTEM_LOG_EVENTS_TOPIC = "system-log-events";
+    public static final String SYSTEM_LOG_EVENTS_DLT = SYSTEM_LOG_EVENTS_TOPIC + ".DLT";
 
     // == Topic 정의 ==
     @Bean
@@ -65,6 +69,22 @@ public class KafkaConfig {
     @Bean
     public NewTopic systemLogEventsTopic() {
         return new NewTopic(SYSTEM_LOG_EVENTS_TOPIC, 1, (short) 1);
+    }
+
+    // 역직렬화 실패/처리 실패 메시지를 흘려보낼 DLT 목적지 토픽
+    @Bean
+    public NewTopic transactionEventsDltTopic() {
+        return new NewTopic(TRANSACTION_EVENTS_DLT, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic riskDetectionEventsDltTopic() {
+        return new NewTopic(RISK_DETECTION_EVENTS_DLT, 1, (short) 1);
+    }
+
+    @Bean
+    public NewTopic systemLogEventsDltTopic() {
+        return new NewTopic(SYSTEM_LOG_EVENTS_DLT, 1, (short) 1);
     }
 
 
@@ -121,8 +141,12 @@ public class KafkaConfig {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "ezpay-group");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        // ErrorHandlingDeserializer로 감싸 역직렬화 실패(헤더 없는/깨진 메시지)가
+        // 컨슈머를 무한 재시도로 막지 않고 에러 핸들러(→ DLT)로 흘러가도록 한다.
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
+        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
 
         return new DefaultKafkaConsumerFactory<>(props);
