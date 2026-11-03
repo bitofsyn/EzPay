@@ -149,8 +149,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     // kafka 이벤트 수신 후 송금 처리
     @Override
-    @Transactional(transactionManager = "transactionManager")
-    public Transaction processTransfer(TransferEvent event) {
+    public Transaction processTransfer(TransferEvent event, Accounts fromAccount, Accounts toAccount) {
         if (event.getRequestId() == null || event.getRequestId().isBlank()) {
             throw new IllegalArgumentException("requestId가 비어있습니다.");
         }
@@ -160,18 +159,6 @@ public class TransactionServiceImpl implements TransactionService {
         if (existing != null) {
             return existing;
         }
-
-        // 계좌 락은 항상 같은 순서로 잡아 데드락을 줄임
-        Long firstLockId = event.getFromAccountId() <= event.getToAccountId() ? event.getFromAccountId() : event.getToAccountId();
-        Long secondLockId = event.getFromAccountId() <= event.getToAccountId() ? event.getToAccountId() : event.getFromAccountId();
-
-        Accounts firstLocked = accountRepository.findByIdForUpdate(firstLockId)
-                .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다."));
-        Accounts secondLocked = accountRepository.findByIdForUpdate(secondLockId)
-                .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다."));
-
-        Accounts fromAccount = firstLockId.equals(event.getFromAccountId()) ? firstLocked : secondLocked;
-        Accounts toAccount = firstLockId.equals(event.getToAccountId()) ? firstLocked : secondLocked;
 
         Transaction transaction = Transaction.builder()
                 .requestId(event.getRequestId())
@@ -260,11 +247,8 @@ public class TransactionServiceImpl implements TransactionService {
             broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
                     pipelineStart, PipelineStage.LEDGER, PipelineStageStatus.PROCESSING, "원장에 거래를 기록하고 있습니다");
 
-            fromAccount.setBalance(fromAccount.getBalance().subtract(event.getAmount()));
-            toAccount.setBalance(toAccount.getBalance().add(event.getAmount()));
-
-            accountRepository.save(fromAccount);
-            accountRepository.save(toAccount);
+            fromAccount.withdraw(event.getAmount());
+            toAccount.deposit(event.getAmount());
 
             transaction.setStatus(TransactionStatus.SUCCESS);
             transaction.setDescription("송금 완료");

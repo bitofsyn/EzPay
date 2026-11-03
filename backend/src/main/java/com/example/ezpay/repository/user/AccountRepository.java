@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import jakarta.persistence.QueryHint;
+import org.springframework.data.jpa.repository.QueryHints;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +21,7 @@ public interface AccountRepository extends JpaRepository<Accounts, Long> {
     List<Accounts> findByUser(User user);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
     @Query("select a from Accounts a where a.accountId = :accountId")
     Optional<Accounts> findByIdForUpdate(@Param("accountId") Long accountId);
 }
