@@ -36,6 +36,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -84,6 +86,26 @@ public class TransactionServiceImpl implements TransactionService {
         } catch (Exception ignore) {
             // 파이프라인 표시는 부가 기능이므로 실패해도 송금 흐름에 영향 주지 않음
         }
+    }
+
+    // 완료·실패 상태는 DB 커밋이 성공한 뒤에만 노출한다.
+    // 중간 단계와 달리 종결 이벤트가 롤백된 거래를 완료로 표시해서는 안 된다.
+    private void broadcastPipelineAfterCommit(Long txId, Accounts from, Accounts to, BigDecimal amount,
+                                              long startedAtMs, PipelineStage stage,
+                                              PipelineStageStatus status, String message) {
+        Runnable publish = () -> broadcastPipeline(
+                txId, from, to, amount, startedAtMs, stage, status, message);
+
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            publish.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                publish.run();
+            }
+        });
     }
 
     // 송금 성공 후 금액 기반 이상거래 모니터링. 통과된 위험/주의 거래를 관리자 검토 큐에 적재한다.
@@ -255,7 +277,7 @@ public class TransactionServiceImpl implements TransactionService {
             Transaction saved = transactionRepository.save(transaction);
 
             // 4단계: 정산 및 완료
-            broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+            broadcastPipelineAfterCommit(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
                     pipelineStart, PipelineStage.SETTLEMENT, PipelineStageStatus.COMPLETED, "정산이 완료되어 거래가 종료되었습니다");
 
             // 알림/학습데이터 저장은 송금 성공을 깨지 않도록 분리(실패시 로그만 남김)
@@ -323,7 +345,7 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setStatus(TransactionStatus.BLOCKED);
             transaction.setDescription(e.getMessage());
             transactionRepository.save(transaction);
-            broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+            broadcastPipelineAfterCommit(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
                     pipelineStart, PipelineStage.RISK_CHECK, PipelineStageStatus.FAILED, e.getMessage());
             errorLogService.logError("Fraud Detection", "송금 차단(FDS): " + e.getMessage(), ErrorLogStatus.UNRESOLVED);
             systemLogger.warn(LOG_SERVICE_RISK, String.format(
@@ -334,7 +356,7 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setStatus(TransactionStatus.HELD);
             transaction.setDescription(e.getMessage());
             transactionRepository.save(transaction);
-            broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+            broadcastPipelineAfterCommit(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
                     pipelineStart, PipelineStage.RISK_CHECK, PipelineStageStatus.FAILED, e.getMessage());
             systemLogger.warn(LOG_SERVICE_RISK, String.format(
                     "송금 보류(FDS 장애): TX%d - %s", transaction.getTransactionId(), e.getMessage()));
@@ -344,7 +366,7 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setDescription(e.getMessage());
             transactionRepository.save(transaction);
             // 검증 단계에서 차단(실패) 처리
-            broadcastPipeline(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
+            broadcastPipelineAfterCommit(transaction.getTransactionId(), fromAccount, toAccount, event.getAmount(),
                     pipelineStart, PipelineStage.RISK_CHECK, PipelineStageStatus.FAILED, e.getMessage());
             errorLogService.logError("Transaction Service", e.getMessage(), ErrorLogStatus.UNRESOLVED);
             // 시스템 로그: 검증 단계 차단(WARN)
