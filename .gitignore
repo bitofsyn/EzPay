@@ -37,11 +37,6 @@ frontend/node_modules/
 frontend/dist/
 frontend/.cache/
 frontend/public/
-frontend/package-lock.json
-frontend/package.json
-frontend/nginx.conf
-frontend/postcss.config.js
-frontend/tailwind.config.js
 
 ### Python (AI Server) ###
 .venv/
