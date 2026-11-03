@@ -78,22 +78,6 @@ public class AccountServiceImpl implements AccountService {
                 .orElse(accounts.isEmpty() ? null : accounts.get(0));
     }
 
-    @Transactional
-    @Override
-    public Accounts updateBalance(Long accountId, BigDecimal balance) {
-        Accounts account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다." + accountId));
-
-        BigDecimal newBalance = account.getBalance().add(balance);
-
-        if(newBalance.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("잔액이 부족합니다.");
-        }
-
-        account.setBalance(newBalance);
-        return accountRepository.save(account);
-    }
-
     @Override
     public void deleteAccount(Long accountId) {
         Accounts account = accountRepository.findById(accountId)

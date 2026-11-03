@@ -7,6 +7,10 @@ import com.example.ezpay.modules.analytics.internal.service.DashboardService;
 import com.example.ezpay.modules.analytics.internal.service.TransactionStatisticsService;
 import com.example.ezpay.modules.analytics.api.dto.DailySummaryInfo;
 import com.example.ezpay.modules.user.api.facade.UserFacade;
+import com.example.ezpay.modules.account.api.dto.AccountInfo;
+import com.example.ezpay.modules.account.api.facade.AccountFacade;
+import com.example.ezpay.modules.payment.api.dto.TransactionInfo;
+import com.example.ezpay.modules.payment.api.facade.PaymentFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -22,28 +26,28 @@ import java.util.List;
 public class AnalyticsFacadeImpl implements AnalyticsFacade {
 
     private final UserFacade userFacade;
-    private final DashboardService dashboardService;
+    private final AccountFacade accountFacade;
+    private final PaymentFacade paymentFacade;
     private final TransactionStatisticsService transactionStatisticsService;
 
     @Override
     public DashboardData getDashboardData(Long userId) {
-        // userId로 email을 조회해야 하지만, DashboardService는 Authentication을 받음
-        // 일단 임시로 null 처리 (실제로는 UserFacade에서 email을 가져와야 함)
-        // 또는 DashboardService를 수정하여 userId를 받도록 변경
+        List<AccountInfo> accounts = accountFacade.getAccountsByUserId(userId);
+        List<TransactionInfo> recentTransactions = accounts.stream()
+                .filter(account -> Boolean.TRUE.equals(account.getIsMainAccount()))
+                .findFirst()
+                .map(account -> paymentFacade.getRecentTransactions(account.getAccountId(), "desc", 10))
+                .orElseGet(List::of);
 
-        // 현재 구조상 DashboardService.getDashboardInfo는 Authentication을 받으므로
-        // 직접 데이터를 조합하는 방식으로 변경
         return DashboardData.builder()
                 .userData(userFacade.getUserById(userId))
-                .accountData(null) // 추후 AccountFacade 사용
-                .recentTransactions(null) // 추후 PaymentFacade 사용
+                .accountData(accounts)
+                .recentTransactions(recentTransactions)
                 .build();
     }
 
     @Override
     public MonthlyStatistics getMonthlyStatistics(Long accountId, int year, int month) {
-        // accountId를 userId로 변환해야 할 수도 있음
-        // 일단 accountId를 userId로 간주
         List<DailySummaryInfo> summaries = transactionStatisticsService.getMonthStatistics(accountId, year, month);
 
         // 총 수입/지출 계산

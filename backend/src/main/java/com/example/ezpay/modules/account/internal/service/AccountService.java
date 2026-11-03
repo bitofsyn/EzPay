@@ -4,7 +4,6 @@ import com.example.ezpay.model.user.Accounts;
 import com.example.ezpay.modules.account.api.dto.AccountCreateRequest;
 import org.springframework.security.core.Authentication;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -31,9 +30,6 @@ public interface AccountService {
 
     // 사용자의 메인 계좌 조회
     Accounts getMainAccountByUserId(Long userId);
-
-    // 계좌 잔액 수정
-    Accounts updateBalance(Long accountId, BigDecimal balance);
 
     // 계좌 삭제
     void deleteAccount(Long accountId);

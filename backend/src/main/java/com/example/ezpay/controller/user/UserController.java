@@ -41,14 +41,17 @@ public class UserController {
 
     // 특정 회원 조회
     @GetMapping("/{id}")
-    public ResponseEntity<CommonResponse<UserInfo>> getUserById(@PathVariable Long id) {
+    public ResponseEntity<CommonResponse<UserInfo>> getUserById(@PathVariable Long id, Authentication authentication) {
+        requireCurrentUser(id, authentication);
         UserInfo userInfo = userFacade.getUserById(id);
         return ResponseEntity.ok(new CommonResponse<>("success", userInfo, "회원 조회 성공"));
     }
 
     // 회원 수정
     @PutMapping("/{id}")
-    public ResponseEntity<CommonResponse<UserInfo>> updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
+    public ResponseEntity<CommonResponse<UserInfo>> updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request,
+                                                                Authentication authentication) {
+        requireCurrentUser(id, authentication);
         UserInfo userInfo = userFacade.updateUser(id, request);
         CommonResponse<UserInfo> response = new CommonResponse<>(
                 "success", userInfo, "User updated successfully"
@@ -58,7 +61,8 @@ public class UserController {
 
     // 회원 탈퇴
     @DeleteMapping("/{id}")
-    public ResponseEntity<CommonResponse<String>> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<CommonResponse<String>> deleteUser(@PathVariable Long id, Authentication authentication) {
+        requireCurrentUser(id, authentication);
         userFacade.deleteUser(id);
         CommonResponse<String> response = new CommonResponse<>(
                 "success", null, "User deleted successfully"
@@ -68,8 +72,19 @@ public class UserController {
 
     // 로그인 기록 조회
     @GetMapping("/{id}/login-history")
-    public ResponseEntity<CommonResponse<List<LoginHistoryInfo>>> getLoginHistory(@PathVariable Long id) {
+    public ResponseEntity<CommonResponse<List<LoginHistoryInfo>>> getLoginHistory(@PathVariable Long id, Authentication authentication) {
+        requireCurrentUser(id, authentication);
         List<LoginHistoryInfo> history = userFacade.getRecentLoginHistory(id, 10);
         return ResponseEntity.ok(new CommonResponse<>("success", history, "최근 로그인 기록 조회 성공"));
+    }
+
+    private void requireCurrentUser(Long requestedUserId, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new org.springframework.security.access.AccessDeniedException("인증이 필요합니다.");
+        }
+        UserInfo currentUser = userFacade.getUserByEmail(authentication.getName());
+        if (!currentUser.getUserId().equals(requestedUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException("다른 사용자의 정보에 접근할 수 없습니다.");
+        }
     }
 }
