@@ -3,12 +3,16 @@ package com.example.ezpay.service.user.impl;
 import com.example.ezpay.shared.common.enums.ErrorLogStatus;
 import com.example.ezpay.model.user.ErrorLog;
 import com.example.ezpay.repository.user.ErrorLogRepository;
+import com.example.ezpay.request.ErrorLogRequest;
+import com.example.ezpay.response.ErrorLogResponse;
 import com.example.ezpay.service.user.ErrorLogService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +55,28 @@ public class ErrorLogServiceImpl implements ErrorLogService {
 
         errorLog.setStatus(ErrorLogStatus.RESOLVED);
         errorLogRepository.save(errorLog);
+    }
+
+    @Override
+    @Transactional
+    public ErrorLogResponse saveErrorLog(ErrorLogRequest request) {
+        return new ErrorLogResponse(errorLogRepository.save(request.toEntity()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ErrorLogResponse> getAllErrorLogs() {
+        return errorLogRepository.findAll().stream()
+                .map(ErrorLogResponse::new)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ErrorLogResponse getErrorLog(Long errorLogId) {
+        ErrorLog errorLog = errorLogRepository.findById(errorLogId)
+                .orElseThrow(() -> new EntityNotFoundException("장애 로그를 찾을 수 없습니다."));
+        return new ErrorLogResponse(errorLog);
     }
 
 }

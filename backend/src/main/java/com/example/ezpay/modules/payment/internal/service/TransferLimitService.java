@@ -17,4 +17,8 @@ public interface TransferLimitService {
 
     // 남은 일일 한도 계산
     BigDecimal getRemainingDailyLimit(Long userId);
+
+    boolean canTransfer(Long userId, BigDecimal amount);
+
+    void initializeDefaultLimit(Long userId, BigDecimal dailyLimit, BigDecimal perTransactionLimit);
 }

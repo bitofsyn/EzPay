@@ -1,8 +1,18 @@
 package com.example.ezpay.service.user;
 
 import com.example.ezpay.shared.common.enums.ErrorLogStatus;
+import com.example.ezpay.request.ErrorLogRequest;
+import com.example.ezpay.response.ErrorLogResponse;
+
+import java.util.List;
 
 public interface ErrorLogService {
+    ErrorLogResponse saveErrorLog(ErrorLogRequest request);
+
+    List<ErrorLogResponse> getAllErrorLogs();
+
+    ErrorLogResponse getErrorLog(Long errorLogId);
+
     void deleteErrorLog(Long errorLogId);
 
     // 장애 발생시 자동으로 로그 추가

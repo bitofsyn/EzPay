@@ -82,4 +82,34 @@ public class NotificationServiceImpl implements NotificationService {
         mailSender.send(message);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isNotificationEnabled(Long userId, NotificationType type) {
+        User user = userRepository.findById(userId).orElse(null);
+        return user != null && notificationRepository.findByUserAndNotificationType(user, type)
+                .map(Notification::getIsEnabled)
+                .orElse(false);
+    }
+
+    @Override
+    public void sendTestEmail(String email) {
+        initEmail(email);
+    }
+
+    @Override
+    @Transactional
+    public void initializeNotificationSettings(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
+        for (NotificationType type : NotificationType.values()) {
+            notificationRepository.findByUserAndNotificationType(user, type)
+                    .orElseGet(() -> notificationRepository.save(Notification.builder()
+                            .user(user)
+                            .notificationType(type)
+                            .isEnabled(true)
+                            .build()));
+        }
+    }
+
 }
