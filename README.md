@@ -66,6 +66,7 @@ SPRING_DATASOURCE_PASSWORD=your-password
 SPRING_KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
+FRONTEND_BASE_URL=http://localhost:5173
 ```
 
 **2. 빌드 및 실행**
