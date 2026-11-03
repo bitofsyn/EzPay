@@ -39,11 +39,53 @@ public class FailedEventLog {
     @Column(updatable = false)
     private LocalDateTime occurredAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private FailedEventStatus status = FailedEventStatus.PENDING;
+
+    private Integer retryCount;
+
+    private LocalDateTime lastRetriedAt;
+
+    private LocalDateTime resolvedAt;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String lastRetryError;
+
     @Builder
     public FailedEventLog(String topic, String kafkaKey, String payload, String errorMessage) {
         this.topic = topic;
         this.kafkaKey = kafkaKey;
         this.payload = payload;
         this.errorMessage = errorMessage;
+        this.status = FailedEventStatus.PENDING;
+        this.retryCount = 0;
+    }
+
+    public void markRetrying() {
+        status = FailedEventStatus.RETRYING;
+        retryCount = getRetryCountOrZero() + 1;
+        lastRetriedAt = LocalDateTime.now();
+        lastRetryError = null;
+    }
+
+    public void markResolved() {
+        status = FailedEventStatus.RESOLVED;
+        resolvedAt = LocalDateTime.now();
+        lastRetryError = null;
+    }
+
+    public void markRetryFailed(String message) {
+        status = FailedEventStatus.RETRY_FAILED;
+        lastRetryError = message;
+    }
+
+    public FailedEventStatus getStatusOrPending() {
+        return status != null ? status : FailedEventStatus.PENDING;
+    }
+
+    public int getRetryCountOrZero() {
+        return retryCount != null ? retryCount : 0;
     }
 }

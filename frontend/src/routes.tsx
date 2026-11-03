@@ -29,6 +29,7 @@ const LayoutSettings = lazy(() => import("./pages/settings/LayoutSettings"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 const AdminErrorLogs = lazy(() => import("./pages/admin/AdminErrorLogs"));
+const AdminFailedEvents = lazy(() => import("./pages/admin/AdminFailedEvents"));
 const AdminTransferLimits = lazy(() => import("./pages/admin/AdminTransferLimits"));
 // New admin pages
 const AdminUserManagement = lazy(() => import("./pages/admin/AdminUserManagement"));
@@ -89,6 +90,7 @@ const AppRoutes = () => {
           {/* 레거시 라우트 유지 */}
           <Route path="/admin/transfer-limits" element={<AdminRoute><AdminTransferLimits /></AdminRoute>} />
           <Route path="/admin/error-logs" element={<AdminRoute><AdminErrorLogs /></AdminRoute>} />
+          <Route path="/admin/failed-events" element={<AdminRoute><AdminFailedEvents /></AdminRoute>} />
           {/* 신규 페이지 */}
           <Route path="/admin/risk" element={<AdminRoute><AdminRiskTransactions /></AdminRoute>} />
           <Route path="/admin/policy" element={<AdminRoute><AdminPolicy /></AdminRoute>} />

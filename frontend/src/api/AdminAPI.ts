@@ -18,7 +18,19 @@ import {
   AdminUserInfo,
   AdminPolicyConfig,
   AdminPolicyChange,
+  FailedEventInfo,
 } from "../types";
+
+// ========== Kafka Failed Event API ==========
+export const getFailedEvents = async (): Promise<FailedEventInfo[]> => {
+    const res = await api.get("/admin/failed-events");
+    return res.data.data ?? res.data;
+};
+
+export const retryFailedEvent = async (id: number): Promise<FailedEventInfo> => {
+    const res = await api.post(`/admin/failed-events/${id}/retry`);
+    return res.data.data ?? res.data;
+};
 
 // ========== Dashboard API ==========
 // Admin 대시보드 통계 조회
