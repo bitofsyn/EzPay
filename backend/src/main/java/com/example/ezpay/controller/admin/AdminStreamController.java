@@ -30,8 +30,7 @@ public class AdminStreamController {
         return sseEmitterRegistry.register("activities");
     }
 
-    // 실시간 트랜잭션 처리 파이프라인(useTransactionPipeline 훅)이 구독하는 스트림.
-    // Kafka 거래 이벤트 및 파이프라인 시뮬레이터가 발행하는 단계 전이 이벤트를 전달한다.
+    // 실제 송금 처리 서비스가 발행하는 단계 전이 이벤트를 관리자 화면에 전달한다.
     @GetMapping("/transaction-pipeline")
     public SseEmitter streamTransactionPipeline() {
         return sseEmitterRegistry.register("transaction-pipeline");

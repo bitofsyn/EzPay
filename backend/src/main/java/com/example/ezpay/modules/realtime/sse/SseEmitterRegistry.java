@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-// 채널(system-logs, tps-metrics, activities)별로 SseEmitter를 관리하고 브로드캐스트하는 컴포넌트
+// 관리자·사용자 실시간 채널별로 SseEmitter를 관리하고 브로드캐스트하는 컴포넌트
 @Slf4j
 @Component
 public class SseEmitterRegistry {
