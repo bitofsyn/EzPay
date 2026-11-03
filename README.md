@@ -211,7 +211,7 @@ aws cloudfront create-invalidation \
 
 | 기술 | 버전 | 용도 |
 |------|------|------|
-| React | 19 | UI 라이브러리 |
+| React | 18.2 | UI 라이브러리 |
 | Vite | - | 빌드 도구 |
 | TypeScript | - | 타입 안전성 |
 | Axios | - | HTTP 클라이언트 |
@@ -316,8 +316,26 @@ cd backend
 **터미널 2 (프론트엔드)**:
 ```bash
 cd frontend
-npm run dev
+npm run start
 ```
+
+---
+
+## ✅ 테스트
+
+```bash
+# 백엔드 전체 테스트
+cd backend
+./gradlew clean test
+
+# 프론트엔드 정적 검사·빌드·브라우저 E2E
+cd ../frontend
+npm run lint
+npm run build
+npm run test:e2e
+```
+
+백엔드 전체 테스트에는 PostgreSQL 16 Testcontainers 기반 송금 E2E가 포함됩니다. Docker를 사용할 수 없는 환경에서는 PostgreSQL 컨테이너 테스트만 건너뛰며, H2·Embedded Kafka 기반 E2E는 계속 실행됩니다.
 
 ---
 
@@ -368,4 +386,4 @@ npm run dev
 
 ---
 
-**마지막 업데이트**: 2026-06-21
+**마지막 업데이트**: 2026-11-03
