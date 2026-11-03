@@ -3,6 +3,7 @@ package com.example.ezpay.controller.user;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.modules.analytics.api.dto.DashboardInfo;
 import com.example.ezpay.modules.analytics.internal.service.DashboardService;
+import com.example.ezpay.modules.account.internal.service.AccountService;
 import com.example.ezpay.shared.common.dto.CommonResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.List;
 public class DashboardController {
 
     private final DashboardService dashboardService;
+    private final AccountService accountService;
 
     // 대시보드
     @GetMapping
@@ -27,9 +29,11 @@ public class DashboardController {
 
     // 최근 거래 내역(정렬화)
     @GetMapping("/accounts/{accountId}/transactions")
-    public ResponseEntity<CommonResponse<List<Transaction>>> getRecentTransactions(@PathVariable Long accountId,
+    public ResponseEntity<CommonResponse<List<Transaction>>> getRecentTransactions(Authentication authentication,
+                                                                                   @PathVariable Long accountId,
                                                                                    @RequestParam(defaultValue = "desc") String sort,
                                                                                    @RequestParam(defaultValue = "10") int limit) {
+        accountService.requireOwnedAccount(authentication.getName(), accountId);
         List<Transaction> transactions = dashboardService.getRecentTransactions(accountId, sort, limit);
         return ResponseEntity.ok(new CommonResponse<>("success", transactions, "최근 거래 내역 조회 성공"));
     }
