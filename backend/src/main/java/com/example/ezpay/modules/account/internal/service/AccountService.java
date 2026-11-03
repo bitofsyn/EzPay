@@ -11,10 +11,7 @@ import java.util.List;
  */
 public interface AccountService {
     // 계좌 생성
-    Accounts createAccount(AccountCreateRequest accountRequest);
-
-    // 모든 계좌 조회
-    List<Accounts> getAllAccounts();
+    Accounts createAccount(String email, AccountCreateRequest accountRequest);
 
     // 인증된 사용자의 모든 계좌 조회
     List<Accounts> getMyAccounts(Authentication authentication);
@@ -32,7 +29,10 @@ public interface AccountService {
     Accounts getMainAccountByUserId(Long userId);
 
     // 계좌 삭제
-    void deleteAccount(Long accountId);
+    void deleteAccount(String email, Long accountId);
+
+    // 계좌가 인증된 사용자의 소유인지 검증
+    Accounts requireOwnedAccount(String email, Long accountId);
 
     // 대표 계좌 설정
     void setMainAccount(String email, Long accountId);
