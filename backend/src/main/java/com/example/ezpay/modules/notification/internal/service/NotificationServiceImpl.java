@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -58,11 +59,13 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void deleteNotification(Long notificationId) {
-        if (!notificationRepository.existsById(notificationId)) {
-            throw new EntityNotFoundException("알림을 찾을 수 없습니다.");
+    public void deleteNotification(Long userId, Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new EntityNotFoundException("알림을 찾을 수 없습니다."));
+        if (!notification.getUser().getUserId().equals(userId)) {
+            throw new AccessDeniedException("다른 사용자의 알림을 삭제할 수 없습니다.");
         }
-        notificationRepository.deleteById(notificationId);
+        notificationRepository.delete(notification);
     }
 
     private void initEmail(String to) {
