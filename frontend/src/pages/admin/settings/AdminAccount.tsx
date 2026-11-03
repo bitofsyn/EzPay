@@ -46,8 +46,9 @@ const AdminAccount: React.FC = () => {
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">정보 수정</h3>
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-slate-500 block mb-1.5">이름</label>
+            <label htmlFor="admin-name" className="text-xs font-semibold text-slate-500 block mb-1.5">이름</label>
             <input
+              id="admin-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -55,8 +56,9 @@ const AdminAccount: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-500 block mb-1.5">이메일</label>
+            <label htmlFor="admin-email" className="text-xs font-semibold text-slate-500 block mb-1.5">이메일</label>
             <input
+              id="admin-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -74,8 +76,9 @@ const AdminAccount: React.FC = () => {
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">비밀번호 변경</h3>
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-slate-500 block mb-1.5">현재 비밀번호</label>
+            <label htmlFor="admin-current-password" className="text-xs font-semibold text-slate-500 block mb-1.5">현재 비밀번호</label>
             <input
+              id="admin-current-password"
               type="password"
               value={currentPw}
               onChange={(e) => setCurrentPw(e.target.value)}
@@ -83,8 +86,9 @@ const AdminAccount: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-500 block mb-1.5">새 비밀번호</label>
+            <label htmlFor="admin-new-password" className="text-xs font-semibold text-slate-500 block mb-1.5">새 비밀번호</label>
             <input
+              id="admin-new-password"
               type="password"
               value={newPw}
               onChange={(e) => setNewPw(e.target.value)}
@@ -92,8 +96,9 @@ const AdminAccount: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-500 block mb-1.5">비밀번호 확인</label>
+            <label htmlFor="admin-confirm-password" className="text-xs font-semibold text-slate-500 block mb-1.5">비밀번호 확인</label>
             <input
+              id="admin-confirm-password"
               type="password"
               value={confirmPw}
               onChange={(e) => setConfirmPw(e.target.value)}

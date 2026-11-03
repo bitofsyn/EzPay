@@ -58,13 +58,6 @@ public class AccountController {
         return ResponseEntity.ok(new CommonResponse<>("success", response, "계좌 소유주 조회 성공"));
     }
 
-    // 계좌 잔액 수정
-    @PutMapping("/{accountId}")
-    public ResponseEntity<CommonResponse<AccountResponse>> updateBalance(@PathVariable Long accountId , @RequestParam BigDecimal balance) {
-        Accounts accounts = accountService.updateBalance(accountId, balance);
-        return ResponseEntity.ok(new CommonResponse<>("success", new AccountResponse(accounts), "Balance updated"));
-    }
-
     // 계좌 삭제
     @DeleteMapping("/{accountId}")
     public ResponseEntity<CommonResponse<String>> deleteAccount(@PathVariable Long accountId) {

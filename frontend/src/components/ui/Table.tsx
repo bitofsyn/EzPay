@@ -1,13 +1,12 @@
 import React from "react";
-import type { TableColumn, TableProps } from "../../types";
+import type { TableProps } from "../../types";
 
-export const Table = <T extends Record<string, any>>({
+export const Table = <T extends object>({
   data,
   columns,
   isLoading = false,
   emptyMessage = "데이터가 없습니다.",
   onRowClick,
-  virtualized = false,
 }: TableProps<T>): React.ReactElement => {
   if (isLoading) {
     return (
@@ -69,7 +68,7 @@ export const Table = <T extends Record<string, any>>({
 };
 
 // Dark variant for dark backgrounds (admin dashboard)
-export const TableDark = <T extends Record<string, any>>({
+export const TableDark = <T extends object>({
   data,
   columns,
   isLoading = false,

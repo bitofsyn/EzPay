@@ -17,7 +17,7 @@ const SecuritySettings: React.FC = () => {
           {/* 세션 만료 슬라이더 */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-semibold text-slate-700">세션 만료 시간</label>
+              <span className="text-sm font-semibold text-slate-700">세션 만료 시간</span>
               <span className="text-sm font-bold text-slate-800">{sessionTimeout}분</span>
             </div>
             <AdminSlider
@@ -36,10 +36,11 @@ const SecuritySettings: React.FC = () => {
 
           {/* 로그인 시도 제한 */}
           <div>
-            <label className="text-sm font-semibold text-slate-700 block mb-2">
+            <label htmlFor="admin-login-attempts" className="text-sm font-semibold text-slate-700 block mb-2">
               로그인 시도 제한 횟수
             </label>
             <input
+              id="admin-login-attempts"
               type="text"
               value={loginAttempts}
               onChange={(e) => setLoginAttempts(e.target.value)}

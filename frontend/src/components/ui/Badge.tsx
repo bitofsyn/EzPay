@@ -8,8 +8,6 @@ import {
   getRiskLevelDarkColor,
 } from "../../utils/admin/styleMapper";
 
-type BadgeType = "status" | "level" | "risk";
-
 interface BadgeDarkProps {
   variant: "status" | "level" | "risk";
   value: TransactionStatus | LogLevel | RiskLevel;

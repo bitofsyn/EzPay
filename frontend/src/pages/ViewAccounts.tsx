@@ -246,6 +246,11 @@ const ViewAccounts: React.FC = () => {
                   <div
                     key={account.accountId}
                     onClick={() => navigate(`/account/${account.accountId}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") navigate(`/account/${account.accountId}`);
+                    }}
+                    role="button"
+                    tabIndex={0}
                     className="cursor-pointer overflow-hidden rounded-2xl bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)]"
                   >
                     {/* 상단 컬러 바 */}
@@ -279,6 +284,8 @@ const ViewAccounts: React.FC = () => {
                       {/* 액션 버튼 */}
                       <div
                         onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        role="presentation"
                         className="mt-3.5 flex gap-1.5 border-t border-slate-100 pt-3"
                       >
                         {!account.isMain && (
@@ -483,11 +490,19 @@ const ViewAccounts: React.FC = () => {
       {deleteConfirmId !== null && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
-          onClick={() => setDeleteConfirmId(null)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeleteConfirmId(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setDeleteConfirmId(null);
+          }}
+          role="button"
+          tabIndex={0}
         >
           <div
             className="w-full max-w-[320px] rounded-[18px] bg-white p-7 text-center shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
           >
             <div className="mx-auto mb-3.5 flex h-12 w-12 items-center justify-center rounded-full bg-rose-50">
               <Trash2 size={22} className="text-rose-500" />

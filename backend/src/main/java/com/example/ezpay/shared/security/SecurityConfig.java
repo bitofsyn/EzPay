@@ -48,12 +48,9 @@ public class SecurityConfig {
                         .requestMatchers("/health").permitAll()
                         // Prometheus 스크레이프용 Actuator 엔드포인트는 인증 없이 허용
                         .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/users/**",
-                                        "/password-reset/**",
-                                        "/password-reset/validate",
-                                        "/password-reset/request",
-                                "/password-reset/reset-password"
-                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/signup", "/users/login",
+                                "/users/find-email", "/users/oauth/*/login").permitAll()
+                        .requestMatchers("/password-reset/**").permitAll()
                         // SSE(EventSource)/WebSocket은 헤더 대신 쿼리 파라미터(?token=)로 JWT를 전달받아 인증한다.
                         // (JwtAuthenticationFilter가 token 파라미터를 인식) → 관리자만 실시간 스트림 구독 가능.
                         .requestMatchers("/ws/**").hasRole("ADMIN")

@@ -2,19 +2,33 @@
 
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.2-green)
-![React](https://img.shields.io/badge/React-19-blue)
+![React](https://img.shields.io/badge/React-18.2-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-RDS-336791)
 ![AWS](https://img.shields.io/badge/AWS-CloudFront%20%7C%20S3-orange)
 
 ---
 
-## 🌐 라이브 서비스
+## 프로젝트 목표
+
+EzPay는 단순 화면 데모가 아니라 송금 정합성과 운영 가시성을 함께 다루는 간편 송금 플랫폼입니다.
+
+- 비관적 락과 멱등성 키를 이용한 안전한 계좌 이체
+- Kafka 비동기 처리, 재시도 및 Dead Letter Topic
+- 송금 한도와 규칙 기반 FDS 차단·보류
+- 사용자 알림과 관리자 실시간 관제(SSE)
+- JWT/OAuth 인증과 사용자·관리자 권한 분리
+
+상세 기능 요구사항과 완료 기준은 [요구사항 문서](docs/REQUIREMENTS.md)를 참고하세요.
+
+---
+
+## 🌐 배포 정보
 
 | 환경 | URL | 상태 |
 |------|-----|------|
 | **프론트엔드** | `der7dm75txez.cloudfront.net` | ✅ 배포 완료 |
-| **백엔드 API** | `<Render/Railway Backend URL>` | ✅ 배포 완료 |
-| **헬스 체크** | `<Backend URL>/health` | ✅ `{"status":"ok"}` |
+| **백엔드 API** | 배포 환경에서 설정 | 저장소에서 확인 불가 |
+| **헬스 체크** | `<Backend URL>/health` | 배포 후 확인 필요 |
 
 ---
 
@@ -76,7 +90,7 @@ npm install
 
 **2. 개발 서버 실행**
 ```bash
-npm run dev
+npm run start
 ```
 
 프론트엔드는 `http://localhost:5173`에서 시작됩니다.
