@@ -13,6 +13,7 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
+import com.example.ezpay.modules.kafka.repository.FailedEventLogRepository;
 
 import java.time.Duration;
 import java.util.Map;
@@ -39,6 +40,8 @@ class KafkaDeadLetterIntegrationTest {
     @Qualifier("objectKafkaTemplate")
     KafkaTemplate<String, Object> kafkaTemplate;
 
+    @Autowired FailedEventLogRepository failedEventLogRepository;
+
     @Test
     void malformedTransferEventIsPublishedToDeadLetterTopic() throws Exception {
         Map<String, Object> consumerProps = KafkaTestUtils.consumerProps(
@@ -55,6 +58,18 @@ class KafkaDeadLetterIntegrationTest {
 
             assertThat(record.value()).contains("malformed-transfer-event");
             assertThat(record.headers().lastHeader("kafka_dlt-exception-message")).isNotNull();
+
+            long deadline = System.currentTimeMillis() + 5_000;
+            while (failedEventLogRepository.count() == 0 && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+            }
+            assertThat(failedEventLogRepository.findAll())
+                    .singleElement()
+                    .satisfies(log -> {
+                        assertThat(log.getTopic()).isEqualTo("transfer-events.DLT");
+                        assertThat(log.getPayload()).contains("malformed-transfer-event");
+                        assertThat(log.getErrorMessage()).isNotBlank();
+                    });
         } finally {
             dltConsumer.close();
         }

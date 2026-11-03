@@ -20,18 +20,16 @@ public class FailedEventLogService {
 
     @Transactional
     public void saveFailedEvent(ConsumerRecord<String, Object> record, String errorMessage) {
-        try {
-            String payloadAsString = getPayloadAsString(record.value());
-            FailedEventLog logEntry = FailedEventLog.builder()
-                    .topic(record.topic())
-                    .kafkaKey(record.key())
-                    .payload(payloadAsString)
-                    .errorMessage(errorMessage)
-                    .build();
-            failedEventLogRepository.save(logEntry);
-        } catch (Exception e) {
-            log.error("Failed to save the failed event log to the database.", e);
-        }
+        String payloadAsString = getPayloadAsString(record.value());
+        FailedEventLog logEntry = FailedEventLog.builder()
+                .topic(record.topic())
+                .kafkaKey(record.key())
+                .payload(payloadAsString)
+                .errorMessage(errorMessage)
+                .build();
+        // 저장 실패를 삼키면 Consumer가 acknowledge하여 복구 불가능한 유실이 발생한다.
+        // 예외를 전파해 Kafka 에러 핸들러가 재시도하도록 한다.
+        failedEventLogRepository.save(logEntry);
     }
 
     private String getPayloadAsString(Object payload) {
