@@ -53,6 +53,7 @@
 - 장애 로그 조회·해결·삭제 관리 기능을 관리자 API로 제한
 - 실제 Spring Security·JPA 데이터베이스·Embedded Kafka를 연결한 가입·로그인·계좌 생성·송금 E2E 테스트 완료
 - PostgreSQL 16 Testcontainers에서 동일한 송금 E2E 및 스키마 호환성 검증 완료
+- 이메일 링크 기반 비밀번호 재설정, 토큰 해시 저장, 계정 열거 방지와 HTTP·브라우저 E2E 검증 완료
 
 ## 현재 보강이 필요한 검증
 

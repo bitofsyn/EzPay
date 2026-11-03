@@ -107,6 +107,7 @@ function FindPasswordForm() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
   const canSubmit = isValidEmail(email) && !isLoading;
@@ -124,10 +125,8 @@ function FindPasswordForm() {
     setError("");
 
     try {
-      const res = await requestPasswordReset(email.trim());
-      const token = res.data as string;
-      sessionStorage.setItem("resetToken", token);
-      navigate("/reset-password");
+      await requestPasswordReset(email.trim());
+      setIsSubmitted(true);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as Record<string, unknown>;
@@ -164,6 +163,12 @@ function FindPasswordForm() {
           </p>
         </div>
 
+        {isSubmitted ? (
+          <div role="status" className="rounded-xl border border-green-200 bg-green-50 px-5 py-5 text-sm text-green-800">
+            <p className="font-semibold">재설정 링크를 전송했습니다.</p>
+            <p className="mt-2 leading-relaxed">메일함에서 EzPay 비밀번호 재설정 링크를 확인해 주세요. 링크는 30분 동안 유효합니다.</p>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
 
           {/* Email input */}
@@ -231,6 +236,7 @@ function FindPasswordForm() {
             )}
           </button>
         </form>
+        )}
 
         {/* Info box */}
         <div className="mt-5 flex gap-3 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3.5">

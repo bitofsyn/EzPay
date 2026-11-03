@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword, validatePasswordResetToken } from "../api/UserAPI";
 import * as Sentry from "@sentry/react";
 
@@ -12,7 +12,8 @@ const ResetPassword: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
 
     const navigate = useNavigate();
-    const token = sessionStorage.getItem("resetToken");
+    const [searchParams] = useSearchParams();
+    const token = searchParams.get("token");
 
     // 토큰 유효성 검사
     useEffect(() => {
@@ -65,9 +66,6 @@ const ResetPassword: React.FC = () => {
             await resetPassword(token, newPassword);
             setSuccessMessage("비밀번호가 성공적으로 변경되었습니다.");
             setError("");
-
-            // 완료 후 토큰 삭제
-            sessionStorage.removeItem("resetToken");
 
             setTimeout(() => {
                 navigate("/login");
