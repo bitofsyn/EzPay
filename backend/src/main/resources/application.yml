@@ -52,7 +52,12 @@ spring:
       hibernate:
         jdbc:
           time_zone: Asia/Seoul
-    defer-datasource-initialization: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 1
+    validate-on-migrate: true
 
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
@@ -143,7 +148,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
@@ -173,10 +178,8 @@ spring:
 
   jpa:
     hibernate:
-      # 마이그레이션 도구(Flyway/Liquibase) 부재로 스키마를 Hibernate가 관리한다.
-      # update: 누락 테이블/컬럼을 자동 생성(추가만, 삭제 없음). 신규 엔티티 테이블
-      # (risk_transactions, system_logs, failed_event_log)이 prod DB에 없어 validate가 실패하던 문제 복구.
-      ddl-auto: update
+      # 운영 스키마 변경은 Flyway 마이그레이션으로만 관리한다.
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
