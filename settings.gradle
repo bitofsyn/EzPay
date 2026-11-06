@@ -1,2 +1,0 @@
-rootProject.name = 'EzPay'
-include('backend', 'frontend')

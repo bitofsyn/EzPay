@@ -125,28 +125,11 @@ services:
     networks:
       - my_network
 
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins
-    restart: always
-    # 기본 up 대상에서 제외. 필요 시: docker compose --profile ci up -d jenkins
-    profiles: ["ci"]
-    user: root
-    ports:
-      - "8082:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins-data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - my_network
-
 volumes:
   postgres-data:
   kafka-data:
   zookeeper-data:
   zookeeper-log:
-  jenkins-data:
   mlflow-data:
 
 networks:

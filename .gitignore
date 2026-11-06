@@ -73,6 +73,18 @@ coverage/
 playwright-report/
 test-results/
 
+### Removed legacy / duplicate project files ###
+/Dockerfile
+/.dockerignore
+/Jenkinsfile
+/gradlew
+/gradlew.bat
+/gradle.properties
+/settings.gradle
+/gradle/
+/EzPay_백엔드_포트폴리오.md
+/EzPay_백엔드_포트폴리오.pdf
+
 ### Plugin / Tool Specific ###
 .idea/**/workspace.xml
 .idea/**/tasks.xml
