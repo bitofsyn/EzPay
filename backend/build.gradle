@@ -64,6 +64,8 @@ dependencies {
     implementation 'com.mysql:mysql-connector-j' // MySQL (로컬/테스트용)
     implementation 'org.postgresql:postgresql' // PostgreSQL (RDS용)
     implementation 'com.h2database:h2' // H2 DB (테스트용)
+    implementation 'org.flywaydb:flyway-core'
+    runtimeOnly 'org.flywaydb:flyway-database-postgresql'
 
     // QueryDSL 최신 버전 (5.0.0, Jakarta 버전)
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'

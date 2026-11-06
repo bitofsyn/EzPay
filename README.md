@@ -104,7 +104,7 @@ AI Category Server는 거래 정보를 받아 카테고리를 분류하는 Pytho
 | Backend | Java 17, Spring Boot 3.4, Spring Security, Spring Data JPA, QueryDSL |
 | Frontend | React 18, TypeScript, Vite, Tailwind CSS, Recharts |
 | AI Server | Python, FastAPI, scikit-learn, Pydantic, MLflow |
-| Database | PostgreSQL, H2 |
+| Database | PostgreSQL, H2, Flyway |
 | Messaging | Apache Kafka |
 | Monitoring | Spring Actuator, Micrometer, Prometheus, Grafana |
 | Infrastructure | Docker, Docker Compose, Nginx |
@@ -116,6 +116,7 @@ EzPay/
 ├── backend/                    # 인증, 계좌, 송금, 알림과 관리자 API
 ├── frontend/                   # 사용자 및 관리자 웹 화면
 ├── ai-category-server/         # 거래 카테고리 분류와 Kafka 연동
+├── docs/                       # 설계 및 데이터베이스 변경 문서
 ├── monitoring/                 # Prometheus·Grafana 설정
 ├── docker-compose.yml          # 애플리케이션 실행 환경
 ├── docker-compose-monitoring.yml
