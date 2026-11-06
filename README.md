@@ -1,388 +1,263 @@
-# EzPay - 간편 송금 서비스
+# EzPay
 
-![Java](https://img.shields.io/badge/Java-17-orange)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.2-green)
-![React](https://img.shields.io/badge/React-18.2-blue)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-RDS-336791)
-![AWS](https://img.shields.io/badge/AWS-CloudFront%20%7C%20S3-orange)
+> 계좌 관리부터 송금, 거래 내역 확인, 알림까지 한곳에서 이용할 수 있는 간편 송금 서비스
 
----
+EzPay는 사용자가 계좌를 등록하고 송금과 거래 내역을 관리할 수 있도록 만든 프로젝트입니다. 사용자 화면에서는 자산과 소비 현황을 확인할 수 있으며, 관리자 화면에서는 사용자·거래·오류·위험 거래와 서비스 상태를 관리할 수 있습니다.
 
-## 프로젝트 목표
+송금 요청이 동시에 발생해도 잔액이 어긋나거나 같은 요청이 중복 처리되지 않도록 **계좌 잠금과 요청 식별값을 사용해 거래의 일관성을 유지**합니다. 송금 이후의 알림, 기록, 분류 작업은 메시지 기반으로 분리해 일부 기능의 지연이 전체 송금 과정에 미치는 영향을 줄였습니다.
 
-EzPay는 단순 화면 데모가 아니라 송금 정합성과 운영 가시성을 함께 다루는 간편 송금 플랫폼입니다.
+## 주요 기능
 
-- 비관적 락과 멱등성 키를 이용한 안전한 계좌 이체
-- Kafka 비동기 처리, 재시도 및 Dead Letter Topic
-- 송금 한도와 규칙 기반 FDS 차단·보류
-- 사용자 알림과 관리자 실시간 관제(SSE)
-- JWT/OAuth 인증과 사용자·관리자 권한 분리
+- 회원가입, 로그인, 로그아웃과 비밀번호 재설정
+- 카카오·네이버 계정을 이용한 소셜 로그인
+- 계좌 등록, 조회, 삭제와 주계좌 설정
+- 계좌 간 송금, 송금 취소와 처리 결과 조회
+- 거래 내역 검색, 필터 저장과 월별 소비 통계
+- 송금 한도 설정과 고액·반복 송금 등 위험 거래 확인
+- 사용자 알림, 읽음 처리와 실시간 알림 수신
+- 사용자·거래·오류·실패 이벤트를 관리하는 관리자 화면
+- 거래 카테고리 자동 분류와 분류 결과 후속 처리
+- 서비스 상태와 처리량을 확인하는 모니터링 환경
 
----
+## 시스템 구조
 
-## 🌐 배포 정보
-
-| 환경 | URL | 상태 |
-|------|-----|------|
-| **프론트엔드** | `der7dm75txez.cloudfront.net` | ✅ 배포 완료 |
-| **백엔드 API** | 배포 환경에서 설정 | 저장소에서 확인 불가 |
-| **헬스 체크** | `<Backend URL>/health` | 배포 후 확인 필요 |
-
----
-
-## 📋 프로젝트 구조
-
+```mermaid
+flowchart LR
+    A[사용자 / 관리자] --> B[React Web UI]
+    B --> C[Spring Boot API]
+    C --> D[(PostgreSQL)]
+    C --> E[송금 처리 및 위험도 확인]
+    E --> D
+    E --> F[Kafka]
+    F --> G[알림 및 운영 기록]
+    F --> H[AI Category Server]
+    H --> I[ML Model / Local LLM / NVIDIA NIM]
+    C --> J[Prometheus]
+    H --> J
+    J --> K[Grafana]
 ```
+
+### 송금 처리 흐름
+
+1. **요청 확인**: 로그인 사용자, 출금 계좌, 수취 계좌, 금액과 송금 한도를 확인합니다.
+2. **중복 방지**: 요청 식별값으로 같은 송금이 다시 처리되는 것을 방지합니다.
+3. **위험도 확인**: 고액 송금, 짧은 시간의 반복 요청, 차단 계좌 여부를 규칙으로 확인합니다.
+4. **잔액 변경**: 계좌를 잠근 상태에서 출금과 입금을 하나의 거래로 처리합니다.
+5. **후속 처리**: 완료된 거래를 Kafka로 전달해 알림, 기록과 카테고리 분류를 이어서 처리합니다.
+6. **결과 확인**: 사용자는 거래 내역과 알림을 확인하고, 관리자는 위험 거래와 실패 이벤트를 검토합니다.
+
+송금 자체의 성공 여부와 부가 작업을 분리해 알림이나 분류 서비스에 일시적인 문제가 생겨도 핵심 거래가 불필요하게 영향을 받지 않도록 구성했습니다. 처리에 실패한 이벤트는 별도로 기록하며 관리자가 확인하고 다시 시도할 수 있습니다.
+
+## 위험 거래 확인
+
+| 확인 항목 | 설명 | 처리 방식 |
+|---|---|---|
+| 고액 송금 | 설정된 주의·위험 금액 이상인지 확인 | 점수 반영 또는 차단 |
+| 반복 송금 | 짧은 시간에 송금 요청이 반복되는지 확인 | 횟수에 따라 차단 |
+| 차단 계좌 | 관리 대상 계좌가 송금에 포함되는지 확인 | 즉시 차단 |
+| 송금 한도 | 사용자의 일일·건별 한도를 초과하는지 확인 | 요청 거절 |
+| 장애 격리 | 위험도 확인 기능에 연속 오류가 발생하는지 확인 | 일시적으로 호출 제한 |
+
+판단 기준은 환경변수로 조정할 수 있으며, 보류되거나 차단된 거래는 관리자 화면에서 확인할 수 있습니다.
+
+## 거래 카테고리 분류
+
+AI Category Server는 거래 정보를 받아 카테고리를 분류하는 Python 기반 서비스입니다.
+
+- 학습된 분류 모델을 먼저 사용해 빠르게 결과를 생성합니다.
+- 신뢰도가 낮은 경우 설정에 따라 LLM 분석으로 전환할 수 있습니다.
+- 로컬 LM Studio와 NVIDIA NIM을 지원합니다.
+- 제공자 호출 실패 시 재시도하고 설정된 대체 제공자로 전환합니다.
+- Kafka를 통해 분류 요청과 완료 이벤트를 비동기로 처리합니다.
+- 모델 학습 결과와 실험 정보는 MLflow에서 관리할 수 있습니다.
+
+외부 AI 서비스가 설정되지 않아도 기본 분류 기능과 송금 서비스는 독립적으로 실행할 수 있습니다.
+
+## 기술 스택
+
+| 영역 | 기술 |
+|---|---|
+| Backend | Java 17, Spring Boot 3.4, Spring Security, Spring Data JPA, QueryDSL |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, Recharts |
+| AI Server | Python, FastAPI, scikit-learn, Pydantic, MLflow |
+| Database | PostgreSQL, H2 |
+| Messaging | Apache Kafka |
+| Monitoring | Spring Actuator, Micrometer, Prometheus, Grafana |
+| Infrastructure | Docker, Docker Compose, Nginx |
+
+## 저장소 구성
+
+```text
 EzPay/
-├── backend/                    # Spring Boot API
-│   ├── build.gradle           # Gradle 설정 (Java 17)
-│   ├── src/main/resources/
-│   │   └── application.yml    # 환경변수 기반 설정
-│   └── src/main/java/
-│       └── com.example.ezpay/
-├── frontend/                   # React + Vite
-│   ├── vite.config.ts
-│   ├── .env                   # API URL 설정
-│   ├── src/
-│   └── dist/                  # S3에 배포되는 파일
-└── README.md
+├── backend/                    # 인증, 계좌, 송금, 알림과 관리자 API
+├── frontend/                   # 사용자 및 관리자 웹 화면
+├── ai-category-server/         # 거래 카테고리 분류와 Kafka 연동
+├── monitoring/                 # Prometheus·Grafana 설정
+├── docker-compose.yml          # 애플리케이션 실행 환경
+├── docker-compose-monitoring.yml
+├── start.sh                    # 전체 서비스 실행
+└── stop.sh                     # 전체 서비스 종료
 ```
 
----
+## 주요 화면
 
-## 🚀 빠른 시작
+- **대시보드**: 총자산, 월별 지출, 최근 거래와 자주 송금한 사용자 확인
+- **계좌**: 계좌 등록, 상세 조회, 삭제와 주계좌 변경
+- **송금**: 수취인과 금액 입력, 송금 결과 확인
+- **거래 내역**: 조건별 검색, 필터 저장과 상세 내역 조회
+- **통계**: 기간·카테고리별 지출 현황 확인
+- **알림**: 송금과 서비스 알림 조회 및 읽음 처리
+- **관리자**: 사용자, 거래, 송금 한도, 위험 거래와 실패 이벤트 관리
+- **운영 화면**: 시스템 로그, 오류, 처리량과 거래 처리 단계 확인
 
-### 백엔드 (Render에 배포됨)
+## 빠른 실행
 
-#### 로컬 개발
+### 사전 준비
 
-**1. 환경변수 설정** (`backend/.env`)
+- Docker Desktop 및 Docker Compose
+- PostgreSQL 데이터베이스
+- 컨테이너를 사용하지 않는 경우 Java 17, Node.js 18 이상과 Python 3
+
+### 환경 파일 준비
+
+비밀값을 포함하는 환경 파일은 저장소에서 제외됩니다. 실행 전에 다음 파일을 직접 생성합니다.
+
+`backend/.env`
+
 ```env
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/ezpay
+SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/ezpay
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=your-password
-SPRING_KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
-FRONTEND_BASE_URL=http://localhost:5173
-```
-
-**2. 빌드 및 실행**
-```bash
-cd backend
-./gradlew bootRun
-```
-
-백엔드는 `http://localhost:8081`에서 시작됩니다.
-
----
-
-### 프론트엔드 (CloudFront + S3에 배포됨)
-
-#### 로컬 개발
-
-**1. 의존성 설치**
-```bash
-cd frontend
-npm install
-```
-
-**2. 개발 서버 실행**
-```bash
-npm run start
-```
-
-프론트엔드는 `http://localhost:5173`에서 시작됩니다.
-
-**3. 프로덕션 빌드**
-```bash
-npm run build
-```
-
-`frontend/dist/` 폴더가 생성됩니다.
-
----
-
-## 🌍 배포 가이드
-
-### 1. 백엔드 배포 (Render)
-
-#### 환경변수 설정 (Render Dashboard)
-
-```env
-# 필수
-DATABASE_URL=jdbc:postgresql://<RDS-ENDPOINT>:5432/ezpay?sslmode=require
-DB_USERNAME=postgres
-DB_PASSWORD=<YOUR_RDS_PASSWORD>
-SPRING_PROFILES_ACTIVE=prod
-PORT=8080
-
-# CORS
-CORS_ALLOWED_ORIGINS=http://localhost:3000,https://<YOUR_CLOUDFRONT_DOMAIN>
-
-# Email
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
-
-# API Security
-EZPAY_INTERNAL_API_SECRET_KEY=<RANDOM_SECRET_KEY>
-
-# Monitoring (선택사항)
-SENTRY_DSN=<YOUR_SENTRY_DSN>
-```
-
-#### 배포 명령
-
-```bash
-# Render 대시보드에서 "Manual Deploy" 클릭
-# 또는 GitHub 푸시 시 자동 배포 (GitHub 연결 필요)
-```
-
-#### 빌드 및 시작 설정
-
-- **Root directory**: `backend/`
-- **Build command**: `./gradlew clean bootJar -x test`
-- **Start command**: `java -jar build/libs/app.jar`
-
-#### 배포 확인
-
-```bash
-# 헬스 체크
-curl https://<YOUR_BACKEND_DOMAIN>/health
-# 응답: {"status":"ok"}
-```
-
----
-
-### 2. 프론트엔드 배포 (S3 + CloudFront)
-
-#### 단계 1: 빌드
-
-```bash
-cd frontend
-npm run build
-```
-
-#### 단계 2: API URL 설정
-
-`frontend/.env` 수정:
-```env
-VITE_API_BASE_URL=https://<YOUR_BACKEND_DOMAIN>
-```
-
-#### 단계 3: S3에 업로드
-
-```bash
-aws s3 sync frontend/dist/ s3://<YOUR_BUCKET_NAME>/ --delete
-```
-
-#### 단계 4: CloudFront 캐시 무효화
-
-```bash
-aws cloudfront create-invalidation \
-  --distribution-id <YOUR_DISTRIBUTION_ID> \
-  --paths "/*"
-```
-
-#### 단계 5: CloudFront 설정
-
-**AWS CloudFront Console**:
-1. Distribution ID: `<YOUR_DISTRIBUTION_ID>`
-2. Settings → Default Root Object: `index.html`
-3. Save
-
----
-
-## 📊 기술 스택
-
-### 백엔드
-
-| 기술 | 버전 | 용도 |
-|------|------|------|
-| Java | 17 | 언어 |
-| Spring Boot | 3.4.2 | 프레임워크 |
-| Spring Security | 6.4.5 | 인증/인가 |
-| JPA/Hibernate | - | ORM |
-| PostgreSQL | - | 데이터베이스 |
-| JWT | 0.12.6 | 토큰 인증 |
-
-### 프론트엔드
-
-| 기술 | 버전 | 용도 |
-|------|------|------|
-| React | 18.2 | UI 라이브러리 |
-| Vite | - | 빌드 도구 |
-| TypeScript | - | 타입 안전성 |
-| Axios | - | HTTP 클라이언트 |
-
-### 배포/인프라
-
-| 서비스 | 용도 |
-|--------|------|
-| AWS RDS (PostgreSQL) | 데이터베이스 |
-| AWS S3 | 프론트엔드 호스팅 |
-| AWS CloudFront | CDN |
-| Render | 백엔드 호스팅 |
-
----
-
-## 🔐 보안
-
-### 환경변수 관리
-
-민감 정보는 환경변수로만 관리됩니다:
-- ✅ 백엔드: Render Environment Variables
-- ✅ 프론트엔드: 빌드 타임 환경변수 (`.env`)
-- ❌ 코드에 하드코딩 금지
-
-### CORS 정책
-
-백엔드는 다음 도메인만 허용:
-```
-http://localhost:3000 (로컬 개발)
-https://<YOUR_CLOUDFRONT_DOMAIN> (프로덕션)
-```
-
-### HTTPS 적용
-
-- ✅ CloudFront: HTTPS 자동 제공
-- ✅ Render: 자동 SSL/TLS
-- ✅ RDS: SSL 암호화 연결
-
----
-
-## 📝 API 문서
-
-### 헬스 체크
-
-```http
-GET /health
-```
-
-**응답:**
-```json
-{"status":"ok"}
-```
-
----
-
-## 🛠️ 로컬 개발 환경 설정
-
-### 필수 설치
-
-- Java 17
-- Node.js 18+
-- PostgreSQL 14+
-- Git
-
-### 데이터베이스 설정
-
-```bash
-# PostgreSQL 로컬 실행
-createdb ezpay
-
-# 또는 Docker 사용
-docker run -d \
-  -e POSTGRES_DB=ezpay \
-  -e POSTGRES_PASSWORD=password \
-  -p 5432:5432 \
-  postgres:14
-```
-
-### 환경변수 설정
-
-**backend/.env**:
-```env
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/ezpay
-SPRING_DATASOURCE_USERNAME=postgres
-SPRING_DATASOURCE_PASSWORD=password
 SPRING_PROFILES_ACTIVE=local
+SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+FRONTEND_BASE_URL=http://localhost:3000
 ```
 
-**frontend/.env**:
+`frontend/.env`
+
 ```env
 VITE_API_BASE_URL=http://localhost:8081
 ```
 
-### 동시 실행
+`ai-category-server/config/.env`
 
-**터미널 1 (백엔드)**:
+```env
+KAFKA_ENABLED=true
+KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+AI_PRIMARY_PROVIDER=local
+AI_FALLBACK_ENABLED=false
+LM_STUDIO_BASE_URL=http://host.docker.internal:1234/v1
+LM_STUDIO_MODEL=local-model
+```
+
+### 전체 서비스 실행
+
+저장소 루트에서 다음 명령을 실행합니다.
+
+```bash
+./start.sh
+```
+
+| 서비스 | 주소 |
+|---|---|
+| Web UI | http://localhost:3000 |
+| Backend API | http://localhost:8081 |
+| AI Category API | http://localhost:8000 |
+| MLflow | http://localhost:5001 |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3001 |
+
+서비스를 종료할 때는 다음 명령을 사용합니다.
+
+```bash
+./stop.sh
+```
+
+데이터 볼륨까지 함께 삭제하려면 `./stop.sh -v`를 사용합니다. 이 명령은 Kafka, MLflow와 모니터링 데이터를 복구할 수 없게 삭제하므로 주의해야 합니다.
+
+## 환경 설정
+
+주요 설정은 코드에 저장하지 않고 환경변수로 주입합니다.
+
+| 변수 | 설명 | 기본값 |
+|---|---|---|
+| `SPRING_DATASOURCE_URL` | PostgreSQL 연결 주소 | 로컬 PostgreSQL |
+| `SPRING_DATASOURCE_USERNAME` | 데이터베이스 사용자 | `postgres` |
+| `SPRING_DATASOURCE_PASSWORD` | 데이터베이스 비밀번호 | 로컬 개발값 |
+| `SPRING_KAFKA_BOOTSTRAP_SERVERS` | Kafka 연결 주소 | `localhost:9092` |
+| `SMTP_USERNAME` | 비밀번호 재설정 메일 발신 계정 | 필수 |
+| `SMTP_PASSWORD` | 메일 계정 비밀번호 | 필수 |
+| `KAKAO_CLIENT_ID` | 카카오 로그인 클라이언트 ID | 미설정 |
+| `NAVER_CLIENT_ID` | 네이버 로그인 클라이언트 ID | 미설정 |
+| `EZPAY_FDS_BLOCK_SCORE` | 위험 거래 차단 점수 | `80` |
+| `EZPAY_FDS_REVIEW_SCORE` | 관리자 검토 점수 | `40` |
+| `NVIDIA_API_KEY` | NVIDIA NIM 인증 키 | 미설정 |
+| `SENTRY_DSN` | 오류 수집 서비스 연결 주소 | 미설정 |
+
+## 주요 API
+
+| 영역 | 경로 | 설명 |
+|---|---|---|
+| 인증 | `POST /users/signup` | 회원가입 |
+| 인증 | `POST /users/login` | 로그인 및 토큰 발급 |
+| 인증 | `POST /users/oauth/{provider}/login` | 소셜 로그인 |
+| 계좌 | `GET /account/me` | 내 계좌 조회 |
+| 계좌 | `POST /account` | 계좌 등록 |
+| 송금 | `POST /transaction/transfer` | 송금 요청 |
+| 송금 | `GET /transaction/transfer/{requestId}` | 송금 처리 결과 조회 |
+| 거래 | `GET /transaction/account/{accountId}` | 계좌별 거래 내역 조회 |
+| 통계 | `GET /api/statistics/spending-summary` | 소비 요약 조회 |
+| 알림 | `GET /user-notifications` | 내 알림 조회 |
+| 알림 | `GET /user-notifications/stream` | 실시간 알림 연결 |
+| 관리자 | `GET /admin/dashboard` | 관리자 대시보드 조회 |
+| 관리자 | `GET /admin/risk-transactions` | 위험 거래 조회 |
+| 관리자 | `POST /admin/failed-events/{id}/retry` | 실패 이벤트 재처리 |
+
+## 개별 실행 및 테스트
+
+### Backend
+
 ```bash
 cd backend
 ./gradlew bootRun
+./gradlew test
 ```
 
-**터미널 2 (프론트엔드)**:
+백엔드 테스트에는 송금 동시성, 계좌 잠금, 사용자 권한, 비밀번호 재설정, 위험 거래와 Kafka 실패 이벤트 처리가 포함됩니다. PostgreSQL 기반 테스트에는 Docker가 필요합니다.
+
+### Frontend
+
 ```bash
 cd frontend
+npm ci
 npm run start
-```
-
----
-
-## ✅ 테스트
-
-```bash
-# 백엔드 전체 테스트
-cd backend
-./gradlew clean test
-
-# 프론트엔드 정적 검사·빌드·브라우저 E2E
-cd ../frontend
 npm run lint
 npm run build
 npm run test:e2e
 ```
 
-백엔드 전체 테스트에는 PostgreSQL 16 Testcontainers 기반 송금 E2E가 포함됩니다. Docker를 사용할 수 없는 환경에서는 PostgreSQL 컨테이너 테스트만 건너뛰며, H2·Embedded Kafka 기반 E2E는 계속 실행됩니다.
+### AI Category Server
 
----
+```bash
+cd ai-category-server
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
 
-## ✨ 주요 기능
+## 보안 및 운영 시 주의사항
 
-- ✅ 회원가입/로그인 (JWT 토큰)
-- ✅ 계좌 생성 및 관리
-- ✅ 계좌 송금
-- ✅ 거래 내역 조회
-- ✅ 계좌 통계
-- ✅ 관리자 대시보드
-- ✅ 비밀번호 재설정
+- `.env`, API 키, 인증서와 데이터베이스 자격 증명은 Git에 커밋하지 않습니다.
+- 운영 환경에서는 데이터베이스, SMTP, OAuth와 외부 AI 서비스의 비밀값을 별도의 Secret Manager로 관리해야 합니다.
+- 기본 데이터베이스 비밀번호와 Grafana 계정은 로컬 개발 편의를 위한 값이므로 운영 환경에서 반드시 변경해야 합니다.
+- 사용자별 계좌와 거래 API는 JWT 인증과 소유권 검사를 전제로 합니다.
+- CORS 허용 주소는 실제 프런트엔드 도메인으로 제한해야 합니다.
+- 위험 거래 규칙은 보조 안전장치이며 실제 금융기관의 심사나 법적 판단을 대신하지 않습니다.
+- 운영 환경에서는 Actuator와 모니터링 포트의 외부 접근을 제한해야 합니다.
 
----
+## 프로젝트 범위
 
-## 📞 문제 해결
-
-### 프론트엔드가 백엔드를 찾을 수 없음
-
-**확인 사항:**
-1. 백엔드가 실행 중인지 확인: `https://<YOUR_BACKEND_DOMAIN>/health`
-2. `frontend/.env`의 `VITE_API_BASE_URL`이 올바른지 확인
-3. CORS 설정 확인: `CORS_ALLOWED_ORIGINS`에 프론트엔드 URL 포함
-
-### 데이터베이스 연결 실패
-
-**확인 사항:**
-1. RDS 엔드포인트 확인
-2. 보안 그룹에서 5432 포트 열려있는지 확인
-3. 자격증명 (사용자명/비밀번호) 확인
-
-### CloudFront에서 404 에러
-
-**확인 사항:**
-1. S3 버킷에 파일이 업로드되었는지 확인
-2. CloudFront의 Default Root Object가 `index.html`로 설정되었는지 확인
-3. 캐시 무효화 확인
-
----
-
-## 🔄 향후 개선
-
-- [ ] 커스텀 도메인 (`ezpay.com`) 연결
-- [ ] 모바일 앱 개발
-- [ ] 2FA 추가
-- [ ] 암호화폐 연동
-- [ ] AI 기반 사기 탐지
-
----
-
-**마지막 업데이트**: 2026-11-03
+EzPay는 계좌 관리, 송금, 거래 내역과 운영 기능을 하나의 흐름으로 구현한 학습용 프로젝트입니다. 실제 금융기관과 연결하거나 실물 자금을 이체하지 않으며, 운영 환경에서 사용하려면 본인 확인, 전자금융 규정, 데이터 암호화, 감사와 장애 복구 정책을 추가로 검토해야 합니다.

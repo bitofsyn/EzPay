@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # EzPay 전체 스택을 빌드하고 백그라운드로 기동한다.
-#   - 앱 스택        : docker-compose.yml (backend / frontend / ai-category / kafka / zookeeper / mlflow / jenkins)
+#   - 앱 스택        : docker-compose.yml (backend / frontend / ai-category / kafka / zookeeper / mlflow)
 #   - 모니터링 스택  : docker-compose-monitoring.yml (prometheus / grafana)
 #
 # 사용법: ./start.sh
