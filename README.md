@@ -28,6 +28,21 @@ EzPay는 사용자가 계좌를 등록하고 송금과 거래 내역을 관리�
 
 ## 시스템 구조
 
+### 현재 배포 구조
+
+현재 공개된 서비스는 프런트엔드, 백엔드와 데이터베이스로 구성되어 있습니다.
+
+```mermaid
+flowchart LR
+    A[사용자] --> B[Cloudflare Workers<br/>React Web UI]
+    B --> C[Render<br/>Spring Boot API]
+    C --> D[(PostgreSQL)]
+```
+
+### 전체 구성
+
+Kafka, AI Category Server와 모니터링 도구를 포함한 전체 구성은 로컬 개발 또는 별도의 실행 환경에서 사용할 수 있습니다.
+
 ```mermaid
 flowchart LR
     A[사용자 / 관리자] --> B[React Web UI]
@@ -117,7 +132,9 @@ EzPay/
 - **관리자**: 사용자, 거래, 송금 한도, 위험 거래와 실패 이벤트 관리
 - **운영 화면**: 시스템 로그, 오류, 처리량과 거래 처리 단계 확인
 
-## 빠른 실행
+## 로컬 개발 환경 실행
+
+아래 내용은 코드를 수정하거나 전체 구성을 직접 실행할 때 사용하는 로컬 개발 안내입니다. 서비스를 바로 확인하려면 상단의 [배포 주소](#배포-주소)를 이용할 수 있습니다.
 
 ### 사전 준비
 
@@ -167,7 +184,9 @@ LM_STUDIO_MODEL=local-model
 ./start.sh
 ```
 
-| 서비스 | 주소 |
+실행 후 다음 로컬 주소에서 각 서비스를 확인할 수 있습니다.
+
+| 서비스 | 로컬 주소 |
 |---|---|
 | Web UI | http://localhost:3000 |
 | Backend API | http://localhost:8081 |
@@ -256,13 +275,6 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 ## 배포 구성
-
-```mermaid
-flowchart LR
-    A[사용자] --> B[Cloudflare Workers<br/>React 정적 웹]
-    B --> C[Render<br/>Spring Boot API]
-    C --> D[(PostgreSQL)]
-```
 
 | 영역 | 서비스 | 설정 |
 |---|---|---|
