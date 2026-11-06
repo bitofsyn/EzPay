@@ -1,5 +1,7 @@
 # EzPay
 
+[![CI](https://github.com/bitofsyn/EzPay/actions/workflows/ci.yml/badge.svg)](https://github.com/bitofsyn/EzPay/actions/workflows/ci.yml)
+
 > 계좌 관리부터 송금, 거래 내역 확인, 알림까지 한곳에서 이용할 수 있는 간편 송금 서비스
 
 EzPay는 사용자가 계좌를 등록하고 송금과 거래 내역을 관리할 수 있도록 만든 프로젝트입니다. 사용자 화면에서는 자산과 소비 현황을 확인할 수 있으며, 관리자 화면에서는 사용자·거래·오류·위험 거래와 서비스 상태를 관리할 수 있습니다.
