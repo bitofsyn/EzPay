@@ -6,6 +6,13 @@ EzPay는 사용자가 계좌를 등록하고 송금과 거래 내역을 관리�
 
 송금 요청이 동시에 발생해도 잔액이 어긋나거나 같은 요청이 중복 처리되지 않도록 **계좌 잠금과 요청 식별값을 사용해 거래의 일관성을 유지**합니다. 송금 이후의 알림, 기록, 분류 작업은 메시지 기반으로 분리해 일부 기능의 지연이 전체 송금 과정에 미치는 영향을 줄였습니다.
 
+## 배포 주소
+
+- **Web UI**: [https://ezpay.soyounjeong6276.workers.dev](https://ezpay.soyounjeong6276.workers.dev)
+- **Backend 상태 확인**: [https://ezpay-82sw.onrender.com/health](https://ezpay-82sw.onrender.com/health)
+
+프런트엔드는 Cloudflare Workers, 백엔드는 Render에 배포되어 있습니다. Render 무료 인스턴스는 일정 시간 요청이 없으면 중지되므로 첫 접속 시 응답까지 시간이 걸릴 수 있습니다.
+
 ## 주요 기능
 
 - 회원가입, 로그인, 로그아웃과 비밀번호 재설정
@@ -248,60 +255,31 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-## 무료 배포 구성
-
-여러 개의 서버와 Kafka를 사용하는 현재 구성을 일반적인 무료 웹 호스팅 한 곳에 모두 올리기는 어렵습니다. 다음처럼 역할을 나누면 별도의 월 사용료 없이 배포할 수 있습니다.
-
-| 영역 | 서비스 | 역할 |
-|---|---|---|
-| Frontend | [Cloudflare Pages](https://pages.cloudflare.com/) | React 정적 파일 배포와 HTTPS 제공 |
-| Backend | [Oracle Cloud Free Tier](https://www.oracle.com/cloud/free/) | Spring Boot, Kafka, AI Category Server 실행 |
-| Database | [Neon Free Plan](https://neon.com/pricing) | PostgreSQL 데이터 저장 |
+## 배포 구성
 
 ```mermaid
 flowchart LR
-    A[Cloudflare Pages<br/>React] --> B[Oracle Cloud VM<br/>Spring Boot]
-    B --> C[(Neon PostgreSQL)]
-    B --> D[Kafka]
-    D --> E[AI Category Server]
+    A[사용자] --> B[Cloudflare Workers<br/>React 정적 웹]
+    B --> C[Render<br/>Spring Boot API]
+    C --> D[(PostgreSQL)]
 ```
 
-### 1. 데이터베이스
+| 영역 | 서비스 | 설정 |
+|---|---|---|
+| Frontend | Cloudflare Workers | Root `frontend`, Build `npm ci && npm run build` |
+| Backend | Render Web Service | Root `backend`, Docker 기반 배포 |
+| Database | PostgreSQL | Render 환경변수로 연결 정보 주입 |
 
-Neon에서 무료 PostgreSQL 프로젝트를 만들고 발급된 연결 정보를 Oracle VM의 `backend/.env`에 등록합니다.
+프런트엔드 빌드에는 다음 환경변수를 사용합니다.
 
 ```env
-SPRING_DATASOURCE_URL=jdbc:postgresql://<NEON_HOST>/<DATABASE>?sslmode=require
-SPRING_DATASOURCE_USERNAME=<NEON_USER>
-SPRING_DATASOURCE_PASSWORD=<NEON_PASSWORD>
-SPRING_PROFILES_ACTIVE=prod
+VITE_API_BASE_URL=https://ezpay-82sw.onrender.com
 ```
 
-### 2. 백엔드와 부가 서비스
+백엔드의 `CORS_ALLOWED_ORIGINS`에는 프런트엔드 주소를 등록합니다.
 
-Oracle Cloud의 Always Free Ampere A1 VM에 Docker와 Git을 설치한 뒤 저장소를 내려받습니다. 환경 파일을 준비하고 필요한 서비스만 실행합니다.
-
-```bash
-git clone https://github.com/bitofsyn/EzPay.git
-cd EzPay
-docker compose up -d --build backend kafka zookeeper ai-category
+```env
+CORS_ALLOWED_ORIGINS=https://ezpay.soyounjeong6276.workers.dev
 ```
 
-메모리를 절약하려면 MLflow, Prometheus와 Grafana는 배포 대상에서 제외하고 필요할 때만 실행합니다. Ampere A1은 ARM 기반이므로 Docker 이미지가 실행되지 않을 경우 ARM64를 지원하는 이미지로 변경하거나 해당 서비스를 VM에서 직접 빌드해야 합니다.
-
-백엔드 API는 무료 도메인 또는 보유한 도메인에 연결하고 Caddy나 Nginx로 HTTPS를 적용합니다. Oracle Cloud 보안 목록에서는 외부에 공개할 HTTP·HTTPS 포트만 허용합니다.
-
-### 3. 프런트엔드
-
-Cloudflare Pages에서 GitHub 저장소를 연결하고 다음 빌드 설정을 사용합니다.
-
-| 항목 | 값 |
-|---|---|
-| Root directory | `frontend` |
-| Build command | `npm ci && npm run build` |
-| Build output directory | `dist` |
-| Environment variable | `VITE_API_BASE_URL=https://<BACKEND_DOMAIN>` |
-
-배포가 끝나면 Cloudflare가 제공하는 `pages.dev` 주소에서 서비스를 확인할 수 있습니다. 백엔드의 `CORS_ALLOWED_ORIGINS`에는 발급된 Pages 주소를 등록해야 합니다.
-
-Oracle Always Free 자원은 리전별로 생성 가능한 수량이 다르고 오래 사용하지 않는 인스턴스가 회수될 수 있습니다. 무료 정책과 제공량은 계정 생성 전에 각 서비스의 공식 안내에서 다시 확인해야 합니다.
+GitHub `main` 브랜치에 변경 사항을 푸시하면 각 서비스가 연결된 저장소를 기준으로 다시 빌드하고 배포합니다.
