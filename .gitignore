@@ -84,6 +84,8 @@ test-results/
 /gradle/
 /EzPay_백엔드_포트폴리오.md
 /EzPay_백엔드_포트폴리오.pdf
+/image/
+/docs/
 
 ### Plugin / Tool Specific ###
 .idea/**/workspace.xml
