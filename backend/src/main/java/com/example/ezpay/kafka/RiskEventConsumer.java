@@ -4,6 +4,7 @@ import com.example.ezpay.modules.risk.entity.RiskLevel;
 import com.example.ezpay.modules.risk.entity.RiskTransaction;
 import com.example.ezpay.modules.risk.entity.RiskTransactionStatus;
 import com.example.ezpay.modules.risk.service.RiskTransactionService;
+import com.example.ezpay.modules.notification.internal.service.AdminNotificationService;
 import com.example.ezpay.shared.messaging.config.KafkaConfig;
 import com.example.ezpay.shared.messaging.events.RiskDetectionEvent;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 public class RiskEventConsumer {
 
     private final RiskTransactionService riskTransactionService;
+    private final AdminNotificationService adminNotificationService;
 
     @KafkaListener(
             topics = KafkaConfig.RISK_DETECTION_EVENTS_TOPIC,
@@ -56,6 +58,7 @@ public class RiskEventConsumer {
                 .build();
 
         riskTransactionService.save(riskTransaction);
+        adminNotificationService.notifyRiskDetected(riskTransaction);
         ack.acknowledge();
     }
 }

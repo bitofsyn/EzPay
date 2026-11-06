@@ -9,8 +9,6 @@ import com.example.ezpay.repository.user.NotificationRepository;
 import com.example.ezpay.repository.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +22,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
-    private final JavaMailSender mailSender;
+    private final EmailDeliveryService emailDeliveryService;
 
     @Override
     @Transactional(readOnly = true)
@@ -69,20 +67,24 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private void initEmail(String to) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("EzPay 이메일 알림 설정 완료");
-        message.setText("이메일 알림 수신이 성공적으로 설정되었습니다");
-        mailSender.send(message);
+        emailDeliveryService.send(
+                to,
+                "EzPay 이메일 알림 설정 완료",
+                "이메일 알림 수신이 성공적으로 설정되었습니다.",
+                "NOTIFICATION_SETTING",
+                null
+        );
     }
 
     @Override
     public void sendMail(String to, Long amount, String receiverName) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("EzPay 송금 완료 알림");
-        message.setText(String.format("%s님에게 %s원이 성공적으로 송금되었습니다.", receiverName, amount));
-        mailSender.send(message);
+        emailDeliveryService.send(
+                to,
+                "EzPay 송금 완료 알림",
+                String.format("%s님에게 %,d원이 성공적으로 송금되었습니다.", receiverName, amount),
+                "TRANSFER_COMPLETED",
+                null
+        );
     }
 
     @Override

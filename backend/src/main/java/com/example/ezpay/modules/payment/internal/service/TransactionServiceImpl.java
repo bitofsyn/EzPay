@@ -14,6 +14,7 @@ import com.example.ezpay.repository.user.*;
 import com.example.ezpay.modules.payment.api.dto.AccountOwnerInfo;
 import com.example.ezpay.modules.payment.api.dto.TransferRequest;
 import com.example.ezpay.modules.notification.internal.service.NotificationService;
+import com.example.ezpay.modules.notification.internal.service.AdminNotificationService;
 import com.example.ezpay.modules.notification.internal.service.UserNotificationService;
 import com.example.ezpay.modules.realtime.EventBroadcaster;
 import com.example.ezpay.modules.realtime.dto.PipelineStage;
@@ -56,6 +57,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final NotificationRepository notificationRepository;
     private final ErrorLogService errorLogService;
     private final NotificationService notificationService;
+    private final AdminNotificationService adminNotificationService;
     private final UserNotificationService userNotificationService;
     private final EventBroadcaster eventBroadcaster;
     private final RiskTransactionService riskTransactionService;
@@ -152,6 +154,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .status(status)
                 .build();
         riskTransactionService.save(risk);
+        adminNotificationService.notifyRiskDetected(risk);
     }
 
     // 송금 요청 (kafka 이벤트 발행)
