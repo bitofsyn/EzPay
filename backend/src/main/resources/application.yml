@@ -124,6 +124,12 @@ sentry:
 ezpay:
   kafka:
     enabled: ${EZPAY_KAFKA_ENABLED:false}
+  notification:
+    admin-email: ${ADMIN_ALERT_EMAIL:${SMTP_USERNAME:}}
+    email:
+      max-attempts: ${EMAIL_MAX_ATTEMPTS:3}
+      retry-delay-seconds: ${EMAIL_RETRY_DELAY_SECONDS:60}
+      retry-interval-ms: ${EMAIL_RETRY_INTERVAL_MS:30000}
   # 사전 위험도 분석(FDS) 설정. 원장 기록 직전 동기 평가로 송금 차단/보류를 결정한다.
   fds:
     block-score: ${EZPAY_FDS_BLOCK_SCORE:80}     # 누적 위험 점수 >= 이 값이면 차단(BLOCK)

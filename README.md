@@ -53,7 +53,11 @@ flowchart LR
     C --> E[송금 처리 및 위험도 확인]
     E --> D
     E --> F[Kafka]
-    F --> G[알림 및 운영 기록]
+    F --> G[알림 처리]
+    G --> L[웹 실시간 알림 SSE]
+    G --> M[이메일 발송]
+    M --> N[(발송 이력 및 재시도)]
+    F --> O[운영 기록]
     F --> H[AI Category Server]
     H --> I[ML Model / Local LLM / NVIDIA NIM]
     C --> J[Prometheus]
@@ -71,6 +75,14 @@ flowchart LR
 6. **결과 확인**: 사용자는 거래 내역과 알림을 확인하고, 관리자는 위험 거래와 실패 이벤트를 검토합니다.
 
 송금 자체의 성공 여부와 부가 작업을 분리해 알림이나 분류 서비스에 일시적인 문제가 생겨도 핵심 거래가 불필요하게 영향을 받지 않도록 구성했습니다. 처리에 실패한 이벤트는 별도로 기록하며 관리자가 확인하고 다시 시도할 수 있습니다.
+
+### 알림 처리
+
+- 송금 완료와 입금 내역은 웹 알림으로 저장하고 SSE를 통해 실시간 전달합니다.
+- 이메일 알림을 활성화한 사용자는 송금 완료 메일을 받을 수 있습니다.
+- 이메일 발송 결과는 `PENDING`, `RETRYING`, `SENT`, `FAILED` 상태로 기록합니다.
+- 일시적인 SMTP 장애는 설정된 횟수까지 자동으로 재시도하며, 최종 실패 원인을 운영 기록으로 남깁니다.
+- 위험 거래가 감지되면 설정된 관리자 이메일로 거래 정보와 감지 사유를 전달합니다.
 
 ## 위험 거래 확인
 
@@ -218,6 +230,9 @@ LM_STUDIO_MODEL=local-model
 | `SPRING_KAFKA_BOOTSTRAP_SERVERS` | Kafka 연결 주소 | `localhost:9092` |
 | `SMTP_USERNAME` | 비밀번호 재설정 메일 발신 계정 | 필수 |
 | `SMTP_PASSWORD` | 메일 계정 비밀번호 | 필수 |
+| `ADMIN_ALERT_EMAIL` | 위험 거래 알림을 받을 관리자 이메일 | `SMTP_USERNAME` |
+| `EMAIL_MAX_ATTEMPTS` | 이메일 최대 발송 시도 횟수 | `3` |
+| `EMAIL_RETRY_DELAY_SECONDS` | 실패 후 재시도 대기 시간(초) | `60` |
 | `KAKAO_CLIENT_ID` | 카카오 로그인 클라이언트 ID | 미설정 |
 | `NAVER_CLIENT_ID` | 네이버 로그인 클라이언트 ID | 미설정 |
 | `EZPAY_FDS_BLOCK_SCORE` | 위험 거래 차단 점수 | `80` |

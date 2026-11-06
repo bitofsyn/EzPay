@@ -16,7 +16,7 @@ import com.example.ezpay.repository.user.NotificationRepository;
 import com.example.ezpay.repository.user.UserRepository;
 import com.example.ezpay.shared.security.CurrentUserService;
 import org.junit.jupiter.api.Test;
-import org.springframework.mail.javamail.JavaMailSender;
+import com.example.ezpay.modules.notification.internal.service.EmailDeliveryService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 
@@ -92,7 +92,7 @@ class UserResourceOwnershipTest {
     void rejectsDeletingAnotherUsersNotification() {
         NotificationRepository notificationRepository = mock(NotificationRepository.class);
         NotificationServiceImpl service = new NotificationServiceImpl(
-                notificationRepository, mock(UserRepository.class), mock(JavaMailSender.class));
+                notificationRepository, mock(UserRepository.class), mock(EmailDeliveryService.class));
         Notification foreignNotification = Notification.builder()
                 .notificationId(20L)
                 .user(User.builder().userId(OTHER_USER_ID).build())
