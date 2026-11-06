@@ -5,7 +5,7 @@
 #
 # 사용법:
 #   ./stop.sh          # 컨테이너/네트워크 중지·제거 (데이터 볼륨은 보존)
-#   ./stop.sh -v       # 볼륨까지 함께 제거 (DB/Kafka/Jenkins 데이터 삭제)
+#   ./stop.sh -v       # 볼륨까지 함께 제거 (Kafka/MLflow/모니터링 데이터 삭제)
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -26,7 +26,7 @@ MONITORING_COMPOSE="docker-compose-monitoring.yml"
 DOWN_ARGS=""
 if [[ "${1:-}" == "-v" || "${1:-}" == "--volumes" ]]; then
   DOWN_ARGS="--volumes"
-  echo "⚠️  볼륨까지 삭제합니다 (DB/Kafka/Jenkins 데이터가 사라집니다)."
+  echo "⚠️  볼륨까지 삭제합니다 (Kafka/MLflow/모니터링 데이터가 사라집니다)."
 fi
 
 echo "🧹 [1/2] 모니터링 스택 중지 중..."
