@@ -3,6 +3,8 @@
 *.iml
 out/
 gen/
+.claude/
+**/.claude/
 
 # VSCode (추가, 혹시 쓸 경우 대비)
 .vscode/
@@ -31,6 +33,7 @@ replay_pid*
 backend/.gradle-user-home/
 build/
 build/reports/
+backend/src/main/generated/
 
 ### Node (Frontend) ###
 frontend/node_modules/
@@ -43,13 +46,32 @@ frontend/public/
 **/.venv/
 __pycache__/
 *.pyc
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 ### Sensitive Files ###
 .env
 .env.*
 **/.env
 **/.env.*
-!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+
+### Local data / runtime artifacts ###
+*.db
+*.sqlite
+*.sqlite3
+coverage/
+playwright-report/
+test-results/
 
 ### Plugin / Tool Specific ###
 .idea/**/workspace.xml
