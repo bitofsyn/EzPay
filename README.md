@@ -240,6 +240,26 @@ LM_STUDIO_MODEL=local-model
 | `NVIDIA_API_KEY` | NVIDIA NIM 인증 키 | 미설정 |
 | `SENTRY_DSN` | 오류 수집 서비스 연결 주소 | 미설정 |
 
+## CI/CD
+
+Pull Request와 `main` 브랜치 Push에서는 GitHub Actions가 프론트엔드 코드 검사·빌드와 백엔드 테스트를 수행합니다. `main`의 CI가 성공한 경우에만 CD 워크플로가 실행됩니다.
+
+```text
+main Push → CI 성공 ┬→ Cloudflare Workers 프론트엔드 배포
+                    └→ Render 백엔드 배포 Hook 호출
+```
+
+CD는 GitHub `production` 환경의 다음 설정을 사용합니다.
+
+| 구분 | 이름 | 용도 |
+|---|---|---|
+| Secret | `CLOUDFLARE_API_TOKEN` | Cloudflare Workers 배포 권한 |
+| Secret | `RENDER_DEPLOY_HOOK_URL` | Render 백엔드 배포 요청 |
+| Variable | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare 계정 식별자 |
+| Variable | `VITE_API_BASE_URL` | 배포 백엔드 주소 |
+| Variable | `VITE_KAKAO_CLIENT_ID` | 카카오 로그인 클라이언트 ID |
+| Variable | `VITE_NAVER_CLIENT_ID` | 네이버 로그인 클라이언트 ID |
+
 ## 주요 API
 
 | 영역 | 경로 | 설명 |
