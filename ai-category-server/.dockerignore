@@ -1,0 +1,9 @@
+.git
+.idea
+.venv
+__pycache__
+**/__pycache__
+*.pyc
+*.log
+config/.env
+models/*.pkl
