@@ -1,6 +1,7 @@
 # EzPay
 
 [![CI](https://github.com/bitofsyn/EzPay/actions/workflows/ci.yml/badge.svg)](https://github.com/bitofsyn/EzPay/actions/workflows/ci.yml)
+[![CD](https://github.com/bitofsyn/EzPay/actions/workflows/cd.yml/badge.svg)](https://github.com/bitofsyn/EzPay/actions/workflows/cd.yml)
 
 > 계좌 관리부터 송금, 거래 내역 확인, 알림까지 한곳에서 이용할 수 있는 간편 송금 서비스
 
@@ -38,7 +39,7 @@ EzPay는 사용자가 계좌를 등록하고 송금과 거래 내역을 관리�
 flowchart LR
     A[사용자] --> B[Cloudflare Workers<br/>React Web UI]
     B --> C[Render<br/>Spring Boot API]
-    C --> D[(PostgreSQL)]
+    C --> D[(AWS RDS<br/>PostgreSQL)]
 ```
 
 ### 전체 구성
@@ -242,14 +243,21 @@ LM_STUDIO_MODEL=local-model
 
 ## CI/CD
 
-Pull Request와 `main` 브랜치 Push에서는 GitHub Actions가 프론트엔드 코드 검사·빌드와 백엔드 테스트를 수행합니다. `main`의 CI가 성공한 경우에만 CD 워크플로가 실행됩니다.
+Pull Request와 `main` 브랜치 Push 시 GitHub Actions가 프론트엔드 코드 검사·빌드와 백엔드 테스트를 수행합니다. `main` 브랜치의 CI가 성공한 경우에만 운영 환경 배포가 자동으로 시작됩니다.
 
 ```text
 main Push → CI 성공 ┬→ Cloudflare Workers 프론트엔드 배포
-                    └→ Render 백엔드 배포 Hook 호출
+                    └→ Render Deploy Hook을 통한 백엔드 배포
 ```
 
-CD는 GitHub `production` 환경의 다음 설정을 사용합니다.
+| 영역 | 배포 환경 | 배포 방식 |
+|---|---|---|
+| Frontend | Cloudflare Workers | GitHub Actions에서 빌드 후 Wrangler로 배포 |
+| Backend | Render Web Service | GitHub Actions에서 Deploy Hook 호출 |
+| Database | AWS RDS PostgreSQL | Render 환경변수로 연결 정보 주입 |
+| CI/CD | GitHub Actions | CI 성공 후 CD 실행 |
+
+프론트엔드 빌드에는 배포된 백엔드 주소를 사용하고, 백엔드의 `CORS_ALLOWED_ORIGINS`에는 Cloudflare Workers 주소를 등록합니다. CD는 GitHub `production` 환경의 다음 설정을 사용합니다.
 
 | 구분 | 이름 | 용도 |
 |---|---|---|
@@ -259,6 +267,24 @@ CD는 GitHub `production` 환경의 다음 설정을 사용합니다.
 | Variable | `VITE_API_BASE_URL` | 배포 백엔드 주소 |
 | Variable | `VITE_KAKAO_CLIENT_ID` | 카카오 로그인 클라이언트 ID |
 | Variable | `VITE_NAVER_CLIENT_ID` | 네이버 로그인 클라이언트 ID |
+
+### 로컬 Jenkins 파이프라인
+
+Jenkins는 공개 운영 배포와 분리된 로컬 CI/CD 환경으로 사용합니다. 프런트엔드 검사·빌드와 백엔드 테스트가 모두 성공하면 이 Mac에서 Docker Compose 스택을 다시 빌드하고 기동한 뒤 헬스 체크를 수행합니다.
+
+```text
+Checkout → Frontend CI → Backend CI → Docker Compose 배포 → Health Check
+```
+
+비밀 환경변수는 Git에 커밋하지 않습니다. Jenkins를 실행하는 사용자 계정에 다음 파일을 준비합니다.
+
+```text
+~/.jenkins/ezpay-env/backend.env
+~/.jenkins/ezpay-env/frontend.env
+~/.jenkins/ezpay-env/ai-category.env
+```
+
+Jenkins에서 Pipeline 작업을 만들고 **Pipeline script from SCM**을 선택한 뒤 저장소 URL과 `Jenkinsfile`을 지정합니다. `DEPLOY_LOCAL`을 끄면 테스트와 빌드만 수행합니다. 로컬 배포에는 실행 중인 Docker Desktop이 필요합니다.
 
 ## 주요 API
 
@@ -311,25 +337,3 @@ source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
-
-## 배포 구성
-
-| 영역 | 서비스 | 설정 |
-|---|---|---|
-| Frontend | Cloudflare Workers | Root `frontend`, Build `npm ci && npm run build` |
-| Backend | Render Web Service | Root `backend`, Docker 기반 배포 |
-| Database | PostgreSQL | Render 환경변수로 연결 정보 주입 |
-
-프런트엔드 빌드에는 다음 환경변수를 사용합니다.
-
-```env
-VITE_API_BASE_URL=https://ezpay-82sw.onrender.com
-```
-
-백엔드의 `CORS_ALLOWED_ORIGINS`에는 프런트엔드 주소를 등록합니다.
-
-```env
-CORS_ALLOWED_ORIGINS=https://ezpay.soyounjeong6276.workers.dev
-```
-
-GitHub `main` 브랜치에 변경 사항을 푸시하면 각 서비스가 연결된 저장소를 기준으로 다시 빌드하고 배포합니다.
