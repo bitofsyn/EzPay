@@ -46,11 +46,6 @@ pipeline {
                     sh './gradlew clean test --no-daemon'
                 }
             }
-            post {
-                always {
-                    junit allowEmptyResults: true, testResults: 'backend/build/test-results/test/*.xml'
-                }
-            }
         }
 
         stage('Prepare local deployment') {
