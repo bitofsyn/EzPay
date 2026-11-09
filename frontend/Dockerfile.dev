@@ -1,6 +1,6 @@
 # frontend/Dockerfile.dev
 
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
 
 # 의존성 설치 (lockfile 기준으로 로컬과 동일한 버전 고정)
