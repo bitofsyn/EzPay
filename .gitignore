@@ -76,7 +76,6 @@ test-results/
 ### Removed legacy / duplicate project files ###
 /Dockerfile
 /.dockerignore
-/Jenkinsfile
 /gradlew
 /gradlew.bat
 /gradle.properties
