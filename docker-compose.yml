@@ -10,6 +10,10 @@ services:
       - "8081:8081"
     env_file:
       - backend/.env
+    environment:
+      # 로컬 모니터링 스택(docker-compose-monitoring.yml)이 /actuator/prometheus 를 수집할 수 있게 연다.
+      # 공개 배포 환경(Render)은 이 값을 설정하지 않으므로 기본값(health,info)만 노출된다.
+      MANAGEMENT_ENDPOINTS_INCLUDE: health,info,prometheus
     depends_on:
       - ai-category
 #      postgres:

@@ -29,7 +29,12 @@ echo "🚀 [2/3] 앱 스택 기동 중 (up -d)..."
 $COMPOSE -f "$APP_COMPOSE" up -d
 
 echo "📈 [3/3] 모니터링 스택 기동 중 (up -d)..."
-$COMPOSE -f "$MONITORING_COMPOSE" up -d
+# 경보 메일은 백엔드와 같은 SMTP 계정을 쓴다. backend/.env 가 있으면 변수 치환용으로 넘긴다.
+MONITORING_ENV_ARGS=""
+if [[ -f backend/.env ]]; then
+  MONITORING_ENV_ARGS="--env-file backend/.env"
+fi
+$COMPOSE $MONITORING_ENV_ARGS -f "$MONITORING_COMPOSE" up -d
 
 echo ""
 echo "✅ 전체 스택이 기동되었습니다."
@@ -38,6 +43,7 @@ echo "   - Backend     : http://localhost:8081"
 echo "   - AI Category : http://localhost:8000"
 echo "   - MLflow      : http://localhost:5001"
 echo "   - Prometheus  : http://localhost:9090"
+echo "   - Alertmanager: http://localhost:9093"
 echo "   - Grafana     : http://localhost:3001 (기본 admin / admin, GRAFANA_ADMIN_PASSWORD 로 변경)"
 echo ""
 echo "상태 확인: $COMPOSE -f $APP_COMPOSE ps"

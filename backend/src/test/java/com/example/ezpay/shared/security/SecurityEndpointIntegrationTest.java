@@ -21,7 +21,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.sql.init.mode=never",
-        "ezpay.kafka.enabled=false"
+        "ezpay.kafka.enabled=false",
+        // 모니터링 스택이 붙는 환경과 동일하게 스크레이프 엔드포인트를 연 상태로 검증한다.
+        "management.endpoints.web.exposure.include=health,info,prometheus"
 })
 @AutoConfigureMockMvc
 class SecurityEndpointIntegrationTest {
