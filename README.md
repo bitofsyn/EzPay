@@ -64,6 +64,8 @@ flowchart LR
     C --> J[Prometheus]
     H --> J
     J --> K[Grafana]
+    J --> P[Alertmanager]
+    P --> Q[경보 이메일]
 ```
 
 ### 송금 처리 흐름
@@ -119,7 +121,7 @@ AI Category Server는 거래 정보를 받아 카테고리를 분류하는 Pytho
 | AI Server | Python, FastAPI, scikit-learn, Pydantic, MLflow |
 | Database | PostgreSQL, H2, Flyway |
 | Messaging | Apache Kafka |
-| Monitoring | Spring Actuator, Micrometer, Prometheus, Grafana |
+| Monitoring | Spring Actuator, Micrometer, Prometheus, Alertmanager, Grafana |
 | Infrastructure | Docker, Docker Compose, Nginx |
 
 ## 저장소 구성
@@ -130,7 +132,7 @@ EzPay/
 ├── frontend/                   # 사용자 및 관리자 웹 화면
 ├── ai-category-server/         # 거래 카테고리 분류와 Kafka 연동
 ├── docs/                       # 설계 및 데이터베이스 변경 문서
-├── monitoring/                 # Prometheus·Grafana 설정
+├── monitoring/                 # Prometheus·Alertmanager·Grafana 설정
 ├── docker-compose.yml          # 애플리케이션 실행 환경
 ├── docker-compose-monitoring.yml
 ├── start.sh                    # 전체 서비스 실행
@@ -209,11 +211,12 @@ LM_STUDIO_MODEL=local-model
 | AI Category API | http://localhost:8000 |
 | MLflow | http://localhost:5001 |
 | Prometheus | http://localhost:9090 |
+| Alertmanager | http://localhost:9093 |
 | Grafana | http://localhost:3001 |
 
 ### 모니터링
 
-Prometheus와 Grafana는 `docker-compose-monitoring.yml`로 실행되며 로컬 루프백(127.0.0.1)에만 게시됩니다.
+Prometheus, Alertmanager, Grafana는 `docker-compose-monitoring.yml`로 실행되며 로컬 루프백(127.0.0.1)에만 게시됩니다.
 
 | 항목 | 위치 |
 |---|---|
@@ -247,7 +250,10 @@ Prometheus와 Grafana는 `docker-compose-monitoring.yml`로 실행되며 로컬 
 | `SPRING_KAFKA_BOOTSTRAP_SERVERS` | Kafka 연결 주소 | `localhost:9092` |
 | `SMTP_USERNAME` | 비밀번호 재설정 메일 발신 계정 | 필수 |
 | `SMTP_PASSWORD` | 메일 계정 비밀번호 | 필수 |
-| `ADMIN_ALERT_EMAIL` | 위험 거래 알림을 받을 관리자 이메일 | `SMTP_USERNAME` |
+| `ADMIN_ALERT_EMAIL` | 위험 거래 알림을 받을 관리자 이메일. 시스템 경보(Alertmanager)의 수신 주소 기본값으로도 쓰입니다 | `SMTP_USERNAME` |
+| `ALERT_EMAIL_TO` | 시스템 경보 메일 수신 주소(선택). 지정하면 `ADMIN_ALERT_EMAIL`보다 우선합니다 | `ADMIN_ALERT_EMAIL` |
+| `GRAFANA_ADMIN_PASSWORD` | Grafana 관리자 비밀번호. 최초 생성 시에만 적용됩니다 | `admin` |
+| `MANAGEMENT_ENDPOINTS_INCLUDE` | 노출할 Actuator 엔드포인트. 공개 배포에서는 설정하지 않습니다 | `health,info` |
 | `EMAIL_MAX_ATTEMPTS` | 이메일 최대 발송 시도 횟수 | `3` |
 | `EMAIL_RETRY_DELAY_SECONDS` | 실패 후 재시도 대기 시간(초) | `60` |
 | `KAKAO_CLIENT_ID` | 카카오 로그인 클라이언트 ID | 미설정 |
