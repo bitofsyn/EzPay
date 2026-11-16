@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -27,8 +28,12 @@ class ActuatorDefaultExposureIntegrationTest {
 
     @Test
     void healthIsExposedByDefault() throws Exception {
+        // 전체 상태는 메일·DB 등 외부 구성요소에 좌우되어 환경에 따라 UP(200) 또는 DOWN(503)이 된다.
+        // 여기서는 엔드포인트가 노출되어 상태 값을 응답하는지만 검증한다.
         mockMvc.perform(get("/actuator/health"))
-                .andExpect(status().isOk());
+                .andExpect(status().is(org.hamcrest.Matchers.anyOf(
+                        org.hamcrest.Matchers.is(200), org.hamcrest.Matchers.is(503))))
+                .andExpect(jsonPath("$.status").exists());
     }
 
     @Test
