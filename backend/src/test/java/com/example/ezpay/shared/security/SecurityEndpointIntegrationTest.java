@@ -1,12 +1,22 @@
 package com.example.ezpay.shared.security;
 
+import com.example.ezpay.modules.realtime.sse.SseEmitterRegistry;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -29,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SecurityEndpointIntegrationTest {
 
     @Autowired MockMvc mockMvc;
+    @Autowired SseEmitterRegistry sseEmitterRegistry;
 
     @Test
     void signupIsPublicButStillValidatesRequestBody() throws Exception {
@@ -55,6 +66,42 @@ class SecurityEndpointIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void adminCanAccessAdminApi() throws Exception {
         mockMvc.perform(get("/admin/dashboard/metrics"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void regularUserCannotOpenAdminStream() throws Exception {
+        mockMvc.perform(get("/admin/stream/tps-metrics"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void anonymousCannotOpenAdminStream() throws Exception {
+        mockMvc.perform(get("/admin/stream/tps-metrics"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void adminStreamAsyncRedispatchIsNotDeniedWithoutAuthentication() throws Exception {
+        MvcResult started = mockMvc.perform(get("/admin/stream/tps-metrics"))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        // 스트림 종료(complete)로 비동기 결과를 확정해 ASYNC 재디스패치가 가능하게 한다.
+        Field field = SseEmitterRegistry.class.getDeclaredField("channelEmitters");
+        field.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Set<SseEmitter>> channels = (Map<String, Set<SseEmitter>>) field.get(sseEmitterRegistry);
+        channels.get("tps-metrics").forEach(SseEmitter::complete);
+
+        // 실제 서버의 ASYNC 재디스패치에서는 JwtAuthenticationFilter가 건너뛰어져 인증 정보가 없다.
+        SecurityContextHolder.clearContext();
+        TestSecurityContextHolder.clearContext();
+
+        // 인가가 거부되면 ExceptionTranslationFilter가 403으로 바꾼다(운영에서는 /error 5xx로 기록됨).
+        mockMvc.perform(asyncDispatch(started))
                 .andExpect(status().isOk());
     }
 
