@@ -11,7 +11,7 @@ EzPay는 사용자가 계좌를 등록하고 송금과 거래 내역을 관리�
 
 ## 배포 주소
 
-- **Web UI**: [https://ezpay.soyounjeong6276.workers.dev](https://ezpay.soyounjeong6276.workers.dev)
+- **Web UI**: [https://ezpay.devfolio-2026.workers.dev/](https://ezpay.devfolio-2026.workers.dev/)
 - **Backend 상태 확인**: [https://ezpay-82sw.onrender.com/health](https://ezpay-82sw.onrender.com/health)
 
 프런트엔드는 Cloudflare Workers, 백엔드는 Render에 배포되어 있습니다. Render 무료 인스턴스는 일정 시간 요청이 없으면 중지되므로 첫 접속 시 응답까지 시간이 걸릴 수 있습니다.
