@@ -1,0 +1,81 @@
+# EzPay 경보 규칙. 문법 검증: promtool check rules monitoring/prometheus/rules/ezpay-alerts.yml
+groups:
+  - name: ezpay-availability
+    rules:
+      - alert: TargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} 스크레이프 실패"
+          description: "{{ $labels.instance }} 의 메트릭 엔드포인트가 1분 이상 응답하지 않습니다."
+
+  - name: ezpay-backend
+    rules:
+      - alert: BackendHighErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{job="ezpay-backend", status=~"5.."}[5m]))
+            /
+          sum(rate(http_server_requests_seconds_count{job="ezpay-backend"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "백엔드 5xx 비율 5% 초과"
+          description: "최근 5분간 5xx 응답 비율이 {{ $value | humanizePercentage }} 입니다."
+
+      - alert: BackendHighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="ezpay-backend"}[5m]))) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "백엔드 p95 응답 시간 1초 초과"
+          description: "최근 5분간 p95 응답 시간이 {{ $value | humanizeDuration }} 입니다."
+
+      - alert: HikariPoolExhausted
+        expr: hikaricp_connections_pending{job="ezpay-backend"} > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DB 커넥션 풀 대기 발생"
+          description: "{{ $labels.pool }} 풀에서 커넥션을 기다리는 스레드가 {{ $value }}개 있습니다."
+
+      - alert: JvmHeapUsageHigh
+        expr: |
+          sum by (instance) (jvm_memory_used_bytes{job="ezpay-backend", area="heap"})
+            /
+          sum by (instance) (jvm_memory_max_bytes{job="ezpay-backend", area="heap"} > 0) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM 힙 사용률 90% 초과"
+          description: "{{ $labels.instance }} 의 힙 사용률이 {{ $value | humanizePercentage }} 입니다."
+
+      - alert: KafkaConsumerLagHigh
+        expr: max by (client_id) (kafka_consumer_fetch_manager_records_lag_max{job="ezpay-backend"}) > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka 컨슈머 lag 누적"
+          description: "{{ $labels.client_id }} 의 최대 lag 가 {{ $value }}건입니다."
+
+  - name: ezpay-ai-category
+    rules:
+      - alert: AiCategoryHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="ai-category-server", status="5xx"}[5m]))
+            /
+          sum(rate(http_requests_total{job="ai-category-server"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI 분류 서버 5xx 비율 5% 초과"
+          description: "최근 5분간 5xx 응답 비율이 {{ $value | humanizePercentage }} 입니다."

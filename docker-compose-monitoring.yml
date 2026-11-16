@@ -14,17 +14,24 @@ services:
     container_name: prometheus
     restart: unless-stopped
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"            # 인증이 없으므로 로컬 루프백에만 게시
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
       - prometheus-data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"  # 로컬 디스크 보호. 5초 간격 수집이라 기본 15일은 과하다.
       - "--web.enable-lifecycle"          # 설정 리로드: curl -X POST localhost:9090/-/reload
     extra_hosts:
       # Linux 호환용. Docker Desktop(Mac/Windows)은 기본 제공하지만 명시해도 무해하다.
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
       - monitoring
 
@@ -33,17 +40,20 @@ services:
     container_name: grafana
     restart: unless-stopped
     ports:
-      - "3001:3000"                        # 프론트엔드(3000)와 충돌 방지 위해 3001 게시
+      - "127.0.0.1:3001:3000"              # 프론트엔드(3000)와 충돌 방지 위해 3001 게시
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      # 로컬 기본값은 admin/admin. 공유 환경에서는 GRAFANA_ADMIN_PASSWORD 로 반드시 덮어쓸 것.
+      # (비밀번호는 grafana-data 볼륨 최초 생성 시에만 적용된다)
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
     networks:
       - monitoring
 

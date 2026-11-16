@@ -48,7 +48,12 @@ app.add_middleware(
 
 # Prometheus 계측: 기본 HTTP 지표(요청 수/지연/진행 중 요청)를 수집해 /metrics 로 노출.
 # Prometheus 가 http://<host>:8000/metrics 를 스크레이프한다.
-Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+# 스크레이프(/metrics)와 헬스 체크(/health) 자체는 지표에서 제외해 실제 트래픽만 집계한다.
+Instrumentator(
+    excluded_handlers=["/metrics", "/health"],
+    should_instrument_requests_inprogress=True,
+    inprogress_labels=True,
+).instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
 # 라우터 등록
 app.include_router(router)

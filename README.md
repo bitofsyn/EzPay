@@ -211,6 +211,20 @@ LM_STUDIO_MODEL=local-model
 | Prometheus | http://localhost:9090 |
 | Grafana | http://localhost:3001 |
 
+### 모니터링
+
+Prometheus와 Grafana는 `docker-compose-monitoring.yml`로 실행되며 로컬 루프백(127.0.0.1)에만 게시됩니다.
+
+| 항목 | 위치 |
+|---|---|
+| 수집 대상 | Backend `/actuator/prometheus`, AI Category `/metrics` ([prometheus.yml](monitoring/prometheus/prometheus.yml)) |
+| 경보 규칙 | [ezpay-alerts.yml](monitoring/prometheus/rules/ezpay-alerts.yml) — 발화 상태는 http://localhost:9090/alerts 에서 확인 |
+| 대시보드 | Grafana `EzPay` 폴더 ([dashboards](monitoring/grafana/dashboards)) |
+
+- Grafana 기본 계정은 `admin` / `admin`이며 `GRAFANA_ADMIN_PASSWORD` 환경변수로 변경합니다.
+- Backend는 `health`, `info`, `prometheus` 엔드포인트만 노출합니다. 스크레이퍼가 없는 공개 배포 환경에서는 `MANAGEMENT_ENDPOINTS_INCLUDE=health,info`로 좁힙니다.
+- Kafka 지표(`kafka_consumer_*`, `spring_kafka_listener_*`)는 `EZPAY_KAFKA_ENABLED=true`일 때만 수집됩니다.
+
 서비스를 종료할 때는 다음 명령을 사용합니다.
 
 ```bash

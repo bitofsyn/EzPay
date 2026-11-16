@@ -1,6 +1,7 @@
 package com.example.ezpay.shared.messaging.config;
 
 import com.example.ezpay.shared.messaging.events.TransferEvent;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -92,7 +93,7 @@ public class KafkaConfig {
         ProducerFactory 설정 (KafkaTemplate을 위해 필수)
      */
     @Bean
-    public ProducerFactory<String, TransferEvent> producerFactory() {
+    public ProducerFactory<String, TransferEvent> producerFactory(MeterRegistry meterRegistry) {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -101,6 +102,8 @@ public class KafkaConfig {
 
         DefaultKafkaProducerFactory<String, TransferEvent> factory = new DefaultKafkaProducerFactory<>(configProps);
         factory.setTransactionIdPrefix("tx-ezpay-");
+        // 커스텀 팩토리는 Boot 자동 구성의 Micrometer 바인딩을 받지 못하므로 직접 등록한다. (kafka_producer_*)
+        factory.addListener(new MicrometerProducerListener<>(meterRegistry));
         return factory;
     }
 
@@ -117,12 +120,14 @@ public class KafkaConfig {
         ProducerFactory for Object type (DLT용)
      */
     @Bean
-    public ProducerFactory<String, Object> objectProducerFactory() {
+    public ProducerFactory<String, Object> objectProducerFactory(MeterRegistry meterRegistry) {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        return new DefaultKafkaProducerFactory<>(configProps);
+        DefaultKafkaProducerFactory<String, Object> factory = new DefaultKafkaProducerFactory<>(configProps);
+        factory.addListener(new MicrometerProducerListener<>(meterRegistry));
+        return factory;
     }
 
     /*
@@ -137,7 +142,7 @@ public class KafkaConfig {
         ConsumerFactory 설정 (Kafka Listener를 위해 필요)
      */
     @Bean
-    public ConsumerFactory<String, Object> consumerFactory() {
+    public ConsumerFactory<String, Object> consumerFactory(MeterRegistry meterRegistry) {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "ezpay-group");
@@ -149,7 +154,10 @@ public class KafkaConfig {
         props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
 
-        return new DefaultKafkaConsumerFactory<>(props);
+        DefaultKafkaConsumerFactory<String, Object> factory = new DefaultKafkaConsumerFactory<>(props);
+        // 컨슈머 lag·fetch 지표(kafka_consumer_*)를 Micrometer로 내보낸다.
+        factory.addListener(new MicrometerConsumerListener<>(meterRegistry));
+        return factory;
     }
 
     /*

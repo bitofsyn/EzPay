@@ -100,18 +100,30 @@ management:
   endpoints:
     web:
       exposure:
-        # 부하 테스트 모니터링에 필요한 엔드포인트만 외부에 노출
-        include: health,info,prometheus,metrics
+        # Prometheus 스크레이프와 헬스 체크에 필요한 엔드포인트만 노출한다.
+        # 공개 배포 환경처럼 스크레이퍼가 없는 곳에서는 MANAGEMENT_ENDPOINTS_INCLUDE=health,info 로 좁힐 것.
+        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:health,info,prometheus}
       base-path: /actuator
   endpoint:
     health:
-      show-details: always
+      # 익명 요청에는 UP/DOWN 만 응답하고, DB·디스크 등 세부 정보는 인증된 사용자에게만 보여준다.
+      show-details: when-authorized
     prometheus:
       access: read_only
   metrics:
     tags:
       # Grafana에서 서비스별로 구분할 수 있도록 공통 태그 부여
       application: ${spring.application.name}
+    distribution:
+      # histogram_quantile(p95/p99) 계산에 필요한 _bucket 시계열을 생성한다.
+      # (미설정 시 http_server_requests_seconds_bucket 이 없어 지연 시간 패널이 비어 있게 된다)
+      percentiles-histogram:
+        "[http.server.requests]": true
+      # 버킷 범위를 제한해 uri × method × status 조합의 시계열 폭증을 억제한다.
+      minimum-expected-value:
+        "[http.server.requests]": 5ms
+      maximum-expected-value:
+        "[http.server.requests]": 10s
   prometheus:
     metrics:
       export:

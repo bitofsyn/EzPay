@@ -46,8 +46,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // (2) OPTIONS 요청 허용
                         .requestMatchers("/health").permitAll()
-                        // Prometheus 스크레이프용 Actuator 엔드포인트는 인증 없이 허용
-                        .requestMatchers("/actuator/**").permitAll()
+                        // Actuator: 헬스 체크와 Prometheus 스크레이프만 인증 없이 허용하고,
+                        // 그 밖의 엔드포인트는 노출되더라도 관리자만 접근할 수 있게 한다.
+                        .requestMatchers("/actuator/health", "/actuator/health/**",
+                                "/actuator/info", "/actuator/prometheus").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/users/signup", "/users/login",
                                 "/users/find-email", "/users/oauth/*/login").permitAll()
                         .requestMatchers("/password-reset/**").permitAll()

@@ -9,6 +9,10 @@ global:
   evaluation_interval: 15s
   scrape_timeout: 5s
 
+# 경보 규칙. Alertmanager 는 두지 않으므로 발화 상태는 Prometheus UI(/alerts)에서 확인한다.
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
 scrape_configs:
   # Prometheus 자체 메트릭
   - job_name: "prometheus"
@@ -16,12 +20,13 @@ scrape_configs:
       - targets: ["localhost:9090"]
 
   # Spring Boot 백엔드 (Micrometer → Actuator)
+  # application 라벨은 앱이 직접 붙이므로(management.metrics.tags.application) 여기서 중복 지정하지 않는다.
+  # 타깃 라벨로 다시 지정하면 충돌로 인해 모든 시계열에 exported_application 라벨이 추가된다.
   - job_name: "ezpay-backend"
     metrics_path: /actuator/prometheus
     static_configs:
       - targets: ["host.docker.internal:8081"]
         labels:
-          application: "EzPay"
           service: "backend"
 
   # AI 카테고리 분류 서버 (FastAPI Instrumentator)
