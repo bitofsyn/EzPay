@@ -51,7 +51,7 @@ export const Table = <T extends object>({
             >
               {columns.map((col) => {
                 const value = row[col.key];
-                const content = col.render ? col.render(value, row) : value;
+                const content = col.render ? col.render(value, row) : (value as React.ReactNode);
 
                 return (
                   <td key={String(col.key)} className="px-6 py-4 text-sm text-slate-700">
@@ -118,7 +118,7 @@ export const TableDark = <T extends object>({
             >
               {columns.map((col) => {
                 const value = row[col.key];
-                const content = col.render ? col.render(value, row) : value;
+                const content = col.render ? col.render(value, row) : (value as React.ReactNode);
 
                 return (
                   <td key={String(col.key)} className="px-6 py-4 text-sm text-slate-300">
