@@ -4,6 +4,7 @@ import com.example.ezpay.shared.common.enums.AuthProvider;
 import com.example.ezpay.shared.common.enums.Role;
 import com.example.ezpay.shared.common.enums.Status;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -26,6 +27,7 @@ public class User {
     private Long userId;
 
     private String email;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // 비밀번호 해시는 어떤 응답에도 직렬화하지 않는다
     private String password;
     private String name;
     @Column(name = "phone_number")
