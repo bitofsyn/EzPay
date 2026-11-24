@@ -23,7 +23,7 @@ class EmailDeliveryServiceTest {
     void setUp() {
         repository = mock(EmailDeliveryRepository.class);
         mailSender = mock(JavaMailSender.class);
-        service = new EmailDeliveryService(repository, mailSender);
+        service = new EmailDeliveryService(repository, mailSender, Runnable::run);
         ReflectionTestUtils.setField(service, "maxAttempts", 3);
         ReflectionTestUtils.setField(service, "retryDelaySeconds", 60L);
         when(repository.save(any(EmailDelivery.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -53,6 +53,40 @@ class EmailDeliveryServiceTest {
         assertThat(saved.getAttempts()).isEqualTo(1);
         assertThat(saved.getNextRetryAt()).isNotNull();
         assertThat(saved.getLastError()).contains("SMTP unavailable");
+    }
+
+    @Test
+    void doesNotSendUntilSurroundingTransactionCommits() {
+        org.springframework.transaction.support.TransactionSynchronizationManager.initSynchronization();
+        try {
+            service.send("user@example.com", "제목", "내용", "TRANSFER_COMPLETED", "tx-1");
+            verifyNoInteractions(mailSender);
+
+            org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(org.springframework.transaction.support.TransactionSynchronization::afterCommit);
+            verify(mailSender).send(any(SimpleMailMessage.class));
+        } finally {
+            org.springframework.transaction.support.TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void sendReturnsWithoutWaitingForSmtp() {
+        java.util.List<Runnable> queued = new java.util.ArrayList<>();
+        service = new EmailDeliveryService(repository, mailSender, queued::add);
+        ReflectionTestUtils.setField(service, "maxAttempts", 3);
+        ReflectionTestUtils.setField(service, "retryDelaySeconds", 60L);
+
+        service.send("user@example.com", "제목", "내용", "TRANSFER_COMPLETED", "tx-1");
+
+        verifyNoInteractions(mailSender);
+        EmailDelivery pending = captureLastSaved();
+        assertThat(pending.getStatus()).isEqualTo(EmailDeliveryStatus.PENDING);
+        assertThat(pending.getNextRetryAt()).isAfter(java.time.LocalDateTime.now().plusSeconds(30));
+
+        queued.forEach(Runnable::run);
+        verify(mailSender).send(any(SimpleMailMessage.class));
+        assertThat(captureLastSaved().getStatus()).isEqualTo(EmailDeliveryStatus.SENT);
     }
 
     private EmailDelivery captureLastSaved() {

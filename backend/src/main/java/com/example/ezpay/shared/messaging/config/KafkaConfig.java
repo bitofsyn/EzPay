@@ -36,6 +36,11 @@ public class KafkaConfig {
     @Value("${spring.kafka.listener.auto-startup:false}")
     private boolean kafkaListenerAutoStartup;
 
+    // 송금 토픽 파티션 수. TransactionConsumer 의 컨슈머 동시성(ezpay.kafka.transfer.concurrency)과
+    // 함께 처리 병렬도를 결정한다. 파티션은 늘릴 수만 있고 줄일 수 없다.
+    @Value("${ezpay.kafka.transfer.partitions:6}")
+    private int transferPartitions;
+
     public static final String TRANSFER_EVENTS_TOPIC = "transfer-events";
     public static final String TRANSFER_EVENTS_DLT = TRANSFER_EVENTS_TOPIC + ".DLT";
 
@@ -49,12 +54,13 @@ public class KafkaConfig {
     // == Topic 정의 ==
     @Bean
     public NewTopic transferEventsTopic() {
-        return new NewTopic(TRANSFER_EVENTS_TOPIC, 1, (short) 1);
+        return new NewTopic(TRANSFER_EVENTS_TOPIC, transferPartitions, (short) 1);
     }
 
+    // DLT 복구기는 원본과 같은 파티션 번호로 보내므로 파티션 수를 원본과 맞춘다.
     @Bean
     public NewTopic transferEventsDltTopic() {
-        return new NewTopic(TRANSFER_EVENTS_DLT, 1, (short) 1);
+        return new NewTopic(TRANSFER_EVENTS_DLT, transferPartitions, (short) 1);
     }
 
     @Bean
@@ -98,10 +104,16 @@ public class KafkaConfig {
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        configProps.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, "tx-ezpay-"); // ✅ 트랜잭션 설정
+        // 트랜잭셔널 프로듀서 대신 멱등 프로듀서를 쓴다.
+        // - 송금 발행은 메시지 1건이라 Kafka 트랜잭션이 보장해 줄 원자성이 없고, DB 와 묶이지도 않는다.
+        // - 트랜잭셔널 모드는 동시 요청마다 프로듀서를 새로 만들고 InitProducerId/EndTxn 왕복을 더해
+        //   지속 고동시성에서 브로커 타임아웃·프로듀서 폭증으로 붕괴했다.
+        // - 중복 발행은 브로커(idempotence)와 컨슈머(requestId 유니크 제약 + 조회 가드)가 막는다.
+        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        configProps.put(ProducerConfig.ACKS_CONFIG, "all");
+        configProps.put(ProducerConfig.LINGER_MS_CONFIG, 5);
 
         DefaultKafkaProducerFactory<String, TransferEvent> factory = new DefaultKafkaProducerFactory<>(configProps);
-        factory.setTransactionIdPrefix("tx-ezpay-");
         // 커스텀 팩토리는 Boot 자동 구성의 Micrometer 바인딩을 받지 못하므로 직접 등록한다. (kafka_producer_*)
         factory.addListener(new MicrometerProducerListener<>(meterRegistry));
         return factory;
@@ -146,6 +158,9 @@ public class KafkaConfig {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "ezpay-group");
+        // 커밋된 오프셋이 없는 새 컨슈머 그룹이 파티션을 배정받기 전에 발행된 송금을 건너뛰지 않도록 처음부터 읽는다.
+        // (기본값 latest 에서는 배포 직후·파티션 증설 직후 들어온 메시지가 유실됐다)
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         // ErrorHandlingDeserializer로 감싸 역직렬화 실패(헤더 없는/깨진 메시지)가
         // 컨슈머를 무한 재시도로 막지 않고 에러 핸들러(→ DLT)로 흘러가도록 한다.
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);

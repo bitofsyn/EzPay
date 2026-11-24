@@ -27,6 +27,9 @@ public class TransactionConsumer {
             topics = KafkaConfig.TRANSFER_EVENTS_TOPIC,
             groupId = "ezpay-group",
             containerFactory = "kafkaListenerContainerFactory",
+            // 파티션 수(ezpay.kafka.transfer.partitions)만큼 컨슈머 스레드를 띄워 송금을 병렬 처리한다.
+            // 서로 다른 계좌 쌍의 송금은 계좌 비관적 락(작은 ID 먼저)으로 정합성이 보장된다.
+            concurrency = "${ezpay.kafka.transfer.concurrency:6}",
             autoStartup = "${spring.kafka.listener.auto-startup:false}"
     )
     public void consumerTransferEvent(TransferEvent event, Acknowledgment ack) {

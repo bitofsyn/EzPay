@@ -3,8 +3,9 @@ package com.example.ezpay.modules.notification.internal.service;
 import com.example.ezpay.modules.notification.internal.entity.EmailDelivery;
 import com.example.ezpay.modules.notification.internal.entity.EmailDeliveryStatus;
 import com.example.ezpay.modules.notification.internal.repository.EmailDeliveryRepository;
-import lombok.RequiredArgsConstructor;
+import com.example.ezpay.modules.notification.config.EmailDeliveryExecutorConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.mail.SimpleMailMessage;
@@ -13,17 +14,34 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.Executor;
 
+/**
+ * 이메일 발송 이력(아웃박스) 기록과 실제 SMTP 발송을 분리한다.
+ * <p>{@link #send}는 PENDING 이력만 남기고 즉시 반환하며, SMTP 발송은 이력이 커밋된 뒤 전용 스레드 풀에서 수행한다.
+ * 호출자(예: 계좌 락을 잡은 송금 컨슈머)가 SMTP 왕복을 기다리지 않게 하기 위함이다.
+ * 비동기 발송이 유실되더라도(큐 포화·프로세스 종료) PENDING 이력은 재시도 스케줄러가 이어서 처리한다.
+ */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class EmailDeliveryService {
 
     private final EmailDeliveryRepository emailDeliveryRepository;
     private final JavaMailSender mailSender;
+    private final Executor emailDeliveryExecutor;
+
+    public EmailDeliveryService(EmailDeliveryRepository emailDeliveryRepository,
+                                JavaMailSender mailSender,
+                                @Qualifier(EmailDeliveryExecutorConfig.EMAIL_DELIVERY_EXECUTOR) Executor emailDeliveryExecutor) {
+        this.emailDeliveryRepository = emailDeliveryRepository;
+        this.mailSender = mailSender;
+        this.emailDeliveryExecutor = emailDeliveryExecutor;
+    }
 
     @Value("${ezpay.notification.email.max-attempts:3}")
     private int maxAttempts;
@@ -41,10 +59,21 @@ public class EmailDeliveryService {
                 .referenceId(referenceId)
                 .status(EmailDeliveryStatus.PENDING)
                 .attempts(0)
-                .nextRetryAt(LocalDateTime.now())
+                // 즉시 발송은 비동기 작업이 맡는다. 스케줄러는 그 작업이 유실됐을 때만 이어받도록 한 주기 늦춘다.
+                .nextRetryAt(LocalDateTime.now().plusSeconds(retryDelaySeconds))
                 .build());
 
-        attempt(delivery);
+        Runnable dispatch = () -> emailDeliveryExecutor.execute(() -> attempt(delivery));
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    dispatch.run();
+                }
+            });
+        } else {
+            dispatch.run();
+        }
     }
 
     @Scheduled(fixedDelayString = "${ezpay.notification.email.retry-interval-ms:30000}")
