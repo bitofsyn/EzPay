@@ -1,0 +1,24 @@
+{
+  "label": "improved-smtp",
+  "target_rate": 20,
+  "duration": "10s",
+  "submitted": 201,
+  "accepted": 201,
+  "submit_latency_ms": {
+    "p(95)": 12.5,
+    "p(99)": 14.9,
+    "max": 57.9,
+    "avg": 10.5,
+    "p(50)": 10.2
+  },
+  "processed": 201,
+  "status": {
+    "SUCCESS": 201
+  },
+  "e2e_seconds": 10.7,
+  "drain_after_submit_seconds": 0.3,
+  "e2e_tps": 18.7,
+  "processing_tps": 20.1,
+  "balance_conserved": true,
+  "negative_balances": 0
+}

@@ -1,0 +1,27 @@
+{
+  "label": "baseline-smtp",
+  "target_rate": 20,
+  "vus": 0,
+  "duration": "10s",
+  "submitted": 200,
+  "accepted": 200,
+  "submit_error_rate": 0.0,
+  "submit_rps": 19.0,
+  "submit_latency_ms": {
+    "avg": 9.7,
+    "p(50)": 8.6,
+    "p(95)": 15.6,
+    "p(99)": 18.5,
+    "max": 58.4
+  },
+  "processed": 200,
+  "status": {
+    "SUCCESS": 200
+  },
+  "e2e_seconds": 212.9,
+  "drain_after_submit_seconds": 202.4,
+  "e2e_tps": 0.9,
+  "processing_tps": 1.0,
+  "balance_conserved": true,
+  "negative_balances": 0
+}

@@ -1,0 +1,27 @@
+{
+  "label": "baseline-burst",
+  "target_rate": 50,
+  "vus": 200,
+  "duration": "60s",
+  "submitted": 215547,
+  "accepted": 215547,
+  "submit_error_rate": 0.0,
+  "submit_rps": 3562.7,
+  "submit_latency_ms": {
+    "p(95)": 114.2,
+    "p(99)": 155.4,
+    "max": 372.9,
+    "avg": 55.6,
+    "p(50)": 51.3
+  },
+  "processed": 82562,
+  "status": {
+    "SUCCESS": 82562
+  },
+  "e2e_seconds": 900.5,
+  "drain_after_submit_seconds": 840.0,
+  "e2e_tps": 91.7,
+  "processing_tps": 91.7,
+  "balance_conserved": true,
+  "negative_balances": 0
+}

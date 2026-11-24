@@ -113,6 +113,7 @@ Docker Desktop이 필요합니다. 먼저 `backend/.env`, `frontend/.env`, `ai-c
 | 문서 | 내용 |
 |---|---|
 | [시스템 구조](docs/architecture.md) | 배포 구조, 송금 처리 흐름, 알림, 위험 거래 확인, 카테고리 분류 |
+| [송금 처리량 개선](docs/performance.md) | 부하테스트로 찾은 병목과 개선 전/후 수치 (6.1 → 33.7 TPS 등), 재현 방법 |
 | [모니터링](docs/monitoring.md) | Prometheus·Grafana 대시보드, 경보 규칙, 이메일 알림 설정 |
 | [실행·배포·테스트](docs/operations.md) | 환경 파일과 환경변수, CI/CD, Jenkins, 개별 실행과 테스트 |
 | [주요 API](docs/api.md) | 인증·계좌·송금·알림·관리자 API 목록 |

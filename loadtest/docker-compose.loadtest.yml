@@ -1,0 +1,65 @@
+# 송금 파이프라인 부하테스트 전용 로컬 인프라 (Postgres + 단일 브로커 Kafka)
+# 운영 DB를 건드리지 않고 같은 조건으로 반복 측정하기 위해 분리했다.
+# 사용법은 loadtest/README.md 참고.
+name: ezpay-loadtest
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ezpay
+      POSTGRES_USER: ezpay
+      POSTGRES_PASSWORD: ezpay
+    command: ["postgres", "-c", "max_connections=200"]
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ezpay"]
+      interval: 3s
+      retries: 20
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.1
+    depends_on:
+      - zookeeper
+    ports:
+      - "59092:59092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:59092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:59092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+
+  # 네트워크 지연 주입용 프록시. 백엔드는 이 프록시를 거쳐 Postgres/SMTP 에 붙는다.
+  # 지연은 toxics.sh 로 켜고 끈다(기본 0ms).
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    ports:
+      - "8474:8474"     # 관리 API
+      - "55433:55433"   # postgres 경유
+      - "51025:51025"   # smtp 경유
+    depends_on:
+      - postgres
+      - mailpit
+
+  # 실제 메일을 내보내지 않는 로컬 SMTP 서버 (송금 완료 메일 경로 측정용)
+  mailpit:
+    image: axllent/mailpit:v1.20.4
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+      MP_MAX_MESSAGES: "1000"

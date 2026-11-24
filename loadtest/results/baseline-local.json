@@ -1,0 +1,27 @@
+{
+  "label": "baseline-local",
+  "target_rate": 600,
+  "vus": 0,
+  "duration": "30s",
+  "submitted": 18000,
+  "accepted": 18000,
+  "submit_error_rate": 0.0,
+  "submit_rps": 591.8,
+  "submit_latency_ms": {
+    "p(95)": 32.9,
+    "p(99)": 509.0,
+    "max": 1037.7,
+    "avg": 18.3,
+    "p(50)": 2.0
+  },
+  "processed": 18000,
+  "status": {
+    "SUCCESS": 18000
+  },
+  "e2e_seconds": 120.1,
+  "drain_after_submit_seconds": 89.7,
+  "e2e_tps": 149.9,
+  "processing_tps": 151.2,
+  "balance_conserved": true,
+  "negative_balances": 0
+}

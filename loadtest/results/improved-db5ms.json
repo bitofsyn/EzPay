@@ -1,0 +1,24 @@
+{
+  "label": "improved-db5ms",
+  "target_rate": 100,
+  "duration": "20s",
+  "submitted": 2000,
+  "accepted": 2000,
+  "submit_latency_ms": {
+    "max": 131.3,
+    "avg": 35.3,
+    "p(50)": 34.4,
+    "p(95)": 42.9,
+    "p(99)": 48.3
+  },
+  "processed": 2000,
+  "status": {
+    "SUCCESS": 2000
+  },
+  "e2e_seconds": 60.3,
+  "drain_after_submit_seconds": 39.8,
+  "e2e_tps": 33.2,
+  "processing_tps": 33.7,
+  "balance_conserved": true,
+  "negative_balances": 0
+}

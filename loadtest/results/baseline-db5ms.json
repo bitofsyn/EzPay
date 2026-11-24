@@ -1,0 +1,27 @@
+{
+  "label": "baseline-db5ms",
+  "target_rate": 100,
+  "vus": 0,
+  "duration": "20s",
+  "submitted": 2000,
+  "accepted": 2000,
+  "submit_error_rate": 0.0,
+  "submit_rps": 97.8,
+  "submit_latency_ms": {
+    "p(50)": 28.7,
+    "p(95)": 32.9,
+    "p(99)": 35.5,
+    "max": 121.4,
+    "avg": 29.0
+  },
+  "processed": 2000,
+  "status": {
+    "SUCCESS": 2000
+  },
+  "e2e_seconds": 330.5,
+  "drain_after_submit_seconds": 310.1,
+  "e2e_tps": 6.1,
+  "processing_tps": 6.1,
+  "balance_conserved": true,
+  "negative_balances": 0
+}

@@ -1,0 +1,3 @@
+.jars/
+results/*.backend.log
+results/*.k6.json

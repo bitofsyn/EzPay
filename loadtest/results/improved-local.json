@@ -1,0 +1,24 @@
+{
+  "label": "improved-local",
+  "target_rate": 600,
+  "duration": "30s",
+  "submitted": 18000,
+  "accepted": 18000,
+  "submit_latency_ms": {
+    "p(95)": 11.1,
+    "p(99)": 54.4,
+    "max": 214.8,
+    "avg": 7.2,
+    "p(50)": 6.0
+  },
+  "processed": 18000,
+  "status": {
+    "SUCCESS": 18000
+  },
+  "e2e_seconds": 34.8,
+  "drain_after_submit_seconds": 4.2,
+  "e2e_tps": 517.0,
+  "processing_tps": 540.5,
+  "balance_conserved": true,
+  "negative_balances": 0
+}
