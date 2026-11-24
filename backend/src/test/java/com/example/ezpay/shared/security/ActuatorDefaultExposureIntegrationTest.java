@@ -46,7 +46,7 @@ class ActuatorDefaultExposureIntegrationTest {
 
     @Test
     void prometheusEndpointIsNotExposedByDefault() throws Exception {
-        // 비노출 경로는 앱의 전역 예외 처리 때문에 404 가 아닌 오류 상태로 응답하므로,
+        // 비노출 경로는 보안 설정·예외 처리에 따라 401/403/404 중 하나로 응답할 수 있으므로,
         // 상태 코드 대신 "성공 응답이 아니며 메트릭 본문이 없다"는 사실을 검증한다.
         var response = mockMvc.perform(get("/actuator/prometheus")).andReturn().getResponse();
         org.junit.jupiter.api.Assertions.assertNotEquals(200, response.getStatus());

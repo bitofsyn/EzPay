@@ -6,6 +6,8 @@ import com.example.ezpay.modules.user.api.dto.UserInfo;
 import com.example.ezpay.modules.user.api.facade.UserFacade;
 import com.example.ezpay.response.SpendingSummaryDto;
 import com.example.ezpay.shared.common.dto.CommonResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
@@ -30,8 +32,9 @@ public class StatisticsController {
     @GetMapping("/spending-summary")
     public ResponseEntity<CommonResponse<List<SpendingSummaryDto>>> getSpendingSummary(
             Authentication authentication,
-            @RequestParam("year") int year,
-            @RequestParam("month") int month) {
+            @RequestParam("year") @Min(value = 1, message = "연도가 올바르지 않습니다.") int year,
+            @RequestParam("month") @Min(value = 1, message = "월은 1~12 사이여야 합니다.")
+            @Max(value = 12, message = "월은 1~12 사이여야 합니다.") int month) {
         Long userId = userFacade.getUserByEmail(authentication.getName()).getUserId();
         List<SpendingSummaryDto> summary = statisticsService.getSpendingSummary(userId, year, month);
         return ResponseEntity.ok(new CommonResponse<>("success", summary, "월별 지출 내역 조회 성공"));
