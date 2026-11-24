@@ -79,6 +79,18 @@ flowchart LR
 
 현재 공개된 서비스는 Cloudflare Workers(React), Render(Spring Boot), AWS RDS(PostgreSQL)로 구성되어 있고, Kafka·AI Category Server·모니터링은 로컬 또는 별도 환경에서 실행합니다. 송금 처리 흐름과 위험도 확인 방식은 [시스템 구조 문서](docs/architecture.md)에 정리했습니다.
 
+## 송금 처리량
+
+부하테스트로 송금 파이프라인의 병목(단일 파티션·단일 컨슈머, 계좌 락 보유 중 SMTP 동기 발송)을 찾아 개선했습니다. 같은 조건에서 개선 전후 end-to-end 처리량을 비교한 결과입니다.
+
+| 조건 | 개선 전 | 개선 후 |
+|---|---|---|
+| DB 왕복 +5ms (운영 RDS 수준) | 6.1 TPS | **33.7 TPS** (5.5배) |
+| 로컬 DB | 151 TPS | **541 TPS** (3.6배) |
+| 송금 메일 알림 ON | 1.0 TPS | **20 TPS 이상** (제출률 그대로 처리) |
+
+모든 실행에서 처리 성공률 100%, 잔액 합 보존, 음수 잔액 0건이었습니다. 측정 방법과 한계는 [송금 처리량 개선](docs/performance.md)에 있습니다.
+
 ## 기술 스택
 
 | 영역 | 기술 |
