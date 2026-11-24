@@ -5,6 +5,7 @@ import com.example.ezpay.modules.account.api.dto.AccountInfo;
 import com.example.ezpay.modules.account.api.facade.AccountFacade;
 import com.example.ezpay.modules.account.internal.service.AccountService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -60,6 +61,7 @@ public class AccountFacadeImpl implements AccountFacade {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public String getOwnerName(String accountNumber) {
         Accounts account = accountService.getAccountByNumber(accountNumber);
         return account.getUser().getName();

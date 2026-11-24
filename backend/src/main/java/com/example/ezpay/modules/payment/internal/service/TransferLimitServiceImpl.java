@@ -60,6 +60,7 @@ public class TransferLimitServiceImpl implements TransferLimitService {
     }
 
     @Override
+    @Transactional(readOnly = true) // user.getAccounts() 지연 로딩
     public BigDecimal getRemainingDailyLimit(Long userId) {
         TransferLimit transferLimit = transferLimitRepository.findByUserId(userId)
                 .orElse(null);

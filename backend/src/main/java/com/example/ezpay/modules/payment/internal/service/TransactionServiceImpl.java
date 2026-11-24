@@ -399,13 +399,13 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Transaction getTransactionById(Long transactionId) {
-        return transactionRepository.findById(transactionId)
+        return transactionRepository.findWithPartiesByTransactionId(transactionId)
                 .orElseThrow(() -> new CustomNotFoundException("거래 내역을 찾을 수 없습니다. : " + transactionId));
     }
 
     @Override
     public Transaction getTransactionByRequestId(String requestId) {
-        return transactionRepository.findByRequestId(requestId)
+        return transactionRepository.findWithPartiesByRequestId(requestId)
                 .orElseThrow(() -> new CustomNotFoundException("거래 내역을 찾을 수 없습니다. : " + requestId));
     }
 
@@ -464,6 +464,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AccountOwnerInfo getOwnerNameByAccountNumber(String accountNumber) {
         Accounts account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new CustomNotFoundException("계좌를 찾을 수 없습니다."));
