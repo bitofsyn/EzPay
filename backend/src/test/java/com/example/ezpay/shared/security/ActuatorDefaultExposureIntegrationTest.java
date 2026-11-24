@@ -36,6 +36,14 @@ class ActuatorDefaultExposureIntegrationTest {
                 .andExpect(jsonPath("$.status").exists());
     }
 
+    @Autowired org.springframework.boot.actuate.health.HealthContributorRegistry healthContributorRegistry;
+
+    @Test
+    void mailHealthCheckIsDisabledByDefault() {
+        // SMTP 아웃바운드가 막힌 환경에서 메일 헬스 체크가 /actuator/health 를 수 분간 붙잡지 않도록 기본으로 끈다.
+        org.junit.jupiter.api.Assertions.assertNull(healthContributorRegistry.getContributor("mail"));
+    }
+
     @Test
     void prometheusEndpointIsNotExposedByDefault() throws Exception {
         // 비노출 경로는 앱의 전역 예외 처리 때문에 404 가 아닌 오류 상태로 응답하므로,

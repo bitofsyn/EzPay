@@ -80,6 +80,7 @@ LM_STUDIO_MODEL=local-model
 | `ALERT_EMAIL_TO` | 시스템 경보 메일 수신 주소(선택). 지정하면 `ADMIN_ALERT_EMAIL`보다 우선합니다 | `ADMIN_ALERT_EMAIL` |
 | `GRAFANA_ADMIN_PASSWORD` | Grafana 관리자 비밀번호. 최초 생성 시에만 적용됩니다 | `admin` |
 | `MANAGEMENT_ENDPOINTS_INCLUDE` | 노출할 Actuator 엔드포인트. 공개 배포에서는 설정하지 않습니다 | `health,info` |
+| `MANAGEMENT_HEALTH_MAIL_ENABLED` | 헬스 체크에 SMTP 연결 확인 포함 여부. SMTP가 막힌 환경에서는 켜지 않습니다 | `false` |
 | `EMAIL_MAX_ATTEMPTS` | 이메일 최대 발송 시도 횟수 | `3` |
 | `EMAIL_RETRY_DELAY_SECONDS` | 실패 후 재시도 대기 시간(초) | `60` |
 | `KAKAO_CLIENT_ID` | 카카오 로그인 클라이언트 ID | 미설정 |

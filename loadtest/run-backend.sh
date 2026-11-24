@@ -20,7 +20,6 @@ export MANAGEMENT_ENDPOINTS_INCLUDE=health,info,prometheus
 # DB·SMTP 는 toxiproxy(toxics.sh) 를 거쳐 접속한다. SMTP 는 로컬 mailpit 이라 실제 메일은 나가지 않는다.
 export SPRING_MAIL_HOST=localhost SPRING_MAIL_PORT=51025
 export SMTP_USERNAME=loadtest SMTP_PASSWORD=loadtest
-export MANAGEMENT_HEALTH_MAIL_ENABLED=false
 
 # 송금 1건당 비용(FDS 룰 평가 포함)은 그대로 측정하되, 같은 계좌의 반복 송금이 velocity 룰에 걸려
 # 보류되지 않도록 임계치만 올린다.

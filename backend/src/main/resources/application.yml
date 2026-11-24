@@ -111,6 +111,12 @@ management:
       show-details: when-authorized
     prometheus:
       access: read_only
+  health:
+    mail:
+      # 메일 헬스 체크는 요청마다 SMTP 에 직접 접속한다. SMTP 아웃바운드가 막힌 환경(Render 무료 인스턴스)에서는
+      # 연결 타임아웃까지 2분 넘게 /actuator/health 를 붙잡아 전체 헬스 체크가 멈췄다.
+      # 메일 장애는 송금을 막지 않으므로(발송 이력·재시도로 처리) 헬스 판정에서 뺀다. 필요하면 환경변수로 켠다.
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
   metrics:
     tags:
       # Grafana에서 서비스별로 구분할 수 있도록 공통 태그 부여
