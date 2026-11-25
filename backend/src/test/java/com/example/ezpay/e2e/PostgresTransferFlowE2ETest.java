@@ -10,7 +10,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(properties = {
-        "spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.sql.init.mode=never",
         "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",

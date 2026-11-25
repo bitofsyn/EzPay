@@ -15,6 +15,10 @@ dependencyManagement {
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 
+// 운영 DB(PostgreSQL 18)를 공식 지원하는 Flyway 로 고정한다.
+// Boot 3.4 기본값(10.20)과 Boot 3.5 기본값(11.7)은 PostgreSQL 17 까지만 검증되어 기동 시 업그레이드 권고 경고를 낸다(11.13.3 부터 18 지원).
+ext['flyway.version'] = '11.20.3'
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
