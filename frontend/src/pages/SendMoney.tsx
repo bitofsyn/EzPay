@@ -377,7 +377,7 @@ const SendMoney: React.FC = () => {
                               {acc.accountName || acc.bankName || "계좌"}
                             </p>
                             <p className="text-xs font-semibold text-slate-400">
-                              {acc.bankName} · {formatAccountNumber(acc.accountNumber).replace(/\d(?=\d{4})/g, "●")}
+                              {acc.bankName ? `${acc.bankName} · ` : ""}{formatAccountNumber(acc.accountNumber).replace(/\d(?=\d{4})/g, "●")}
                             </p>
                           </div>
                         </div>
@@ -625,7 +625,13 @@ const SendMoney: React.FC = () => {
 
             <div className="space-y-2.5 px-6 py-5">
               {[
-                { label: "출금 계좌", value: selectedAccount ? `${selectedAccount.bankName} · ${formatAccountNumber(selectedAccount.accountNumber)}` : "-" },
+                {
+                  label: "출금 계좌",
+                  // /account/me 는 은행명을 accountName 으로 내려준다(bankName 없음).
+                  value: selectedAccount
+                    ? `${selectedAccount.bankName || selectedAccount.accountName || "계좌"} · ${formatAccountNumber(selectedAccount.accountNumber)}`
+                    : "-",
+                },
                 { label: "받는 분", value: receiverInputName || receiverName || "-" },
                 ...(toAccountNumber ? [{ label: "받는 계좌", value: formatAccountNumber(toAccountNumber) }] : []),
                 { label: "송금 금액", value: `₩${amount}`, highlight: true },
