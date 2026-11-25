@@ -41,6 +41,11 @@ public class KafkaConfig {
     @Value("${ezpay.kafka.transfer.partitions:6}")
     private int transferPartitions;
 
+    // send() 가 브로커 메타데이터를 기다리며 요청 스레드를 붙잡는 최대 시간. 기본값(60초)이면 브로커 장애 시
+    // 송금 요청마다 1분씩 스레드가 묶이므로 짧게 제한해 빨리 실패시킨다.
+    @Value("${ezpay.kafka.producer.max-block-ms:5000}")
+    private long producerMaxBlockMs;
+
     public static final String TRANSFER_EVENTS_TOPIC = "transfer-events";
     public static final String TRANSFER_EVENTS_DLT = TRANSFER_EVENTS_TOPIC + ".DLT";
 
@@ -112,6 +117,7 @@ public class KafkaConfig {
         configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
         configProps.put(ProducerConfig.ACKS_CONFIG, "all");
         configProps.put(ProducerConfig.LINGER_MS_CONFIG, 5);
+        configProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, producerMaxBlockMs);
 
         DefaultKafkaProducerFactory<String, TransferEvent> factory = new DefaultKafkaProducerFactory<>(configProps);
         // 커스텀 팩토리는 Boot 자동 구성의 Micrometer 바인딩을 받지 못하므로 직접 등록한다. (kafka_producer_*)

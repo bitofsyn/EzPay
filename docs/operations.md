@@ -73,6 +73,7 @@ LM_STUDIO_MODEL=local-model
 | `SPRING_DATASOURCE_URL` | PostgreSQL 연결 주소 | 로컬 PostgreSQL |
 | `SPRING_DATASOURCE_USERNAME` | 데이터베이스 사용자 | `postgres` |
 | `SPRING_DATASOURCE_PASSWORD` | 데이터베이스 비밀번호 | 로컬 개발값 |
+| `EZPAY_KAFKA_ENABLED` | Kafka 사용 여부. `true`면 송금을 Kafka로 비동기 처리하고, `false`면 요청 안에서 바로 처리합니다(공개 배포) | `false` |
 | `SPRING_KAFKA_BOOTSTRAP_SERVERS` | Kafka 연결 주소 | `localhost:9092` |
 | `SMTP_USERNAME` | 비밀번호 재설정 메일 발신 계정 | 필수 |
 | `SMTP_PASSWORD` | 메일 계정 비밀번호 | 필수 |

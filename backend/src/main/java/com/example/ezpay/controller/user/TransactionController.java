@@ -2,6 +2,7 @@ package com.example.ezpay.controller.user;
 
 import com.example.ezpay.shared.exception.CustomNotFoundException;
 import com.example.ezpay.shared.exception.TransferLimitExceededException;
+import com.example.ezpay.shared.exception.TransferNotCompletedException;
 import com.example.ezpay.model.user.Transaction;
 import com.example.ezpay.modules.payment.internal.service.TransactionService;
 import com.example.ezpay.modules.payment.api.dto.TransferRequest;
@@ -33,6 +34,10 @@ public class TransactionController {
             String requestId = transactionService.transferMoney(transferRequest);
             return ResponseEntity.status(HttpStatus.ACCEPTED)
                     .body(new CommonResponse<>("success", requestId, "TRANSFER_ACCEPTED"));
+        } catch (TransferNotCompletedException e) {
+            // Kafka 미사용(동기 처리) 환경에서 실패·차단·보류된 송금. data 에는 이력 조회용 requestId 를 담는다.
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new CommonResponse<>("error", e.getRequestId(), e.getMessage()));
         } catch (IllegalArgumentException | CustomNotFoundException | TransferLimitExceededException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new CommonResponse<>("error", null, e.getMessage()));

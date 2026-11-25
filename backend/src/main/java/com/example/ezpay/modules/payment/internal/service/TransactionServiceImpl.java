@@ -6,9 +6,9 @@ import com.example.ezpay.shared.exception.CustomNotFoundException;
 import com.example.ezpay.shared.exception.FraudBlockedException;
 import com.example.ezpay.shared.exception.FraudHeldException;
 import com.example.ezpay.shared.exception.TransferLimitExceededException;
-import com.example.ezpay.kafka.TransactionProducer;
 import com.example.ezpay.shared.common.enums.ErrorLogStatus;
 import com.example.ezpay.shared.common.enums.TransactionStatus;
+import com.example.ezpay.shared.exception.TransferNotCompletedException;
 import com.example.ezpay.shared.messaging.events.TransferEvent;
 import com.example.ezpay.repository.user.*;
 import com.example.ezpay.modules.payment.api.dto.AccountOwnerInfo;
@@ -51,7 +51,7 @@ import java.util.UUID;
 public class TransactionServiceImpl implements TransactionService {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
-    private final TransactionProducer transactionProducer;
+    private final TransferDispatcher transferDispatcher;
     private final TransferLimitRepository transferLimitRepository;
     private final TrainingDataRepository trainingDataRepository;
     private final NotificationRepository notificationRepository;
@@ -166,8 +166,13 @@ public class TransactionServiceImpl implements TransactionService {
         TransferEvent event = new TransferEvent(requestId, transferRequest.getFromAccountId(), transferRequest.getToAccountId(), transferRequest.getAmount(),
                 transferRequest.getMemo(), transferRequest.getCategory(), transferRequest.isCategoryManuallyEdited());
 
-        // 2. Kafka에 이벤트 발행
-        transactionProducer.sendTransferEvent(event);
+        // 2. 처리 경로로 전달 (Kafka 발행, 또는 Kafka 미사용 시 즉시 처리)
+        transferDispatcher.dispatch(event)
+                .filter(processed -> processed.getStatus() != TransactionStatus.SUCCESS)
+                .ifPresent(processed -> {
+                    // 동기 처리에서 실패·차단·보류된 송금은 이력만 남고 잔액은 이동하지 않았다. 클라이언트가 성공으로 오인하지 않게 알린다.
+                    throw new TransferNotCompletedException(requestId, processed.getStatus(), processed.getDescription());
+                });
 
         return requestId;
     }
